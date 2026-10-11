@@ -1,0 +1,8 @@
+{
+  "name": "AppDock75 v0.1",
+  "description": "All-in-one lifecycle workspace for iOS indie developers: ideas, projects, Kanban boards, versioning, changelogs, App Store checklists, and archive.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
