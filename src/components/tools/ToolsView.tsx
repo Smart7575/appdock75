@@ -30,9 +30,12 @@ import {
 import { useData } from '../../context/DataContext';
 import { PrivacyPermission, CertificateReminder } from '../../types';
 import { DEFAULT_CHECKLIST_TEMPLATE } from '../../services/storage';
-import { ChecklistTemplateManager } from '../settings/ChecklistTemplateManager';
 
-export const ToolsView: React.FC = () => {
+interface ToolsViewProps {
+  onNavigate?: (view: string) => void;
+}
+
+export const ToolsView: React.FC<ToolsViewProps> = ({ onNavigate }) => {
   const {
     db,
     activeProjectId,
@@ -48,7 +51,6 @@ export const ToolsView: React.FC = () => {
   >('submission');
 
   const [selectedProjectId, setSelectedProjectId] = useState<string>(activeProjectId || db.projects[0]?.id || '');
-  const [showChecklistTemplateModal, setShowChecklistTemplateModal] = useState(false);
 
   const currentProject = db.projects.find(p => p.id === selectedProjectId) || db.projects.find(p => p.id === activeProjectId) || db.projects[0];
 
@@ -246,9 +248,9 @@ export const ToolsView: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => setShowChecklistTemplateModal(true)}
+                onClick={() => onNavigate?.('settings:checklist')}
                 className="px-2.5 py-1 text-[11px] font-medium bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 hover:text-blue-300 border border-blue-500/30 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
-                title="Edit standard checklist template for all apps (add, modify, reorder, delete)"
+                title="Edit standard checklist template for all apps in Settings"
               >
                 <Edit2 className="w-3 h-3" />
                 <span>Edit Standard Checklist</span>
@@ -656,15 +658,6 @@ export const ToolsView: React.FC = () => {
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
-      )}
-
-      {/* Global Standard Checklist Template Editor Modal */}
-      {showChecklistTemplateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
-            <ChecklistTemplateManager isModal onClose={() => setShowChecklistTemplateModal(false)} />
           </div>
         </div>
       )}

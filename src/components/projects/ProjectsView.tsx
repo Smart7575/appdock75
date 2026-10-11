@@ -64,7 +64,6 @@ import { DEFAULT_CHECKLIST_TEMPLATE } from '../../services/storage';
 import { DevSubstatusPipeline } from './DevSubstatusPipeline';
 import { ProjectImagePicker } from './ProjectImagePicker';
 import { ProjectImageModal } from './ProjectImageModal';
-import { ChecklistTemplateManager } from '../settings/ChecklistTemplateManager';
 import { getProjectColorTheme, PROJECT_COLOR_THEMES } from '../../utils/projectColors';
 
 interface ProjectsViewProps {
@@ -128,7 +127,6 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   // Project edit modal
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
-  const [showChecklistTemplateModal, setShowChecklistTemplateModal] = useState(false);
   const [projectForm, setProjectForm] = useState({
     name: '',
     description: '',
@@ -1755,9 +1753,9 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowChecklistTemplateModal(true)}
+                  onClick={() => onNavigate('settings:checklist')}
                   className="px-2.5 py-1 text-[11px] font-medium bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 hover:text-blue-300 border border-blue-500/30 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
-                  title="Edit standard checklist template for all apps (add, modify, reorder, delete)"
+                  title="Open standard checklist template manager in Settings"
                 >
                   <Edit2 className="w-3 h-3" />
                   <span>Edit Standard Checklist</span>
@@ -2193,15 +2191,6 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
         isOpen={showImageModal}
         onClose={() => setShowImageModal(false)}
       />
-
-      {/* Global Standard Checklist Template Editor Modal */}
-      {showChecklistTemplateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
-            <ChecklistTemplateManager isModal onClose={() => setShowChecklistTemplateModal(false)} />
-          </div>
-        </div>
-      )}
     </div>
   );
 };

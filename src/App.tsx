@@ -27,12 +27,29 @@ import { SettingsView } from './components/settings/SettingsView';
 const WorkspaceShell: React.FC = () => {
   const { isAuthenticated, isLoading, loginAsDemo } = useAuth();
   const [currentView, setCurrentView] = useState<string>('dashboard');
+  const [settingsTab, setSettingsTab] = useState<'profile' | 'workflow' | 'checklist' | 'data' | 'security'>('profile');
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [authModalState, setAuthModalState] = useState<{ open: boolean; mode: 'login' | 'register' }>({
     open: false,
     mode: 'login',
   });
   const [newItemType, setNewItemType] = useState<'idea' | 'project' | 'task' | 'release' | null>(null);
+
+  const handleNavigate = (view: string) => {
+    if (view === 'settings:checklist' || view === 'settings/checklist') {
+      setSettingsTab('checklist');
+      setCurrentView('settings');
+    } else if (view.startsWith('settings:')) {
+      const tab = view.split(':')[1] as any;
+      setSettingsTab(tab);
+      setCurrentView('settings');
+    } else {
+      if (view === 'settings') {
+        setSettingsTab('profile');
+      }
+      setCurrentView(view);
+    }
+  };
 
   // Keyboard shortcut listeners (PRD §10: N for new item, / or ⌘K for search)
   useEffect(() => {
@@ -99,7 +116,7 @@ const WorkspaceShell: React.FC = () => {
       <Header
         currentView={currentView}
         onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
-        onNavigate={setCurrentView}
+        onNavigate={handleNavigate}
         onOpenNewModal={type => setNewItemType(type)}
       />
 
@@ -107,32 +124,32 @@ const WorkspaceShell: React.FC = () => {
         {/* Desktop Sidebar & Mobile Tab Bar */}
         <Sidebar
           currentView={currentView}
-          onNavigate={setCurrentView}
+          onNavigate={handleNavigate}
         />
 
         {/* Viewport Canvas */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 min-w-0">
           {currentView === 'dashboard' && (
             <DashboardView
-              onNavigate={setCurrentView}
+              onNavigate={handleNavigate}
               onOpenNewModal={type => setNewItemType(type)}
             />
           )}
 
           {currentView === 'ideas' && (
-            <IdeasView onNavigate={setCurrentView} />
+            <IdeasView onNavigate={handleNavigate} />
           )}
 
           {currentView === 'projects' && (
             <ProjectsView
-              onNavigate={setCurrentView}
+              onNavigate={handleNavigate}
               onOpenNewModal={type => setNewItemType(type)}
             />
           )}
 
           {currentView === 'released' && (
             <ReleasedProjectsView
-              onNavigate={setCurrentView}
+              onNavigate={handleNavigate}
               onOpenNewModal={type => setNewItemType(type)}
             />
           )}
@@ -142,15 +159,18 @@ const WorkspaceShell: React.FC = () => {
           )}
 
           {currentView === 'archive' && (
-            <ArchiveView onNavigate={setCurrentView} />
+            <ArchiveView onNavigate={handleNavigate} />
           )}
 
           {currentView === 'tools' && (
-            <ToolsView />
+            <ToolsView onNavigate={handleNavigate} />
           )}
 
           {currentView === 'settings' && (
-            <SettingsView />
+            <SettingsView
+              initialTab={settingsTab}
+              onNavigate={handleNavigate}
+            />
           )}
         </main>
       </div>
@@ -159,7 +179,7 @@ const WorkspaceShell: React.FC = () => {
       <CommandPalette
         isOpen={isCommandPaletteOpen}
         onClose={() => setIsCommandPaletteOpen(false)}
-        onNavigate={setCurrentView}
+        onNavigate={handleNavigate}
         onOpenNewModal={type => setNewItemType(type)}
       />
 
@@ -167,7 +187,7 @@ const WorkspaceShell: React.FC = () => {
       <NewItemModal
         type={newItemType}
         onClose={() => setNewItemType(null)}
-        onNavigate={setCurrentView}
+        onNavigate={handleNavigate}
       />
     </div>
   );

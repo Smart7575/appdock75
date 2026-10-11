@@ -18,6 +18,7 @@ import {
   ArrowDown,
   GripVertical,
   ArrowUpDown,
+  ArrowLeft,
 } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { ChecklistItem } from '../../types';
@@ -25,6 +26,7 @@ import { ChecklistItem } from '../../types';
 interface ChecklistTemplateManagerProps {
   onClose?: () => void;
   isModal?: boolean;
+  onNavigate?: (view: string) => void;
 }
 
 const STORAGE_CUSTOM_CATEGORIES_KEY = 'appdock_custom_checklist_categories';
@@ -44,6 +46,7 @@ const PRESET_CATEGORIES = [
 export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> = ({
   onClose,
   isModal = false,
+  onNavigate,
 }) => {
   const {
     checklistTemplate,
@@ -325,6 +328,17 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
           </div>
 
           <div className="flex items-center gap-2 flex-wrap shrink-0">
+            {onNavigate && !isModal && (
+              <button
+                type="button"
+                onClick={() => onNavigate('projects')}
+                className="px-3.5 py-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700/80 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+                title="Return to Projects Workspace"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-blue-400" />
+                <span>Back to Projects</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={openAddForm}

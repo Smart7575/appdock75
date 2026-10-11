@@ -38,7 +38,15 @@ import {
 } from '../../services/storage';
 import { WorkflowStatus, StatusType } from '../../types';
 
-export const SettingsView: React.FC = () => {
+interface SettingsViewProps {
+  initialTab?: 'profile' | 'workflow' | 'checklist' | 'data' | 'security';
+  onNavigate?: (view: string) => void;
+}
+
+export const SettingsView: React.FC<SettingsViewProps> = ({
+  initialTab = 'profile',
+  onNavigate,
+}) => {
   const {
     user,
     updateProfile,
@@ -57,7 +65,13 @@ export const SettingsView: React.FC = () => {
     deleteStatus,
   } = useData();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'workflow' | 'checklist' | 'data' | 'security'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'workflow' | 'checklist' | 'data' | 'security'>(initialTab);
+
+  React.useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   // Profile Form State
   const [name, setName] = useState(user?.name || '');
@@ -205,7 +219,7 @@ export const SettingsView: React.FC = () => {
         {[
           { id: 'profile', label: 'Profile & Account', icon: User },
           { id: 'workflow', label: 'Kanban Workflow Statuses', icon: Columns },
-          { id: 'checklist', label: 'Standaard Checklist', icon: CheckSquare },
+          { id: 'checklist', label: 'Standard Checklist', icon: CheckSquare },
           { id: 'data', label: 'Data & Demo Management', icon: Sparkles },
           { id: 'security', label: 'Danger Zone & Deletion', icon: ShieldAlert },
         ].map(tab => {
@@ -448,9 +462,9 @@ export const SettingsView: React.FC = () => {
         </div>
       )}
  
-      {/* TAB: STANDAARD CHECKLIST (GLOBAL VOOR ALLE APPS) */}
+      {/* TAB: STANDARD CHECKLIST (GLOBAL FOR ALL APPS) */}
       {activeTab === 'checklist' && (
-        <ChecklistTemplateManager />
+        <ChecklistTemplateManager onNavigate={onNavigate} />
       )}
 
       {/* TAB 3: DATA & DEMO MANAGEMENT (PRD §6 & §8.7) */}
