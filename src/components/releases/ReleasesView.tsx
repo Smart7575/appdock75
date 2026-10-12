@@ -29,6 +29,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { useData } from '../../context/DataContext';
+import { useFormatDate } from '../../utils/dateFormat';
 import { Release, ChangelogEntry, ChangelogType, ReleaseStatus } from '../../types';
 
 export const ReleasesView: React.FC = () => {
@@ -46,6 +47,7 @@ export const ReleasesView: React.FC = () => {
     generateReleaseNotes,
     keepItemAsMine,
   } = useData();
+  const { formatDate } = useFormatDate();
 
   // Current project filter
   const currentProject = db.projects.find(p => p.id === activeProjectId) || db.projects[0];
@@ -266,7 +268,7 @@ export const ReleasesView: React.FC = () => {
                     </p>
 
                     <div className="flex items-center justify-between text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-800">
-                      <span>{rel.releasedDate ? `Released ${rel.releasedDate}` : `Target: ${rel.plannedDate || 'TBD'}`}</span>
+                      <span>{rel.releasedDate ? `Released ${formatDate(rel.releasedDate)}` : `Target: ${rel.plannedDate ? formatDate(rel.plannedDate) : 'TBD'}`}</span>
                       {rel.isDemo && (
                         <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-1 rounded">
                           Demo
@@ -329,11 +331,11 @@ export const ReleasesView: React.FC = () => {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-3 text-xs">
                 <div>
                   <span className="text-slate-500">Planned Date:</span>
-                  <p className="text-slate-300 mt-0.5">{activeRelease.plannedDate || 'Not scheduled'}</p>
+                  <p className="text-slate-300 mt-0.5">{activeRelease.plannedDate ? formatDate(activeRelease.plannedDate) : 'Not scheduled'}</p>
                 </div>
                 <div>
                   <span className="text-slate-500">Released Date:</span>
-                  <p className="text-slate-300 mt-0.5">{activeRelease.releasedDate || 'Pending release'}</p>
+                  <p className="text-slate-300 mt-0.5">{activeRelease.releasedDate ? formatDate(activeRelease.releasedDate) : 'Pending release'}</p>
                 </div>
                 {activeRelease.notes.testFlightUrl && (
                   <div>

@@ -28,6 +28,7 @@ import {
   Edit2,
 } from 'lucide-react';
 import { useData } from '../../context/DataContext';
+import { useFormatDate } from '../../utils/dateFormat';
 import { PrivacyPermission, CertificateReminder } from '../../types';
 import { DEFAULT_CHECKLIST_TEMPLATE } from '../../services/storage';
 
@@ -45,6 +46,7 @@ export const ToolsView: React.FC<ToolsViewProps> = ({ onNavigate }) => {
     addCertificate,
     deleteCertificate,
   } = useData();
+  const { formatDate } = useFormatDate();
 
   const [activeSubTool, setActiveSubTool] = useState<
     'submission' | 'privacy' | 'rejections' | 'aso' | 'certificates' | 'testmatrix'
@@ -430,7 +432,7 @@ export const ToolsView: React.FC<ToolsViewProps> = ({ onNavigate }) => {
               <div key={rej.id} className="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-2 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-rose-400">{rej.guideline}</span>
-                  <span className="font-mono text-slate-500">{rej.date}</span>
+                  <span className="font-mono text-slate-500">{formatDate(rej.date)}</span>
                 </div>
                 <p className="text-slate-300 bg-slate-800/40 p-2.5 rounded-lg border border-slate-800">
                   {rej.reason}
@@ -557,7 +559,7 @@ export const ToolsView: React.FC<ToolsViewProps> = ({ onNavigate }) => {
                 </div>
 
                 <div className="text-slate-400 text-[11px]">
-                  Expires on: <span className="font-mono text-slate-300">{cert.expiryDate}</span>
+                  Expires on: <span className="font-mono text-slate-300">{formatDate(cert.expiryDate)}</span>
                 </div>
                 <p className="text-[11px] text-slate-500">{cert.notes}</p>
               </div>

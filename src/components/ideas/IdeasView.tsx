@@ -31,6 +31,8 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useData } from '../../context/DataContext';
+import { useAuth } from '../../context/AuthContext';
+import { useFormatDate } from '../../utils/dateFormat';
 import { Idea, IdeaCategory, IdeaStatus } from '../../types';
 
 interface IdeasViewProps {
@@ -47,6 +49,9 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
     addIdeaComment,
     keepItemAsMine,
   } = useData();
+  const { user } = useAuth();
+  const { formatDate } = useFormatDate();
+  const bundlePrefix = (user?.settings?.bundlePrefix || 'indie').trim().toLowerCase().replace(/[^a-z0-9.-]/g, '') || 'indie';
 
   // Local state
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'matrix'>('grid');
@@ -410,7 +415,7 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
                       </span>
                     ) : (
                       <span className="text-[11px] text-slate-500">
-                        {new Date(idea.createdAt).toLocaleDateString()}
+                        {formatDate(idea.createdAt)}
                       </span>
                     )}
                   </div>
@@ -523,7 +528,7 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
                     >
                       <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
                         <span className="font-medium text-slate-300">{idea.status}</span>
-                        <span className="text-[10px] text-slate-500">{new Date(idea.createdAt).toLocaleDateString()}</span>
+                        <span className="text-[10px] text-slate-500">{formatDate(idea.createdAt)}</span>
                       </div>
                       <p className="text-xs font-medium text-white line-clamp-2">{idea.title}</p>
                     </div>
@@ -597,7 +602,7 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
                       <div key={c.id} className="p-2.5 rounded-lg bg-slate-800/60 text-slate-300">
                         <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
                           <span className="font-semibold text-slate-200">{c.author}</span>
-                          <span>{new Date(c.createdAt).toLocaleDateString()}</span>
+                          <span>{formatDate(c.createdAt)}</span>
                         </div>
                         <p>{c.text}</p>
                       </div>
@@ -632,7 +637,7 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
                     {selectedIdea.timeline.map(tl => (
                       <div key={tl.id} className="flex items-center gap-2">
                         <Clock className="w-3 h-3 text-slate-500" />
-                        <span className="font-mono text-[10px] text-slate-500">{tl.date}:</span>
+                        <span className="font-mono text-[10px] text-slate-500">{formatDate(tl.date)}:</span>
                         <span>{tl.event}</span>
                       </div>
                     ))}
@@ -705,7 +710,7 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
             <div className="p-3 bg-slate-800/50 rounded-xl space-y-2 mb-4 text-xs">
               <div className="flex justify-between">
                 <span className="text-slate-400">Generated Bundle ID:</span>
-                <span className="font-mono text-slate-200">com.indie.{showConvertModal.title.toLowerCase().replace(/[^a-z0-9]/g, '')}</span>
+                <span className="font-mono text-slate-200">com.{bundlePrefix}.{showConvertModal.title.toLowerCase().replace(/[^a-z0-9]/g, '')}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Target Framework:</span>

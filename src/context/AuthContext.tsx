@@ -103,6 +103,8 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
             theme: 'dark',
             emailNotifications: true,
             compactView: false,
+            dateFormat: 'DD/MM/YYYY',
+            bundlePrefix: 'indie',
           },
         };
         saveCredentialsVault([...vault, demoUser]);
@@ -126,6 +128,8 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
             theme: 'dark',
             emailNotifications: true,
             compactView: false,
+            dateFormat: 'DD/MM/YYYY',
+            bundlePrefix: 'indie',
           },
         };
         if (mappedUser.providers.length === 0) mappedUser.providers = ['email'];
@@ -158,6 +162,7 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
             theme: 'dark',
             emailNotifications: true,
             compactView: false,
+            dateFormat: 'DD/MM/YYYY',
           },
         };
         await saveUserToFirestore(profile);
@@ -170,7 +175,12 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
         avatar: undefined,
         providers: profile.providers || ['email'],
         createdAt: profile.createdAt,
-        settings: profile.settings || { theme: 'dark', emailNotifications: true, compactView: false },
+        settings: {
+          theme: profile.settings?.theme || 'dark',
+          emailNotifications: profile.settings?.emailNotifications ?? true,
+          compactView: profile.settings?.compactView ?? false,
+          dateFormat: profile.settings?.dateFormat || 'DD/MM/YYYY',
+        },
       };
 
       setUser(sessionUser);
@@ -247,6 +257,7 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
           theme: 'dark',
           emailNotifications: true,
           compactView: false,
+          dateFormat: 'DD/MM/YYYY',
         },
       };
 
@@ -268,7 +279,13 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
         avatar: undefined,
         providers: userRecord.providers,
         createdAt: userRecord.createdAt,
-        settings: userRecord.settings,
+        settings: {
+          theme: userRecord.settings?.theme || 'dark',
+          emailNotifications: userRecord.settings?.emailNotifications ?? true,
+          compactView: userRecord.settings?.compactView ?? false,
+          dateFormat: userRecord.settings?.dateFormat || 'DD/MM/YYYY',
+          bundlePrefix: userRecord.settings?.bundlePrefix || 'indie',
+        },
       };
 
       setUser(sessionUser);
@@ -310,6 +327,7 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
             theme: 'dark',
             emailNotifications: true,
             compactView: false,
+            dateFormat: 'DD/MM/YYYY',
           },
         };
         // Save to Firestore /users/{userId}
@@ -325,7 +343,13 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
         avatar: undefined,
         providers: userRecord.providers || ['google'],
         createdAt: userRecord.createdAt,
-        settings: userRecord.settings,
+        settings: {
+          theme: userRecord.settings?.theme || 'dark',
+          emailNotifications: userRecord.settings?.emailNotifications ?? true,
+          compactView: userRecord.settings?.compactView ?? false,
+          dateFormat: userRecord.settings?.dateFormat || 'DD/MM/YYYY',
+          bundlePrefix: userRecord.settings?.bundlePrefix || 'indie',
+        },
       };
 
       setUser(sessionUser);
@@ -361,6 +385,7 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
             theme: 'dark',
             emailNotifications: true,
             compactView: false,
+            dateFormat: 'DD/MM/YYYY',
           },
         };
         // Save to Firestore /users/{userId}
@@ -376,7 +401,13 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
         avatar: undefined,
         providers: userRecord.providers || ['apple'],
         createdAt: userRecord.createdAt,
-        settings: userRecord.settings,
+        settings: {
+          theme: userRecord.settings?.theme || 'dark',
+          emailNotifications: userRecord.settings?.emailNotifications ?? true,
+          compactView: userRecord.settings?.compactView ?? false,
+          dateFormat: userRecord.settings?.dateFormat || 'DD/MM/YYYY',
+          bundlePrefix: userRecord.settings?.bundlePrefix || 'indie',
+        },
       };
 
       setUser(sessionUser);
@@ -429,9 +460,16 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
   const changePassword = async (oldPass: string, newPass: string) => {
     if (!user) return { success: false, error: 'No active session.' };
     const vault = getCredentialsVault();
-    const entry = vault.find(u => u.id === user.id);
+    let entry = vault.find(u => u.id === user.id || (user.email && u.email.toLowerCase() === user.email.toLowerCase()));
 
-    if (!entry) return { success: false, error: 'User record not found.' };
+    if (!entry) {
+      entry = {
+        ...user,
+        passwordHash: newPass,
+      };
+      saveCredentialsVault([...vault, entry]);
+      return { success: true };
+    }
 
     if (entry.passwordHash && entry.passwordHash !== oldPass) {
       return { success: false, error: 'Current password does not match.' };
@@ -522,6 +560,7 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
           theme: 'dark',
           emailNotifications: true,
           compactView: false,
+          dateFormat: 'DD/MM/YYYY',
         },
       };
       saveCredentialsVault([...vault, demoUser]);

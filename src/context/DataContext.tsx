@@ -145,6 +145,22 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
             localStorage.getItem('ios_dev_hub_global_demo_purged') === 'true' ||
             (!remoteDb.projects.some(p => p.isDemo) && !remoteDb.ideas.some(i => i.isDemo));
 
+          // Preserve custom checklist template if remote Firestore document lacked it
+          if (!remoteDb.checklistTemplate || remoteDb.checklistTemplate.length === 0) {
+            if (localDb.checklistTemplate && localDb.checklistTemplate.length > 0) {
+              remoteDb.checklistTemplate = localDb.checklistTemplate;
+            }
+          }
+
+          // Reconcile project substatus (devSubstatus)
+          remoteDb.projects = (remoteDb.projects || []).map(rp => {
+            const lp = (localDb.projects || []).find(p => p.id === rp.id);
+            if (lp && lp.devSubstatus && (!rp.devSubstatus || (rp.devSubstatus === 'Design' && lp.devSubstatus !== 'Design'))) {
+              return { ...rp, devSubstatus: lp.devSubstatus };
+            }
+            return rp;
+          });
+
           let finalDb = remoteDb;
           if (isPurged) {
             finalDb = {
@@ -165,13 +181,11 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
               localStorage.setItem('ios_dev_hub_global_demo_purged', 'true');
             } catch {}
           }
-          const sanitized = sanitizeDatabaseChecklists(finalDb);
+          const sanitized = sanitizeDatabaseChecklists(finalDb, user.id);
           setDb(sanitized);
           saveUserDatabase(user.id, sanitized);
-          if (isPurged && (!remoteDb.demoPurged || (remoteDb.projects || []).some(p => p.isDemo))) {
-            // Overwrite Firestore if it still had old demo items or lacked demoPurged flag
-            saveWorkspaceToFirestore(user.id, sanitized);
-          }
+          // Always save the reconciled workspace back to Firestore to ensure cloud sync
+          saveWorkspaceToFirestore(user.id, sanitized);
           if (sanitized.projects.length > 0) {
             setActiveProjectId(sanitized.projects[0].id);
           } else {
@@ -196,6 +210,22 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
             localStorage.getItem('ios_dev_hub_global_demo_purged') === 'true' ||
             (!remoteUpdate.projects.some(p => p.isDemo) && !remoteUpdate.ideas.some(i => i.isDemo));
 
+          // Preserve checklist template if missing in update
+          if (!remoteUpdate.checklistTemplate || remoteUpdate.checklistTemplate.length === 0) {
+            if (localDb.checklistTemplate && localDb.checklistTemplate.length > 0) {
+              remoteUpdate.checklistTemplate = localDb.checklistTemplate;
+            }
+          }
+
+          // Reconcile project substatus (devSubstatus)
+          remoteUpdate.projects = (remoteUpdate.projects || []).map(rp => {
+            const lp = (localDb.projects || []).find(p => p.id === rp.id);
+            if (lp && lp.devSubstatus && (!rp.devSubstatus || (rp.devSubstatus === 'Design' && lp.devSubstatus !== 'Design'))) {
+              return { ...rp, devSubstatus: lp.devSubstatus };
+            }
+            return rp;
+          });
+
           let finalUpdate = remoteUpdate;
           if (isPurged) {
             finalUpdate = {
@@ -215,7 +245,7 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
               localStorage.setItem(`ios_dev_hub_data_${user.id}_demo_purged`, 'true');
             } catch {}
           }
-          const sanitized = sanitizeDatabaseChecklists(finalUpdate);
+          const sanitized = sanitizeDatabaseChecklists(finalUpdate, user.id);
           setDb(sanitized);
           saveUserDatabase(user.id, sanitized);
         }
@@ -335,13 +365,14 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
     const idea = db.ideas.find(i => i.id === ideaId);
     const cleanBundleSuffix = (idea?.title || 'app').toLowerCase().replace(/[^a-z0-9]/g, '');
     const newProjId = `proj-${Date.now()}`;
+    const bundlePrefix = (user?.settings?.bundlePrefix || 'indie').trim().toLowerCase().replace(/[^a-z0-9.-]/g, '') || 'indie';
 
     const newProject: Project = {
       id: newProjId,
       userId: user?.id || 'anonymous',
       name: idea?.title || 'New iOS Project',
       description: idea?.description || 'Built from idea brainstorm workspace.',
-      bundleId: `com.indie.${cleanBundleSuffix || 'app'}`,
+      bundleId: `com.${bundlePrefix}.${cleanBundleSuffix || 'app'}`,
       platforms: ['iPhone', 'iPad'],
       minIOS: 'iOS 17.0',
       stack: {
@@ -812,7 +843,7 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
       name: `${app?.name || 'Reopened App'} (Next Cycle)`,
       icon: app?.icon,
       description: `New development lifecycle cycle for ${app?.name || 'published app'}.`,
-      bundleId: app?.bundleId || 'com.indie.app',
+      bundleId: app?.bundleId || `com.${(user?.settings?.bundlePrefix || 'indie').trim().toLowerCase().replace(/[^a-z0-9.-]/g, '') || 'indie'}.app`,
       platforms: ['iPhone', 'iPad'],
       minIOS: 'iOS 17.5',
       stack: {

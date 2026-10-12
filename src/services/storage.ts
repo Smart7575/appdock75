@@ -744,29 +744,46 @@ export function setCurrentSessionUser(user: User | null): void {
 
 // User Database CRUD
 /**
- * Ensures all checklist items for user-created (non-demo) projects or newly started projects
- * start 100% unchecked (done: false). Also resets any orphaned template items.
+ * Normalizes checklist items and ensures custom checklist templates are safely preserved
+ * across logins, reloads, and database syncs.
  */
-export function sanitizeDatabaseChecklists(parsed: UserDatabase): UserDatabase {
+export function sanitizeDatabaseChecklists(parsed: UserDatabase, userId?: string): UserDatabase {
   if (!parsed) return parsed;
-  let checklists = parsed.checklists || [];
-  if (Array.isArray(checklists)) {
-    const nonDemoProjectIds = new Set((parsed.projects || []).filter(p => !p.isDemo).map(p => p.id));
-    checklists = checklists.map(c => {
-      // If tied to a user-created (non-demo) project, or legacy template without projectId where all were pre-checked
-      if (!c.projectId || (c.projectId && nonDemoProjectIds.has(c.projectId))) {
-        return { ...c, done: false };
+  const checklists = parsed.checklists || [];
+
+  // Recover custom checklist template if missing from remote or local storage
+  let template = Array.isArray(parsed.checklistTemplate) && parsed.checklistTemplate.length > 0
+    ? parsed.checklistTemplate
+    : undefined;
+
+  if (!template) {
+    try {
+      const backupKey = userId ? `appdock_template_backup_${userId}` : null;
+      const backupRaw = backupKey ? localStorage.getItem(backupKey) : null;
+      const globalRaw = localStorage.getItem('appdock_global_checklist_template');
+      const rawToUse = backupRaw || globalRaw;
+      if (rawToUse) {
+        const parsedTpl = JSON.parse(rawToUse);
+        if (Array.isArray(parsedTpl) && parsedTpl.length > 0) {
+          template = parsedTpl;
+        }
       }
-      return c;
-    });
+    } catch {}
   }
+
+  const resolvedTemplate = template || DEFAULT_CHECKLIST_TEMPLATE.map(c => ({ ...c }));
+
+  // Ensure projects have devSubstatus preserved
+  const sanitizedProjects = (parsed.projects || []).map(p => ({
+    ...p,
+    devSubstatus: p.devSubstatus || (p.status === 'In development' ? 'Design' : undefined),
+  }));
+
   return {
     ...parsed,
+    projects: sanitizedProjects,
     checklists,
-    checklistTemplate:
-      Array.isArray(parsed.checklistTemplate) && parsed.checklistTemplate.length > 0
-        ? parsed.checklistTemplate
-        : DEFAULT_CHECKLIST_TEMPLATE.map(c => ({ ...c })),
+    checklistTemplate: resolvedTemplate,
   };
 }
 
@@ -820,7 +837,7 @@ export function loadUserDatabase(userId: string): UserDatabase {
         }
       }
     }
-    return sanitizeDatabaseChecklists(parsed);
+    return sanitizeDatabaseChecklists(parsed, userId);
   } catch (err) {
     console.error('Failed to load user database', err);
     return createEmptyDatabase();
@@ -831,6 +848,10 @@ export function saveUserDatabase(userId: string, data: UserDatabase): void {
   try {
     const key = `${DATA_PREFIX}${userId}`;
     localStorage.setItem(key, JSON.stringify(data));
+    if (data.checklistTemplate && data.checklistTemplate.length > 0) {
+      localStorage.setItem('appdock_global_checklist_template', JSON.stringify(data.checklistTemplate));
+      localStorage.setItem(`appdock_template_backup_${userId}`, JSON.stringify(data.checklistTemplate));
+    }
   } catch (err) {
     console.error('Failed to save user database', err);
   }

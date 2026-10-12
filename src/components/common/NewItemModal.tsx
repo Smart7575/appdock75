@@ -11,6 +11,7 @@ import {
   Tag,
 } from 'lucide-react';
 import { useData } from '../../context/DataContext';
+import { useAuth } from '../../context/AuthContext';
 import {
   IdeaCategory,
   TaskType,
@@ -33,6 +34,8 @@ export const NewItemModal: React.FC<NewItemModalProps> = ({
   onNavigate,
 }) => {
   const { db, activeProjectId, addIdea, addProject, addTask, addRelease } = useData();
+  const { user } = useAuth();
+  const bundlePrefix = (user?.settings?.bundlePrefix || 'indie').trim().toLowerCase().replace(/[^a-z0-9.-]/g, '') || 'indie';
 
   // Idea state
   const [ideaTitle, setIdeaTitle] = useState('');
@@ -109,7 +112,7 @@ export const NewItemModal: React.FC<NewItemModalProps> = ({
       onClose();
       onNavigate('ideas');
     } else if (type === 'project') {
-      const bundleToUse = projBundle.trim() || `com.indie.${projName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'app'}`;
+      const bundleToUse = projBundle.trim() || `com.${bundlePrefix}.${projName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'app'}`;
       addProject({
         name: projName.trim(),
         description: projDesc.trim() || 'Custom iOS application project.',
@@ -215,9 +218,9 @@ export const NewItemModal: React.FC<NewItemModalProps> = ({
                   onChange={e => {
                     const newName = e.target.value;
                     setProjName(newName);
-                    if (!projBundle || projBundle.startsWith('com.indie.')) {
+                    if (!projBundle || projBundle.startsWith('com.') || projBundle.startsWith(`com.${bundlePrefix}.`)) {
                       const cleanSuffix = newName.toLowerCase().replace(/[^a-z0-9]/g, '');
-                      setProjBundle(cleanSuffix ? `com.indie.${cleanSuffix}` : '');
+                      setProjBundle(cleanSuffix ? `com.${bundlePrefix}.${cleanSuffix}` : '');
                     }
                   }}
                   className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
@@ -246,7 +249,7 @@ export const NewItemModal: React.FC<NewItemModalProps> = ({
                 <input
                   type="text"
                   required
-                  placeholder="e.g. com.indie.luminacamera"
+                  placeholder={`e.g. com.${bundlePrefix}.luminacamera`}
                   value={projBundle}
                   onChange={e => setProjBundle(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg font-mono text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"

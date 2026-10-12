@@ -26,6 +26,8 @@ import {
   FileText,
 } from 'lucide-react';
 import { useData } from '../../context/DataContext';
+import { useAuth } from '../../context/AuthContext';
+import { useFormatDate } from '../../utils/dateFormat';
 import { ArchivedApp, PricingModel } from '../../types';
 
 interface ArchiveViewProps {
@@ -41,6 +43,9 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({ onNavigate }) => {
     reopenArchivedAppAsProject,
     keepItemAsMine,
   } = useData();
+  const { user } = useAuth();
+  const { formatDate } = useFormatDate();
+  const bundlePrefix = (user?.settings?.bundlePrefix || 'indie').trim().toLowerCase().replace(/[^a-z0-9.-]/g, '') || 'indie';
 
   const [selectedAppId, setSelectedAppId] = useState<string | null>(db.archivedApps[0]?.id || null);
   const activeApp = db.archivedApps.find(a => a.id === selectedAppId) || db.archivedApps[0];
@@ -57,7 +62,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({ onNavigate }) => {
     name: '',
     storeUrl: 'https://apps.apple.com/app/id',
     appleId: '6480000000',
-    bundleId: 'com.indie.app',
+    bundleId: `com.${bundlePrefix}.app`,
     sku: 'APP-IOS-01',
     category: 'Productivity',
     priceModel: 'Freemium' as PricingModel,
@@ -115,7 +120,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({ onNavigate }) => {
     md += `- **Bundle ID**: ${app.bundleId}\n`;
     md += `- **Category**: ${app.category}\n`;
     md += `- **Monetization**: ${app.priceModel}\n`;
-    md += `- **First Published**: ${app.publishedDate}\n`;
+    md += `- **First Published**: ${formatDate(app.publishedDate)}\n`;
     md += `- **Store URL**: ${app.storeUrl}\n\n`;
     md += `## Retrospective & Post-Mortem\n${app.retrospectiveNotes}\n\n`;
     md += `## Metric Performance Log\n`;
@@ -217,7 +222,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({ onNavigate }) => {
                     </div>
 
                     <div className="flex items-center justify-between text-[11px] text-slate-500 mt-3 pt-2 border-t border-slate-800">
-                      <span>Published {app.publishedDate}</span>
+                      <span>Published {formatDate(app.publishedDate)}</span>
                       {latestMetric && (
                         <span className="font-mono text-slate-300">
                           {latestMetric.rating} ★ · ${latestMetric.revenue}
@@ -447,7 +452,7 @@ export const ArchiveView: React.FC<ArchiveViewProps> = ({ onNavigate }) => {
                   <input
                     type="text"
                     required
-                    placeholder="com.indie.app"
+                    placeholder={`com.${bundlePrefix}.app`}
                     value={appForm.bundleId}
                     onChange={e => setAppForm({ ...appForm, bundleId: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg font-mono text-slate-100"

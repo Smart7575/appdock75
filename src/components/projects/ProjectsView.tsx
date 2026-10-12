@@ -46,10 +46,23 @@ import {
   HardDrive,
   Folder,
   Copy,
+  X,
+  Smartphone,
+  Tablet,
+  Watch,
+  Monitor,
+  Glasses,
+  Pencil,
+  Code2,
+  Cpu,
+  Boxes,
 } from 'lucide-react';
 import { useData } from '../../context/DataContext';
+import { useAuth } from '../../context/AuthContext';
+import { useFormatDate } from '../../utils/dateFormat';
 import {
   Project,
+  ProjectStatus,
   Task,
   TaskType,
   TaskPriority,
@@ -93,6 +106,9 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     toggleChecklist,
     resetChecklist,
   } = useData();
+  const { user } = useAuth();
+  const { formatDate } = useFormatDate();
+  const bundlePrefix = (user?.settings?.bundlePrefix || 'indie').trim().toLowerCase().replace(/[^a-z0-9.-]/g, '') || 'indie';
 
   // Active Tab inside Project
   const [activeTab, setActiveTab] = useState<
@@ -124,6 +140,15 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     releaseId: '',
   });
 
+  // Available Apple platforms list with icons
+  const ALL_APPLE_PLATFORMS: { id: ProjectPlatform; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { id: 'iPhone', label: 'iPhone', icon: Smartphone },
+    { id: 'iPad', label: 'iPad', icon: Tablet },
+    { id: 'Apple Watch', label: 'Apple Watch', icon: Watch },
+    { id: 'Mac Catalyst', label: 'Mac Catalyst', icon: Monitor },
+    { id: 'visionOS', label: 'visionOS', icon: Glasses },
+  ];
+
   // Project edit modal
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
@@ -132,14 +157,16 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     description: '',
     icon: '',
     color: undefined as ProjectColor | undefined,
-    bundleId: 'com.indie.app',
+    bundleId: `com.${bundlePrefix}.app`,
     platforms: ['iPhone', 'iPad'] as ProjectPlatform[],
     minIOS: 'iOS 17.0',
     uiFramework: 'SwiftUI' as 'SwiftUI' | 'UIKit' | 'Hybrid',
     swiftVersion: '6.0',
     xcodeVersion: '16.1',
-    status: 'In development' as const,
+    status: 'In development' as ProjectStatus,
     devSubstatus: 'Design' as DevelopmentSubstatus,
+    startDate: '',
+    targetDate: '',
   });
 
   // Notes editor
@@ -444,40 +471,65 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
       icon: currentProject.icon || '',
       color: currentProject.color,
       bundleId: currentProject.bundleId,
-      platforms: currentProject.platforms,
-      minIOS: currentProject.minIOS,
-      uiFramework: currentProject.stack.uiFramework,
-      swiftVersion: currentProject.stack.swiftVersion,
-      xcodeVersion: currentProject.stack.xcodeVersion,
-      status: currentProject.status as any,
+      platforms: currentProject.platforms && currentProject.platforms.length > 0 ? [...currentProject.platforms] : ['iPhone', 'iPad'],
+      minIOS: currentProject.minIOS || currentProject.stack?.minIOS || 'iOS 17.0',
+      uiFramework: currentProject.stack?.uiFramework || 'SwiftUI',
+      swiftVersion: currentProject.stack?.swiftVersion || '6.0',
+      xcodeVersion: currentProject.stack?.xcodeVersion || '16.1',
+      status: currentProject.status,
       devSubstatus: currentProject.devSubstatus || 'Design',
+      startDate: currentProject.dates?.startDate || new Date().toISOString().split('T')[0],
+      targetDate: currentProject.dates?.targetDate || '',
     });
     setShowProjectModal(true);
+  };
+
+  const handleTogglePlatform = (plat: ProjectPlatform) => {
+    setProjectForm(prev => {
+      const exists = prev.platforms.includes(plat);
+      if (exists) {
+        if (prev.platforms.length <= 1) return prev; // Keep at least one platform selected
+        return { ...prev, platforms: prev.platforms.filter(p => p !== plat) };
+      } else {
+        return { ...prev, platforms: [...prev.platforms, plat] };
+      }
+    });
   };
 
   const handleSaveProject = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentProject) return;
+    const finalStartDate = projectForm.startDate.trim() || currentProject.dates?.startDate || new Date().toISOString().split('T')[0];
+    const finalMinIOS = projectForm.minIOS.trim() || 'iOS 17.0';
+    const finalSwift = projectForm.swiftVersion.trim() || '6.0';
+    const finalXcode = projectForm.xcodeVersion.trim() || '16.1';
+    const finalPlatforms: ProjectPlatform[] = projectForm.platforms.length > 0 ? projectForm.platforms : ['iPhone'];
+
     updateProject(currentProject.id, {
-      name: projectForm.name,
-      description: projectForm.description,
+      name: projectForm.name.trim(),
+      description: projectForm.description.trim(),
       icon: projectForm.icon || undefined,
       color: projectForm.color,
-      bundleId: projectForm.bundleId,
-      platforms: projectForm.platforms,
-      minIOS: projectForm.minIOS,
+      bundleId: projectForm.bundleId.trim(),
+      platforms: finalPlatforms,
+      minIOS: finalMinIOS,
       stack: {
         ...currentProject.stack,
         uiFramework: projectForm.uiFramework,
-        swiftVersion: projectForm.swiftVersion,
-        xcodeVersion: projectForm.xcodeVersion,
-        minIOS: projectForm.minIOS,
+        swiftVersion: finalSwift,
+        xcodeVersion: finalXcode,
+        minIOS: finalMinIOS,
       },
       status: projectForm.status,
       devSubstatus:
         projectForm.status === 'In development'
           ? projectForm.devSubstatus
           : undefined,
+      dates: {
+        ...currentProject.dates,
+        startDate: finalStartDate,
+        targetDate: projectForm.targetDate.trim() ? projectForm.targetDate.trim() : undefined,
+      },
     });
     setShowProjectModal(false);
   };
@@ -604,9 +656,11 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
 
           <button
             onClick={openProjectSettings}
-            className="px-3 py-1.5 text-xs text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+            className="px-3 py-1.5 text-xs text-slate-200 bg-slate-800 hover:bg-slate-700 hover:text-white rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 border border-slate-700/80 shadow-sm"
+            title="Edit project name, bundle identifier, deployment target, Swift & Xcode, platforms, and dates"
           >
-            Project Settings
+            <Edit2 className="w-3.5 h-3.5 text-blue-400" />
+            <span>Edit Project</span>
           </button>
 
           <button
@@ -835,7 +889,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                                     v{linkedRelease.version}
                                   </span>
                                 )}
-                                {task.dueDate && <span>Due {task.dueDate}</span>}
+                                {task.dueDate && <span>Due {formatDate(task.dueDate)}</span>}
                               </div>
 
                               {/* Column mover select (optimal for iPad touch without drag lag) */}
@@ -868,14 +922,25 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
             <div className="p-5 bg-slate-900 border border-slate-800 rounded-xl space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-white">Project Identity & Scope</h3>
-                <button
-                  type="button"
-                  onClick={() => setShowImageModal(true)}
-                  className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 cursor-pointer"
-                >
-                  <Camera className="w-3.5 h-3.5" />
-                  <span>Change Icon</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={openProjectSettings}
+                    className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-lg transition-colors cursor-pointer"
+                    title="Edit all project details"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    <span>Edit Project Info</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowImageModal(true)}
+                    className="text-xs text-slate-300 hover:text-white flex items-center gap-1 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                    <span>Change Icon</span>
+                  </button>
+                </div>
               </div>
 
               {/* App Icon / Visual Artwork Display */}
@@ -918,31 +983,84 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 {currentProject.description}
               </p>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-                <div className="p-3 bg-slate-800/50 rounded-lg">
-                  <span className="text-[10px] text-slate-400">Bundle Identifier</span>
-                  <p className="font-mono text-slate-200 mt-0.5">{currentProject.bundleId}</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                <div
+                  onClick={openProjectSettings}
+                  className="p-3 bg-slate-800/50 hover:bg-slate-800/80 rounded-lg border border-slate-700/40 hover:border-blue-500/50 transition-all cursor-pointer group"
+                  title="Click to edit bundle identifier"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-slate-400">Bundle Identifier</span>
+                    <Pencil className="w-2.5 h-2.5 text-slate-500 group-hover:text-blue-400 transition-colors" />
+                  </div>
+                  <p className="font-mono text-slate-200 mt-0.5 truncate" title={currentProject.bundleId}>{currentProject.bundleId}</p>
                 </div>
-                <div className="p-3 bg-slate-800/50 rounded-lg">
-                  <span className="text-[10px] text-slate-400">Deployment Target</span>
-                  <p className="text-slate-200 mt-0.5">{currentProject.minIOS}+</p>
+                <div
+                  onClick={openProjectSettings}
+                  className="p-3 bg-slate-800/50 hover:bg-slate-800/80 rounded-lg border border-slate-700/40 hover:border-blue-500/50 transition-all cursor-pointer group"
+                  title="Click to edit deployment target"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-slate-400">Deployment Target</span>
+                    <Pencil className="w-2.5 h-2.5 text-slate-500 group-hover:text-blue-400 transition-colors" />
+                  </div>
+                  <p className="text-slate-200 mt-0.5">{currentProject.minIOS}</p>
                 </div>
-                <div className="p-3 bg-slate-800/50 rounded-lg">
-                  <span className="text-[10px] text-slate-400">Swift & Xcode</span>
-                  <p className="text-slate-200 mt-0.5">Swift {currentProject.stack.swiftVersion} · Xcode {currentProject.stack.xcodeVersion}</p>
+                <div
+                  onClick={openProjectSettings}
+                  className="p-3 bg-slate-800/50 hover:bg-slate-800/80 rounded-lg border border-slate-700/40 hover:border-blue-500/50 transition-all cursor-pointer group"
+                  title="Click to edit Swift & Xcode versions"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-slate-400">Swift & Xcode</span>
+                    <Pencil className="w-2.5 h-2.5 text-slate-500 group-hover:text-blue-400 transition-colors" />
+                  </div>
+                  <p className="text-slate-200 mt-0.5 truncate">Swift {currentProject.stack.swiftVersion} · Xcode {currentProject.stack.xcodeVersion}</p>
+                </div>
+                <div
+                  onClick={openProjectSettings}
+                  className="p-3 bg-slate-800/50 hover:bg-slate-800/80 rounded-lg border border-slate-700/40 hover:border-blue-500/50 transition-all cursor-pointer group"
+                  title="Click to edit start date"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-slate-400">Start Date</span>
+                    <Pencil className="w-2.5 h-2.5 text-slate-500 group-hover:text-blue-400 transition-colors" />
+                  </div>
+                  <p className="text-slate-200 mt-0.5 font-medium">{formatDate(currentProject.dates.startDate)}</p>
                 </div>
               </div>
 
               <div>
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">
-                  Target Apple Platforms
-                </span>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+                    Target Apple Platforms
+                  </span>
+                  <button
+                    type="button"
+                    onClick={openProjectSettings}
+                    className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Pencil className="w-2.5 h-2.5" />
+                    <span>Wijzig platforms</span>
+                  </button>
+                </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  {currentProject.platforms.map(plat => (
-                    <span key={plat} className="text-xs px-2.5 py-1 bg-slate-800 text-slate-200 rounded-lg border border-slate-700">
-                      {plat}
-                    </span>
-                  ))}
+                  {currentProject.platforms.map(plat => {
+                    const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+                      'iPhone': Smartphone,
+                      'iPad': Tablet,
+                      'Apple Watch': Watch,
+                      'Mac Catalyst': Monitor,
+                      'visionOS': Glasses,
+                    };
+                    const PlatIcon = iconMap[plat] || Smartphone;
+                    return (
+                      <span key={plat} className="text-xs px-2.5 py-1 bg-slate-800 text-slate-200 rounded-lg border border-slate-700 flex items-center gap-1.5 shadow-sm">
+                        <PlatIcon className="w-3.5 h-3.5 text-blue-400" />
+                        <span>{plat}</span>
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -1439,11 +1557,11 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 <div className="text-xs space-y-1.5 pt-2 text-slate-400 border-t border-slate-800">
                   <div className="flex justify-between">
                     <span>Start Date:</span>
-                    <span className="text-slate-200">{currentProject.dates.startDate}</span>
+                    <span className="text-slate-200">{formatDate(currentProject.dates.startDate)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Target Release:</span>
-                    <span className="text-slate-200">{currentProject.dates.targetDate || 'Not set'}</span>
+                    <span className="text-slate-200">{currentProject.dates.targetDate ? formatDate(currentProject.dates.targetDate) : 'Not set'}</span>
                   </div>
                 </div>
               </div>
@@ -1663,7 +1781,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 </div>
                 <p className="text-xs text-slate-300 font-medium">{rel.name}</p>
                 <div className="text-[11px] text-slate-400">
-                  {rel.releasedDate ? `Released: ${rel.releasedDate}` : `Target: ${rel.plannedDate || 'TBD'}`}
+                  {rel.releasedDate ? `Released: ${formatDate(rel.releasedDate)}` : `Target: ${rel.plannedDate ? formatDate(rel.plannedDate) : 'TBD'}`}
                 </div>
               </div>
             ))}
@@ -1823,11 +1941,11 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           <div className="space-y-3 text-xs text-slate-400">
             <div className="flex items-center gap-2">
               <Clock className="w-3.5 h-3.5 text-blue-400" />
-              <span>Project created on {new Date(currentProject.createdAt).toLocaleDateString()}</span>
+              <span>Project created on {formatDate(currentProject.createdAt)}</span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Last updated on {new Date(currentProject.updatedAt).toLocaleDateString()}</span>
+              <span>Last updated on {formatDate(currentProject.updatedAt)}</span>
             </div>
           </div>
         </div>
@@ -2025,156 +2143,421 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
         </div>
       )}
 
-      {/* Project Settings Modal */}
+      {/* Project Settings / Edit Modal */}
       {showProjectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-sm font-bold text-white mb-3">Project Settings</h3>
-
-            <form onSubmit={handleSaveProject} className="space-y-4 text-xs">
+          <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 max-h-[92vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-slate-800 mb-5">
               <div>
-                <label className="block font-medium text-slate-300 mb-1">Project Name</label>
-                <input
-                  type="text"
-                  required
-                  value={projectForm.name}
-                  onChange={e => setProjectForm({ ...projectForm, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none"
-                />
-              </div>
-
-              {/* App Icon / Image Picker */}
-              <ProjectImagePicker
-                value={projectForm.icon}
-                onChange={icon => setProjectForm({ ...projectForm, icon })}
-                projectName={projectForm.name || 'App'}
-              />
-
-              {/* Project Accent Color Swatches */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block font-medium text-slate-300">
-                    Project Accent Color
-                  </label>
-                  <span className="text-[11px] text-slate-400">
-                    {projectForm.color ? PROJECT_COLOR_THEMES[projectForm.color].label : 'Auto matching'}
-                  </span>
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
+                    <Edit2 className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-base font-bold text-white">Project Info & Settings</h3>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap p-2.5 bg-slate-800/50 border border-slate-700/60 rounded-xl">
-                  {(['emerald', 'cyan', 'indigo', 'purple', 'amber', 'rose', 'teal', 'blue'] as ProjectColor[]).map(c => {
-                    const theme = PROJECT_COLOR_THEMES[c];
-                    const isSelected = projectForm.color === c || (!projectForm.color && currentProject.color === c);
-                    return (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => setProjectForm({ ...projectForm, color: c })}
-                        className={`w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer ${
-                          isSelected ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900 scale-110 shadow-md' : 'hover:scale-105 opacity-70 hover:opacity-100'
-                        }`}
-                        style={{ backgroundColor: theme.hex }}
-                        title={theme.label}
-                      >
-                        {isSelected && <span className="w-2 h-2 rounded-full bg-white shadow-sm" />}
-                      </button>
-                    );
-                  })}
-                </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  Wijzig projectnaam, bundle identifier, deployment target, Swift & Xcode versies, Apple platforms en datums.
+                </p>
               </div>
+              <button
+                type="button"
+                onClick={() => setShowProjectModal(false)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-              <div>
-                <label className="block font-medium text-slate-300 mb-1">Description</label>
-                <textarea
-                  rows={2}
-                  value={projectForm.description}
-                  onChange={e => setProjectForm({ ...projectForm, description: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none"
-                />
-              </div>
+            <form onSubmit={handleSaveProject} className="space-y-5 text-xs">
+              {/* SECTION 1: IDENTITY & BRANDING */}
+              <div className="p-4 bg-slate-800/40 border border-slate-800 rounded-xl space-y-4">
+                <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <FolderGit2 className="w-3.5 h-3.5 text-blue-400" />
+                  <span>General Information & Visual Identity</span>
+                </h4>
 
-              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-medium text-slate-300 mb-1">Bundle ID</label>
+                  <label className="block font-medium text-slate-300 mb-1">
+                    Project Name <span className="text-rose-400">*</span>
+                  </label>
                   <input
                     type="text"
                     required
-                    value={projectForm.bundleId}
-                    onChange={e => setProjectForm({ ...projectForm, bundleId: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg font-mono text-slate-100 focus:outline-none"
+                    value={projectForm.name}
+                    onChange={e => setProjectForm({ ...projectForm, name: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-blue-500"
+                    placeholder="e.g. Lumina Camera"
                   />
                 </div>
+
+                {/* App Icon / Image Picker */}
+                <ProjectImagePicker
+                  value={projectForm.icon}
+                  onChange={icon => setProjectForm({ ...projectForm, icon })}
+                  projectName={projectForm.name || 'App'}
+                />
+
+                {/* Project Accent Color Swatches */}
                 <div>
-                  <label className="block font-medium text-slate-300 mb-1">Status</label>
-                  <select
-                    value={projectForm.status}
-                    onChange={e => setProjectForm({ ...projectForm, status: e.target.value as any })}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none"
-                  >
-                    <option value="Planning">Planning</option>
-                    <option value="In development">In development</option>
-                    <option value="Beta">Beta</option>
-                    <option value="In review">In review</option>
-                    <option value="Released">Released</option>
-                    <option value="On hold">On hold</option>
-                    <option value="Archived">Archived</option>
-                  </select>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block font-medium text-slate-300">
+                      Project Accent Color
+                    </label>
+                    <span className="text-[11px] text-slate-400">
+                      {projectForm.color ? PROJECT_COLOR_THEMES[projectForm.color].label : 'Auto matching'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap p-2.5 bg-slate-800/50 border border-slate-700/60 rounded-xl">
+                    {(['emerald', 'cyan', 'indigo', 'purple', 'amber', 'rose', 'teal', 'blue'] as ProjectColor[]).map(c => {
+                      const theme = PROJECT_COLOR_THEMES[c];
+                      const isSelected = projectForm.color === c || (!projectForm.color && currentProject.color === c);
+                      return (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => setProjectForm({ ...projectForm, color: c })}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                            isSelected ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900 scale-110 shadow-md' : 'hover:scale-105 opacity-70 hover:opacity-100'
+                          }`}
+                          style={{ backgroundColor: theme.hex }}
+                          title={theme.label}
+                        >
+                          {isSelected && <span className="w-2 h-2 rounded-full bg-white shadow-sm" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-medium text-slate-300 mb-1">Description</label>
+                  <textarea
+                    rows={2}
+                    value={projectForm.description}
+                    onChange={e => setProjectForm({ ...projectForm, description: e.target.value })}
+                    placeholder="Describe this project, features, or architectural notes..."
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-blue-500 resize-y"
+                  />
                 </div>
               </div>
 
-              {projectForm.status === 'In development' && (
-                <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/60 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="block font-medium text-slate-200">
-                      Development Substatus
+              {/* SECTION 2: BUNDLE IDENTIFIER & APPLE PLATFORMS */}
+              <div className="p-4 bg-slate-800/40 border border-slate-800 rounded-xl space-y-4">
+                <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Apple className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Bundle Identifier & Target Apple Platforms</span>
+                </h4>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-medium text-slate-300">
+                      Bundle Identifier <span className="text-rose-400">*</span>
                     </label>
-                    <span className="text-[10px] text-blue-400 font-mono">
-                      Phase {DEVELOPMENT_SUBSTATUSES.find(s => s.id === projectForm.devSubstatus)?.step || 1} of 7
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const cleanSuffix = projectForm.name.toLowerCase().replace(/[^a-z0-9]/g, '') || 'app';
+                        setProjectForm({ ...projectForm, bundleId: `com.${bundlePrefix}.${cleanSuffix}` });
+                      }}
+                      className="text-[11px] text-blue-400 hover:text-blue-300 hover:underline flex items-center gap-1 cursor-pointer"
+                      title="Apply configured developer prefix"
+                    >
+                      <span>Apply prefix (com.{bundlePrefix}.*)</span>
+                    </button>
                   </div>
-                  <select
-                    value={projectForm.devSubstatus}
-                    onChange={e =>
-                      setProjectForm({
-                        ...projectForm,
-                        devSubstatus: e.target.value as DevelopmentSubstatus,
-                      })
-                    }
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
-                  >
-                    {DEVELOPMENT_SUBSTATUSES.map(sub => (
-                      <option key={sub.id} value={sub.id} className="bg-slate-900 text-white">
-                        {sub.label}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-[11px] text-slate-400">
-                    {DEVELOPMENT_SUBSTATUSES.find(s => s.id === projectForm.devSubstatus)?.description}
+                  <input
+                    type="text"
+                    required
+                    placeholder={`e.g. com.${bundlePrefix}.app`}
+                    value={projectForm.bundleId}
+                    onChange={e => setProjectForm({ ...projectForm, bundleId: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg font-mono text-slate-100 focus:outline-none focus:border-blue-500"
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Reverse-domain app identifier for App Store Connect. Middle prefix is configured as <span className="text-blue-400 font-mono font-semibold">{bundlePrefix}</span> in Developer Profile.
                   </p>
                 </div>
-              )}
 
-              <div className="flex justify-between items-center pt-2">
+                <div>
+                  <label className="block font-medium text-slate-300 mb-1.5">
+                    Target Apple Platforms <span className="text-rose-400">*</span>
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {ALL_APPLE_PLATFORMS.map(p => {
+                      const Icon = p.icon;
+                      const isSelected = projectForm.platforms.includes(p.id);
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => handleTogglePlatform(p.id)}
+                          className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-blue-600/15 border-blue-500 text-white shadow-sm ring-1 ring-blue-500/40'
+                              : 'bg-slate-800/60 border-slate-700/60 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                          }`}
+                        >
+                          <Icon className={`w-4 h-4 ${isSelected ? 'text-blue-400' : 'text-slate-400'}`} />
+                          <span className="flex-1 text-left">{p.label}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-blue-400 shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Select all Apple platforms this application targets. (Minimaal 1 platform vereist).
+                  </p>
+                </div>
+              </div>
+
+              {/* SECTION 3: TECH STACK & DEPLOYMENT TARGET */}
+              <div className="p-4 bg-slate-800/40 border border-slate-800 rounded-xl space-y-4">
+                <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Code2 className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Tech Stack & Deployment Target</span>
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block font-medium text-slate-300 mb-1">
+                      Deployment Target (Min iOS) <span className="text-rose-400">*</span>
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. iOS 17.0"
+                        value={projectForm.minIOS}
+                        onChange={e => setProjectForm({ ...projectForm, minIOS: e.target.value })}
+                        className="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-mono focus:outline-none focus:border-blue-500"
+                      />
+                      <select
+                        value={['iOS 18.2', 'iOS 18.0', 'iOS 17.5', 'iOS 17.0', 'iOS 16.4', 'iOS 16.0', 'iOS 15.0'].includes(projectForm.minIOS) ? projectForm.minIOS : 'custom'}
+                        onChange={e => {
+                          if (e.target.value !== 'custom') {
+                            setProjectForm({ ...projectForm, minIOS: e.target.value });
+                          }
+                        }}
+                        className="px-2.5 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-300 text-xs focus:outline-none cursor-pointer"
+                      >
+                        <option value="iOS 18.2">iOS 18.2</option>
+                        <option value="iOS 18.0">iOS 18.0</option>
+                        <option value="iOS 17.5">iOS 17.5</option>
+                        <option value="iOS 17.0">iOS 17.0</option>
+                        <option value="iOS 16.4">iOS 16.4</option>
+                        <option value="iOS 16.0">iOS 16.0</option>
+                        <option value="iOS 15.0">iOS 15.0</option>
+                        <option value="custom">Custom</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-slate-300 mb-1">
+                      UI Framework
+                    </label>
+                    <select
+                      value={projectForm.uiFramework}
+                      onChange={e => setProjectForm({ ...projectForm, uiFramework: e.target.value as any })}
+                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none cursor-pointer"
+                    >
+                      <option value="SwiftUI">SwiftUI (Modern declarative)</option>
+                      <option value="UIKit">UIKit (Imperative)</option>
+                      <option value="Hybrid">Hybrid (SwiftUI + UIKit)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-slate-300 mb-1">
+                      Swift Version <span className="text-rose-400">*</span>
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. 6.0"
+                        value={projectForm.swiftVersion}
+                        onChange={e => setProjectForm({ ...projectForm, swiftVersion: e.target.value })}
+                        className="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-mono focus:outline-none focus:border-blue-500"
+                      />
+                      <select
+                        value={['6.0', '5.10', '5.9', '5.8'].includes(projectForm.swiftVersion) ? projectForm.swiftVersion : 'custom'}
+                        onChange={e => {
+                          if (e.target.value !== 'custom') {
+                            setProjectForm({ ...projectForm, swiftVersion: e.target.value });
+                          }
+                        }}
+                        className="px-2.5 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-300 text-xs focus:outline-none cursor-pointer"
+                      >
+                        <option value="6.0">Swift 6.0</option>
+                        <option value="5.10">Swift 5.10</option>
+                        <option value="5.9">Swift 5.9</option>
+                        <option value="5.8">Swift 5.8</option>
+                        <option value="custom">Custom</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-medium text-slate-300 mb-1">
+                      Xcode Version <span className="text-rose-400">*</span>
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. 16.1"
+                        value={projectForm.xcodeVersion}
+                        onChange={e => setProjectForm({ ...projectForm, xcodeVersion: e.target.value })}
+                        className="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-mono focus:outline-none focus:border-blue-500"
+                      />
+                      <select
+                        value={['16.2', '16.1', '16.0', '15.4', '15.0'].includes(projectForm.xcodeVersion) ? projectForm.xcodeVersion : 'custom'}
+                        onChange={e => {
+                          if (e.target.value !== 'custom') {
+                            setProjectForm({ ...projectForm, xcodeVersion: e.target.value });
+                          }
+                        }}
+                        className="px-2.5 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-300 text-xs focus:outline-none cursor-pointer"
+                      >
+                        <option value="16.2">Xcode 16.2</option>
+                        <option value="16.1">Xcode 16.1</option>
+                        <option value="16.0">Xcode 16.0</option>
+                        <option value="15.4">Xcode 15.4</option>
+                        <option value="15.0">Xcode 15.0</option>
+                        <option value="custom">Custom</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 4: PROJECT STATUS & DATES */}
+              <div className="p-4 bg-slate-800/40 border border-slate-800 rounded-xl space-y-4">
+                <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Project Status & Dates</span>
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block font-medium text-slate-300 mb-1">Project Status</label>
+                    <select
+                      value={projectForm.status}
+                      onChange={e => setProjectForm({ ...projectForm, status: e.target.value as any })}
+                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none"
+                    >
+                      <option value="Planning">Planning</option>
+                      <option value="In development">In development</option>
+                      <option value="Beta">Beta</option>
+                      <option value="In review">In review</option>
+                      <option value="Released">Released</option>
+                      <option value="On hold">On hold</option>
+                      <option value="Archived">Archived</option>
+                    </select>
+                  </div>
+
+                  {projectForm.status === 'In development' ? (
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block font-medium text-slate-300">Development Subphase</label>
+                        <span className="text-[10px] text-blue-400 font-mono">
+                          Phase {DEVELOPMENT_SUBSTATUSES.find(s => s.id === projectForm.devSubstatus)?.step || 1}/7
+                        </span>
+                      </div>
+                      <select
+                        value={projectForm.devSubstatus}
+                        onChange={e =>
+                          setProjectForm({
+                            ...projectForm,
+                            devSubstatus: e.target.value as DevelopmentSubstatus,
+                          })
+                        }
+                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
+                      >
+                        {DEVELOPMENT_SUBSTATUSES.map(sub => (
+                          <option key={sub.id} value={sub.id} className="bg-slate-900 text-white">
+                            {sub.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    <div className="flex items-center text-slate-500 text-xs pt-5">
+                      Subphase is active when status is &quot;In development&quot;.
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                  <div>
+                    <label className="block font-medium text-slate-300 mb-1">
+                      Start Date <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={projectForm.startDate}
+                      onChange={e => setProjectForm({ ...projectForm, startDate: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-blue-500 [color-scheme:dark]"
+                    />
+                    <span className="text-[11px] text-slate-400 mt-1 block">
+                      Weergave: {projectForm.startDate ? formatDate(projectForm.startDate) : 'Geen datum ingevoerd'}
+                    </span>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="font-medium text-slate-300">
+                        Target Release Date <span className="text-slate-500 font-normal">(Optioneel)</span>
+                      </label>
+                      {projectForm.targetDate && (
+                        <button
+                          type="button"
+                          onClick={() => setProjectForm({ ...projectForm, targetDate: '' })}
+                          className="text-[10px] text-slate-400 hover:text-rose-400 cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="date"
+                      value={projectForm.targetDate}
+                      onChange={e => setProjectForm({ ...projectForm, targetDate: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-blue-500 [color-scheme:dark]"
+                    />
+                    <span className="text-[11px] text-slate-400 mt-1 block">
+                      Weergave: {projectForm.targetDate ? formatDate(projectForm.targetDate) : 'Geen streefdatum'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* MODAL FOOTER */}
+              <div className="flex justify-between items-center pt-3 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => {
                     deleteProject(currentProject.id);
                     setShowProjectModal(false);
                   }}
-                  className="text-rose-400 hover:underline cursor-pointer"
+                  className="px-3 py-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
                 >
                   Delete Project
                 </button>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setShowProjectModal(false)}
-                    className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg cursor-pointer"
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg cursor-pointer transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-1.5 bg-blue-600 text-white rounded-lg font-semibold cursor-pointer"
+                    className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold cursor-pointer shadow-lg shadow-blue-500/20 transition-all"
                   >
                     Save Changes
                   </button>

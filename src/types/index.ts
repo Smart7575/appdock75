@@ -5,6 +5,15 @@
 
 export type AuthProvider = 'email' | 'google' | 'apple';
 
+export type DateFormatOption =
+  | 'DD/MM/YYYY'
+  | 'YYYY-MM-DD'
+  | 'MM/DD/YYYY'
+  | 'DD-MM-YYYY'
+  | 'DD.MM.YYYY'
+  | 'D MMM YYYY'
+  | 'MMMM D, YYYY';
+
 export interface User {
   id: string;
   email: string;
@@ -16,6 +25,8 @@ export interface User {
     theme: 'dark' | 'light' | 'system';
     emailNotifications: boolean;
     compactView: boolean;
+    dateFormat?: DateFormatOption;
+    bundlePrefix?: string;
   };
 }
 

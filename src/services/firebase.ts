@@ -31,7 +31,7 @@ import {
   onSnapshot,
 } from 'firebase/firestore';
 import { UserDatabase } from './storage';
-import { AuthProvider } from '../types';
+import { AuthProvider, DateFormatOption } from '../types';
 
 export const firebaseConfig = {
   apiKey: "AIzaSyArHcFsZNQIvQwXMAEDj0Uz1wjDmJQs7fc",
@@ -125,6 +125,8 @@ export interface FirestoreUserRecord {
     theme: 'dark' | 'light' | 'system';
     emailNotifications: boolean;
     compactView: boolean;
+    dateFormat?: DateFormatOption;
+    bundlePrefix?: string;
   };
 }
 
@@ -171,6 +173,14 @@ export async function getUserFromFirestore(userId: string): Promise<FirestoreUse
 }
 
 /**
+ * Helper to strip all unsupported `undefined` values from data before passing to Firestore setDoc
+ */
+function sanitizeForFirestore<T>(data: T): T {
+  if (data === undefined || data === null) return data;
+  return JSON.parse(JSON.stringify(data, (_, value) => (value === undefined ? null : value)));
+}
+
+/**
  * Persist user workspace directly inside the /users/{userId} document in Firestore
  * Strictly stays within /users/{userId} to comply with owner-only security rules
  */
@@ -181,22 +191,28 @@ export async function saveWorkspaceToFirestore(userId: string, data: UserDatabas
   const path = `users/${userId}`;
   try {
     const userDocRef = doc(db, 'users', userId);
-    await setDoc(userDocRef, {
+    const payload = sanitizeForFirestore({
       userId,
       updatedAt: new Date().toISOString(),
       ideas: data.ideas || [],
-      projects: data.projects || [],
+      projects: (data.projects || []).map(p => ({
+        ...p,
+        devSubstatus: p.devSubstatus || (p.status === 'In development' ? 'Design' : null),
+      })),
       tasks: data.tasks || [],
       releases: data.releases || [],
       changelogEntries: data.changelogEntries || [],
       archivedApps: data.archivedApps || [],
       statuses: data.statuses || [],
       checklists: data.checklists || [],
+      checklistTemplate: data.checklistTemplate || [],
       privacyPermissions: data.privacyPermissions || [],
       certificates: data.certificates || [],
       notifications: data.notifications || [],
       demoPurged: !!data.demoPurged,
-    }, { merge: true });
+    });
+
+    await setDoc(userDocRef, payload, { merge: true });
 
     return true;
   } catch (error) {
@@ -221,13 +237,20 @@ export async function loadWorkspaceFromFirestore(userId: string): Promise<UserDa
       if (data.projects !== undefined || data.ideas !== undefined || data.tasks !== undefined || data.statuses !== undefined) {
         return {
           ideas: data.ideas || [],
-          projects: data.projects || [],
+          projects: (data.projects || []).map((p: any) => ({
+            ...p,
+            devSubstatus: p.devSubstatus || (p.status === 'In development' ? 'Design' : undefined),
+          })),
           tasks: data.tasks || [],
           releases: data.releases || [],
           changelogEntries: data.changelogEntries || [],
           archivedApps: data.archivedApps || [],
           statuses: data.statuses || [],
           checklists: data.checklists || [],
+          checklistTemplate:
+            Array.isArray(data.checklistTemplate) && data.checklistTemplate.length > 0
+              ? data.checklistTemplate
+              : undefined,
           privacyPermissions: data.privacyPermissions || [],
           certificates: data.certificates || [],
           notifications: data.notifications || [],
@@ -263,13 +286,20 @@ export function subscribeToWorkspace(
         if (data.projects !== undefined || data.ideas !== undefined || data.tasks !== undefined || data.statuses !== undefined) {
           onData({
             ideas: data.ideas || [],
-            projects: data.projects || [],
+            projects: (data.projects || []).map((p: any) => ({
+              ...p,
+              devSubstatus: p.devSubstatus || (p.status === 'In development' ? 'Design' : undefined),
+            })),
             tasks: data.tasks || [],
             releases: data.releases || [],
             changelogEntries: data.changelogEntries || [],
             archivedApps: data.archivedApps || [],
             statuses: data.statuses || [],
             checklists: data.checklists || [],
+            checklistTemplate:
+              Array.isArray(data.checklistTemplate) && data.checklistTemplate.length > 0
+                ? data.checklistTemplate
+                : undefined,
             privacyPermissions: data.privacyPermissions || [],
             certificates: data.certificates || [],
             notifications: data.notifications || [],
