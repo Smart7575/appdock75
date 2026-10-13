@@ -463,6 +463,30 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     setQuickTaskTitle('');
   };
 
+  const handleToggleTaskDone = (taskId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    const task = db.tasks.find(t => t.id === taskId);
+    if (!task) return;
+    const currentStatus = db.statuses.find(s => s.id === task.statusId);
+    const isDone = currentStatus?.type === 'Done';
+
+    if (isDone) {
+      // Revert to 'To do' (or first Active status or status-todo)
+      const todoStatus = db.statuses.find(s => s.id === 'status-todo') || db.statuses.find(s => s.type === 'Active') || db.statuses[0];
+      if (todoStatus) {
+        moveTask(taskId, todoStatus.id);
+      }
+    } else {
+      // Move to 'Done' (find status where type === 'Done' or id === 'status-done')
+      const doneStatus = db.statuses.find(s => s.type === 'Done') || db.statuses.find(s => s.id === 'status-done') || db.statuses[db.statuses.length - 1];
+      if (doneStatus) {
+        moveTask(taskId, doneStatus.id);
+      }
+    }
+  };
+
   const openProjectSettings = () => {
     if (!currentProject) return;
     setProjectForm({
@@ -828,52 +852,80 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                       columnTasks.map(task => {
                         const linkedRelease = db.releases.find(r => r.id === task.releaseId);
                         const doneSubtasks = task.subtasks.filter(s => s.completed).length;
+                        const isDone = status.type === 'Done';
 
                         return (
                           <div
                             key={task.id}
-                            className="p-3 bg-slate-800/70 hover:bg-slate-800 border border-slate-700/60 rounded-xl transition-all shadow-sm hover:border-slate-600 group"
+                            className={`p-3 bg-slate-800/70 hover:bg-slate-800 border rounded-xl transition-all shadow-sm group ${
+                              isDone
+                                ? 'border-emerald-500/30 bg-slate-800/40 hover:border-emerald-500/50'
+                                : 'border-slate-700/60 hover:border-slate-600'
+                            }`}
                           >
-                            <div className="flex items-start justify-between gap-2 mb-1.5">
-                              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
-                                {task.type}
-                              </span>
-                              <div className="flex items-center gap-1.5">
-                                <span
-                                  className={`text-[10px] font-semibold ${
-                                    task.priority === 'Urgent'
-                                      ? 'text-rose-400'
-                                      : task.priority === 'High'
-                                      ? 'text-amber-400'
-                                      : 'text-slate-400'
+                            <div className="flex items-start gap-2.5 mb-1.5">
+                              {/* Vinkje (checkbox) naar Done */}
+                              <button
+                                type="button"
+                                onClick={(e) => handleToggleTaskDone(task.id, e)}
+                                className={`w-4 h-4 mt-0.5 rounded flex items-center justify-center shrink-0 transition-all cursor-pointer ${
+                                  isDone
+                                    ? 'bg-emerald-500 text-white shadow-sm ring-1 ring-emerald-400'
+                                    : 'border-2 border-slate-600 hover:border-emerald-400 bg-slate-800 text-transparent hover:text-emerald-400/50'
+                                }`}
+                                title={isDone ? 'Taak is afgerond (klik om te heropenen)' : 'Vink af om status op Done te zetten'}
+                                aria-label={isDone ? 'Mark as incomplete' : 'Mark as done'}
+                              >
+                                <Check className="w-3 h-3 stroke-[3]" />
+                              </button>
+
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-1 mb-1">
+                                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 truncate">
+                                    {task.type}
+                                  </span>
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    <span
+                                      className={`text-[10px] font-semibold ${
+                                        task.priority === 'Urgent'
+                                          ? 'text-rose-400'
+                                          : task.priority === 'High'
+                                          ? 'text-amber-400'
+                                          : 'text-slate-400'
+                                      }`}
+                                    >
+                                      {task.priority}
+                                    </span>
+                                    {task.isDemo && (
+                                      <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-1 rounded">
+                                        Demo
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <h4
+                                  onClick={() => openEditTaskModal(task)}
+                                  className={`text-xs font-semibold cursor-pointer leading-snug mb-1 transition-colors ${
+                                    isDone
+                                      ? 'line-through text-slate-400 hover:text-slate-300'
+                                      : 'text-slate-100 group-hover:text-blue-400'
                                   }`}
                                 >
-                                  {task.priority}
-                                </span>
-                                {task.isDemo && (
-                                  <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-1 rounded">
-                                    Demo
-                                  </span>
-                                )}
+                                  {task.title}
+                                </h4>
                               </div>
                             </div>
 
-                            <h4
-                              onClick={() => openEditTaskModal(task)}
-                              className="text-xs font-semibold text-slate-100 group-hover:text-blue-400 transition-colors cursor-pointer leading-snug mb-1"
-                            >
-                              {task.title}
-                            </h4>
-
                             {task.description && (
-                              <p className="text-[11px] text-slate-400 line-clamp-2 mb-2 leading-relaxed">
+                              <p className={`text-[11px] line-clamp-2 mb-2 leading-relaxed ml-6.5 ${isDone ? 'text-slate-500' : 'text-slate-400'}`}>
                                 {task.description}
                               </p>
                             )}
 
                             {/* Subtasks Progress */}
                             {task.subtasks.length > 0 && (
-                              <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mb-2">
+                              <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mb-2 ml-6.5">
                                 <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                                 <span>
                                   {doneSubtasks}/{task.subtasks.length} subtasks
@@ -1657,7 +1709,11 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-800/60 text-slate-400 border-b border-slate-800">
                 <tr>
-                  <th className="py-2.5 px-4">Task</th>
+                  <th className="py-2.5 pl-4 pr-1 w-12 text-center" title="Mark as Done">
+                    <span className="sr-only">Done</span>
+                    <CheckSquare className="w-3.5 h-3.5 mx-auto text-slate-400" />
+                  </th>
+                  <th className="py-2.5 px-3">Task</th>
                   <th className="py-2.5 px-3">Type</th>
                   <th className="py-2.5 px-3">Priority</th>
                   <th className="py-2.5 px-3">Status</th>
@@ -1668,10 +1724,36 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               <tbody className="divide-y divide-slate-800/50 text-slate-300">
                 {projectTasks.map(task => {
                   const status = db.statuses.find(s => s.id === task.statusId);
+                  const isDone = status?.type === 'Done';
                   return (
-                    <tr key={task.id} className="hover:bg-slate-800/40">
-                      <td className="py-3 px-4 font-medium text-white max-w-sm truncate">
-                        <span onClick={() => openEditTaskModal(task)} className="hover:text-blue-400 cursor-pointer">
+                    <tr
+                      key={task.id}
+                      className={`transition-colors ${
+                        isDone ? 'bg-slate-900/40 hover:bg-slate-800/30 opacity-80' : 'hover:bg-slate-800/40'
+                      }`}
+                    >
+                      <td className="py-3 pl-4 pr-1 text-center align-middle">
+                        <button
+                          type="button"
+                          onClick={(e) => handleToggleTaskDone(task.id, e)}
+                          className={`w-5 h-5 mx-auto rounded-md flex items-center justify-center transition-all cursor-pointer ${
+                            isDone
+                              ? 'bg-emerald-500 text-white shadow-sm ring-1 ring-emerald-400'
+                              : 'border-2 border-slate-600 hover:border-emerald-400 bg-slate-800/80 text-transparent hover:text-emerald-400/50'
+                          }`}
+                          title={isDone ? 'Taak is afgerond (klik om te heropenen)' : 'Zet vinkje om status op Done te zetten'}
+                          aria-label={isDone ? 'Mark as incomplete' : 'Mark as done'}
+                        >
+                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                        </button>
+                      </td>
+                      <td className="py-3 px-3 font-medium max-w-sm truncate">
+                        <span
+                          onClick={() => openEditTaskModal(task)}
+                          className={`cursor-pointer transition-colors ${
+                            isDone ? 'line-through text-slate-400 hover:text-slate-300' : 'text-white hover:text-blue-400'
+                          }`}
+                        >
                           {task.title}
                         </span>
                       </td>
@@ -1682,8 +1764,14 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                         </span>
                       </td>
                       <td className="py-3 px-3">
-                        <span className="text-[11px] font-medium" style={{ color: status?.color }}>
-                          {status?.name}
+                        <span
+                          className={`text-[11px] font-medium px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${
+                            isDone ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : ''
+                          }`}
+                          style={!isDone ? { color: status?.color } : undefined}
+                        >
+                          {isDone && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                          <span>{status?.name}</span>
                         </span>
                       </td>
                       <td className="py-3 px-3 text-slate-400 font-mono">
@@ -1693,12 +1781,14 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                         <button
                           onClick={() => openEditTaskModal(task)}
                           className="p-1 text-slate-400 hover:text-white cursor-pointer mr-2"
+                          title="Edit Task"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => deleteTask(task.id)}
                           className="p-1 text-slate-400 hover:text-rose-400 cursor-pointer"
+                          title="Delete Task"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -2012,6 +2102,50 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                     <option value="Urgent">Urgent</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Quick Done Checkbox Toggle */}
+              <div
+                onClick={() => {
+                  const isCurrentDone = db.statuses.find(s => s.id === taskForm.statusId)?.type === 'Done';
+                  if (isCurrentDone) {
+                    const todoStatus = db.statuses.find(s => s.id === 'status-todo') || db.statuses.find(s => s.type === 'Active') || db.statuses[0];
+                    if (todoStatus) setTaskForm({ ...taskForm, statusId: todoStatus.id });
+                  } else {
+                    const doneStatus = db.statuses.find(s => s.type === 'Done') || db.statuses.find(s => s.id === 'status-done') || db.statuses[db.statuses.length - 1];
+                    if (doneStatus) setTaskForm({ ...taskForm, statusId: doneStatus.id });
+                  }
+                }}
+                className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                  db.statuses.find(s => s.id === taskForm.statusId)?.type === 'Done'
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                    : 'bg-slate-800/60 border-slate-700/60 hover:border-slate-600 text-slate-300'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className={`w-5 h-5 rounded-md flex items-center justify-center transition-all ${
+                      db.statuses.find(s => s.id === taskForm.statusId)?.type === 'Done'
+                        ? 'bg-emerald-500 text-white shadow-sm ring-1 ring-emerald-400'
+                        : 'border-2 border-slate-600 bg-slate-800 text-transparent'
+                    }`}
+                  >
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold block">Mark as Done</span>
+                    <span className="text-[11px] text-slate-400">
+                      {db.statuses.find(s => s.id === taskForm.statusId)?.type === 'Done'
+                        ? 'Status is currently set to Done (completed)'
+                        : 'Vink aan om status direct op Done te zetten'}
+                    </span>
+                  </div>
+                </div>
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${
+                  db.statuses.find(s => s.id === taskForm.statusId)?.type === 'Done' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-300'
+                }`}>
+                  {db.statuses.find(s => s.id === taskForm.statusId)?.name}
+                </span>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

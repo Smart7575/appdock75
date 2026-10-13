@@ -191,8 +191,8 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
           } else {
             setActiveProjectId(null);
           }
-        } else if (user.id !== 'usr-alex-indie') {
-          // Push initial data to Firestore for registered users
+        } else {
+          // Push initial data to Cloud Firestore so the workspace is immediately backed by the database
           saveWorkspaceToFirestore(user.id, localDb);
         }
       }).catch(() => {

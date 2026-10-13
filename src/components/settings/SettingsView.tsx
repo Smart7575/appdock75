@@ -40,6 +40,7 @@ import {
   exportChangelogAsMarkdown,
   saveUserDatabase,
 } from '../../services/storage';
+import { saveWorkspaceToFirestore } from '../../services/firebase';
 import { WorkflowStatus, StatusType, DateFormatOption } from '../../types';
 import {
   DATE_FORMAT_OPTIONS,
@@ -266,15 +267,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const file = e.target.files?.[0];
     if (!file || !user) return;
     const reader = new FileReader();
-    reader.onload = event => {
+    reader.onload = async event => {
       try {
         const parsed = JSON.parse(event.target?.result as string);
         if (parsed.data) {
           saveUserDatabase(user.id, parsed.data);
+          await saveWorkspaceToFirestore(user.id, parsed.data);
           window.location.reload();
         }
       } catch (err) {
-        alert('Invalid JSON backup file.');
+        console.error('Invalid JSON backup file.', err);
       }
     };
     reader.readAsText(file);

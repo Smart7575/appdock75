@@ -21,6 +21,7 @@ import {
   saveUserToFirestore,
   getUserFromFirestore,
   saveWorkspaceToFirestore,
+  ensureFirebaseAuth,
   FirestoreUserRecord,
 } from '../services/firebase';
 import {
@@ -81,64 +82,68 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check initial local session first
+    // 1. Initial local session cache check for instant render
     const current = getCurrentSessionUser();
     if (current) {
       setUser(current);
-    } else {
-      // Default demo developer account for instant exploration
-      const vault = getCredentialsVault();
-      let demoUser = vault.find(u => u.email === 'alex.swift@appdock75.local');
-      if (!demoUser) {
-        demoUser = {
-          id: 'usr-alex-indie',
-          name: 'Alex Vance',
-          email: 'alex.swift@appdock75.local',
-          avatar: undefined,
-          providers: ['email', 'apple'],
-          passwordHash: 'DemoPassword123!',
-          appleSubToken: 'apple_sub_token_live_indie_alex',
-          createdAt: '2026-08-01T09:00:00Z',
-          settings: {
-            theme: 'dark',
-            emailNotifications: true,
-            compactView: false,
-            dateFormat: 'DD/MM/YYYY',
-            bundlePrefix: 'indie',
-          },
-        };
-        saveCredentialsVault([...vault, demoUser]);
-        saveRegisteredUsers([demoUser]);
-      }
-      setUser(demoUser);
-      setCurrentSessionUser(demoUser);
     }
 
-    // Also observe Firebase Auth state
-    const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
+    // 2. Observe Firebase Auth state and sync with Cloud Firestore (/users/{uid})
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
+        // Fetch existing user profile & settings from Firestore
+        let profile = await getUserFromFirestore(fbUser.uid);
+        if (!profile) {
+          profile = {
+            id: fbUser.uid,
+            name: fbUser.displayName || 'Alex Vance',
+            email: fbUser.email || 'alex.swift@appdock75.local',
+            avatar: undefined,
+            providers: ['email'],
+            createdAt: fbUser.metadata.creationTime || new Date().toISOString(),
+            settings: {
+              theme: 'dark',
+              emailNotifications: true,
+              compactView: false,
+              dateFormat: 'DD/MM/YYYY',
+              bundlePrefix: 'indie',
+            },
+          };
+          await saveUserToFirestore(profile);
+        }
+
         const mappedUser: User = {
           id: fbUser.uid,
-          name: fbUser.displayName || fbUser.email?.split('@')[0] || 'AppDock Developer',
-          email: fbUser.email || `${fbUser.uid}@appdock75.local`,
-          avatar: undefined,
+          name: profile?.name || fbUser.displayName || fbUser.email?.split('@')[0] || 'Alex Vance',
+          email: fbUser.email || profile?.email || `${fbUser.uid}@appdock75.local`,
+          avatar: profile?.avatar,
           providers: (fbUser.providerData.map(p => p.providerId.includes('google') ? 'google' : p.providerId.includes('apple') ? 'apple' : 'email') as AuthProvider[]),
-          createdAt: fbUser.metadata.creationTime || new Date().toISOString(),
+          createdAt: profile?.createdAt || fbUser.metadata.creationTime || new Date().toISOString(),
           settings: {
-            theme: 'dark',
-            emailNotifications: true,
-            compactView: false,
-            dateFormat: 'DD/MM/YYYY',
-            bundlePrefix: 'indie',
+            theme: profile?.settings?.theme || 'dark',
+            emailNotifications: profile?.settings?.emailNotifications ?? true,
+            compactView: profile?.settings?.compactView ?? false,
+            dateFormat: profile?.settings?.dateFormat || 'DD/MM/YYYY',
+            bundlePrefix: profile?.settings?.bundlePrefix || 'indie',
           },
         };
         if (mappedUser.providers.length === 0) mappedUser.providers = ['email'];
         setUser(mappedUser);
         setCurrentSessionUser(mappedUser);
+        setIsLoading(false);
+      } else {
+        // Ensure developer is signed into Firebase Auth so all writes persist to Firestore
+        try {
+          const autoUser = await ensureFirebaseAuth();
+          if (!autoUser) {
+            setIsLoading(false);
+          }
+        } catch {
+          setIsLoading(false);
+        }
       }
     });
 
-    setIsLoading(false);
     return () => unsubscribe();
   }, []);
 

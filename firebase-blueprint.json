@@ -2,7 +2,7 @@
   "entities": {
     "UserDocument": {
       "title": "UserDocument",
-      "description": "User profile information and all specific user workspace data in AppDock75.",
+      "description": "User profile information, developer settings, and all workspace data in AppDock75.",
       "type": "object",
       "properties": {
         "id": { "type": "string", "description": "Unique user ID" },
@@ -12,14 +12,16 @@
         "providers": { "type": "array", "description": "Linked authentication providers" },
         "createdAt": { "type": "string", "description": "ISO timestamp of creation" },
         "updatedAt": { "type": "string", "description": "ISO timestamp of last update" },
+        "settings": { "type": "object", "description": "Developer profile settings including bundlePrefix, dateFormat, theme" },
         "ideas": { "type": "array", "description": "List of brainstormed ideas" },
-        "projects": { "type": "array", "description": "List of iOS projects" },
-        "tasks": { "type": "array", "description": "List of Kanban tasks" },
+        "projects": { "type": "array", "description": "List of iOS projects with bundleId, minIOS, stack, platforms, dates" },
+        "tasks": { "type": "array", "description": "List of Kanban tasks and subtasks" },
         "releases": { "type": "array", "description": "List of versions and releases" },
         "changelogEntries": { "type": "array", "description": "Changelog items" },
         "archivedApps": { "type": "array", "description": "Archived published apps" },
         "statuses": { "type": "array", "description": "Custom workflow statuses" },
         "checklists": { "type": "array", "description": "App Store submission checklists" },
+        "checklistTemplate": { "type": "array", "description": "Global App Store checklist template items" },
         "privacyPermissions": { "type": "array", "description": "Privacy and permission strings" },
         "certificates": { "type": "array", "description": "Certificate expiry reminders" },
         "notifications": { "type": "array", "description": "Developer notification items" }
@@ -30,11 +32,7 @@
   "firestore": {
     "/users/{userId}": {
       "schema": { "$ref": "UserDocument" },
-      "description": "User profile and all specific user data in the users collection."
-    },
-    "/userWorkspaces/{userId}": {
-      "schema": { "$ref": "UserDocument" },
-      "description": "Mirrored isolated per-user AppDock75 workspace containing projects, kanban tasks, releases, and archive data."
+      "description": "User profile, developer settings, and complete workspace data in the users collection."
     }
   }
 }
