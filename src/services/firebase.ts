@@ -166,12 +166,15 @@ export interface FirestoreUserRecord {
  * Persist user account directly in Firestore /users/{userId}
  * Conforms to security rule: allow read, write: if request.auth != null && request.auth.uid == userId
  */
+/**
+ * Persist user account directly in Firestore /users/{userId}
+ * Conforms to security rule: allow read, write: if request.auth != null && request.auth.uid == userId
+ */
 export async function saveUserToFirestore(userRecord: FirestoreUserRecord): Promise<boolean> {
   if (!auth.currentUser) {
-    const autoUser = await ensureFirebaseAuth();
-    if (!autoUser) return false;
+    return false;
   }
-  const targetId = auth.currentUser ? auth.currentUser.uid : userRecord.id;
+  const targetId = auth.currentUser.uid;
   const path = `users/${targetId}`;
   try {
     const docRef = doc(db, 'users', targetId);
@@ -192,10 +195,9 @@ export async function saveUserToFirestore(userRecord: FirestoreUserRecord): Prom
  */
 export async function getUserFromFirestore(userId: string): Promise<FirestoreUserRecord | null> {
   if (!auth.currentUser) {
-    const autoUser = await ensureFirebaseAuth();
-    if (!autoUser) return null;
+    return null;
   }
-  const targetId = auth.currentUser ? auth.currentUser.uid : userId;
+  const targetId = auth.currentUser.uid;
   const path = `users/${targetId}`;
   try {
     const snap = await getDoc(doc(db, 'users', targetId));
@@ -223,10 +225,9 @@ function sanitizeForFirestore<T>(data: T): T {
  */
 export async function saveWorkspaceToFirestore(userId: string, data: UserDatabase): Promise<boolean> {
   if (!auth.currentUser) {
-    const autoUser = await ensureFirebaseAuth();
-    if (!autoUser) return false;
+    return false;
   }
-  const targetId = auth.currentUser ? auth.currentUser.uid : userId;
+  const targetId = auth.currentUser.uid;
   const path = `users/${targetId}`;
   try {
     const userDocRef = doc(db, 'users', targetId);
@@ -264,10 +265,9 @@ export async function saveWorkspaceToFirestore(userId: string, data: UserDatabas
  */
 export async function loadWorkspaceFromFirestore(userId: string): Promise<UserDatabase | null> {
   if (!auth.currentUser) {
-    const autoUser = await ensureFirebaseAuth();
-    if (!autoUser) return null;
+    return null;
   }
-  const targetId = auth.currentUser ? auth.currentUser.uid : userId;
+  const targetId = auth.currentUser.uid;
   const path = `users/${targetId}`;
   try {
     const userDocRef = doc(db, 'users', targetId);

@@ -82,13 +82,7 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Initial local session cache check for instant render
-    const current = getCurrentSessionUser();
-    if (current) {
-      setUser(current);
-    }
-
-    // 2. Observe Firebase Auth state and sync with Cloud Firestore (/users/{uid})
+    // Observe Firebase Auth state and sync with Cloud Firestore (/users/{uid})
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
         // Fetch existing user profile & settings from Firestore
@@ -132,15 +126,10 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
         setCurrentSessionUser(mappedUser);
         setIsLoading(false);
       } else {
-        // Ensure developer is signed into Firebase Auth so all writes persist to Firestore
-        try {
-          const autoUser = await ensureFirebaseAuth();
-          if (!autoUser) {
-            setIsLoading(false);
-          }
-        } catch {
-          setIsLoading(false);
-        }
+        // User is logged out / no active Firebase session: keep unauthenticated so login screen displays
+        setUser(null);
+        setCurrentSessionUser(null);
+        setIsLoading(false);
       }
     });
 
@@ -548,7 +537,19 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const loginAsDemo = () => {
+  const loginAsDemo = async () => {
+    setIsLoading(true);
+    try {
+      const fbUser = await ensureFirebaseAuth();
+      if (fbUser) {
+        // onAuthStateChanged will automatically fetch Firestore profile and set the user!
+        return;
+      }
+    } catch (e) {
+      console.warn('Demo Firebase Auth login failed, using offline fallback:', e);
+    }
+
+    // Offline fallback
     const vault = getCredentialsVault();
     let demoUser = vault.find(u => u.email === 'alex.swift@appdock75.local');
     if (!demoUser) {
@@ -566,6 +567,7 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
           emailNotifications: true,
           compactView: false,
           dateFormat: 'DD/MM/YYYY',
+          bundlePrefix: 'indie',
         },
       };
       saveCredentialsVault([...vault, demoUser]);
@@ -573,6 +575,7 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
     }
     setUser(demoUser);
     setCurrentSessionUser(demoUser);
+    setIsLoading(false);
   };
 
   return (

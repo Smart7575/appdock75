@@ -11,7 +11,7 @@ import { Header } from './components/common/Header';
 import { Sidebar } from './components/common/Sidebar';
 import { CommandPalette } from './components/common/CommandPalette';
 import { NewItemModal } from './components/common/NewItemModal';
-import { AuthModal } from './components/auth/AuthModal';
+import { LoginView } from './components/auth/LoginView';
 import { LandingPage } from './components/landing/LandingPage';
 
 // Views
@@ -29,10 +29,8 @@ const WorkspaceShell: React.FC = () => {
   const [currentView, setCurrentView] = useState<string>('dashboard');
   const [settingsTab, setSettingsTab] = useState<'profile' | 'workflow' | 'checklist' | 'data' | 'security'>('profile');
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [authModalState, setAuthModalState] = useState<{ open: boolean; mode: 'login' | 'register' }>({
-    open: false,
-    mode: 'login',
-  });
+  const [unauthScreen, setUnauthScreen] = useState<'login' | 'landing'>('login');
+  const [authInitialMode, setAuthInitialMode] = useState<'login' | 'register'>('login');
   const [newItemType, setNewItemType] = useState<'idea' | 'project' | 'task' | 'release' | null>(null);
 
   const handleNavigate = (view: string) => {
@@ -90,23 +88,27 @@ const WorkspaceShell: React.FC = () => {
     );
   }
 
-  // If visitor is not authenticated, show Landing Page with Auth options (PRD Section 4)
+  // When visitor is not logged in: start directly with Login Screen (Inlogscherm)
   if (!isAuthenticated) {
-    return (
-      <>
+    if (unauthScreen === 'landing') {
+      return (
         <LandingPage
-          onOpenAuth={mode => setAuthModalState({ open: true, mode: mode || 'login' })}
+          onOpenAuth={mode => {
+            setAuthInitialMode(mode || 'login');
+            setUnauthScreen('login');
+          }}
           onExploreDemo={() => {
-            // Instant demo fast-track
             loginAsDemo();
           }}
         />
-        <AuthModal
-          isOpen={authModalState.open}
-          onClose={() => setAuthModalState({ ...authModalState, open: false })}
-          defaultMode={authModalState.mode}
-        />
-      </>
+      );
+    }
+
+    return (
+      <LoginView
+        initialMode={authInitialMode}
+        onExploreLandingPage={() => setUnauthScreen('landing')}
+      />
     );
   }
 
