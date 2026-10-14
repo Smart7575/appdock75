@@ -12,12 +12,12 @@ import {
   Rocket,
   CheckSquare,
   Tag,
-  Archive,
-  Wrench,
   Settings,
   Plus,
   Trash2,
   Download,
+  Upload,
+  Database,
   ArrowRight,
 } from 'lucide-react';
 import { useData } from '../../context/DataContext';
@@ -35,7 +35,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onNavigate,
   onOpenNewModal,
 }) => {
-  const { db, setActiveProjectId, purgeDemoData, hasDemoData } = useData();
+  const { db, setActiveProjectId, purgeDemoData, hasDemoData, exportFullDatabase } = useData();
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -95,6 +95,42 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       action: () => { onClose(); onOpenNewModal('release'); },
     });
 
+    items.push({
+      id: 'act-export-json',
+      title: 'Export All Data (Download JSON Backup)',
+      category: 'Data & Backup',
+      icon: Download,
+      action: () => {
+        onClose();
+        try {
+          const jsonStr = exportFullDatabase();
+          const blob = new Blob([jsonStr], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          const dateStr = new Date().toISOString().split('T')[0];
+          a.href = url;
+          a.download = `AppDock75_backup_${dateStr}.json`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        } catch (e) {
+          console.error('Export failed', e);
+        }
+      },
+    });
+
+    items.push({
+      id: 'act-import-data',
+      title: 'Import & Restore Workspace Data',
+      category: 'Data & Backup',
+      icon: Upload,
+      action: () => {
+        onClose();
+        onNavigate('settings:data');
+      },
+    });
+
     if (hasDemoData) {
       items.push({
         id: 'act-purge-demo',
@@ -142,18 +178,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       action: () => { onClose(); onNavigate('releases'); },
     });
     items.push({
-      id: 'nav-archive',
-      title: 'Go to App Archive',
+      id: 'nav-settings-checklist',
+      title: 'Go to Standard Checklist (Settings)',
       category: 'Navigation',
-      icon: Archive,
-      action: () => { onClose(); onNavigate('archive'); },
-    });
-    items.push({
-      id: 'nav-tools',
-      title: 'Go to iOS Development Tools',
-      category: 'Navigation',
-      icon: Wrench,
-      action: () => { onClose(); onNavigate('tools'); },
+      icon: CheckSquare,
+      action: () => { onClose(); onNavigate('settings:checklist'); },
     });
     items.push({
       id: 'nav-settings',

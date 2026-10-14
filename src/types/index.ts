@@ -89,8 +89,7 @@ export type ProjectStatus =
   | 'Beta'
   | 'In review'
   | 'Released'
-  | 'On hold'
-  | 'Archived';
+  | 'On hold';
 
 export type DevelopmentSubstatus =
   | 'Design'
@@ -259,6 +258,8 @@ export interface Project {
   appStoreConnectUrl?: string;
   appStoreUrl?: string;
   customLinks?: ProjectCustomInfo[];
+  appStoreAnswers?: Record<string, string>;
+  githubUrl?: string;
 }
 
 export interface ProjectCustomInfo {
@@ -437,4 +438,15 @@ export interface NotificationItem {
   targetId?: string;
   read: boolean;
   createdAt: string;
+}
+
+export interface AppStoreQuestionItem {
+  id: string;
+  question: string;
+  description?: string;
+  category: string;
+  maxLength: number;
+  order: number;
+  multiline?: boolean;
+  placeholder?: string;
 }

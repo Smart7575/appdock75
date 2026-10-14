@@ -10,6 +10,7 @@ import {
   Bell,
   Sparkles,
   ShieldAlert,
+  Database,
   LogOut,
   User,
   Settings,
@@ -52,9 +53,7 @@ export const Header: React.FC<HeaderProps> = ({
     ideas: 'Ideas & Brainstorm',
     projects: 'Project Workspace',
     released: 'Released Projects',
-    releases: 'Releases & Changelogs',
-    archive: 'App Archive',
-    tools: 'iOS Development Tools',
+    releases: 'Releases and Builds',
     settings: 'Settings & Data',
   };
 
@@ -258,11 +257,11 @@ export const Header: React.FC<HeaderProps> = ({
                     Account Settings
                   </button>
                   <button
-                    onClick={() => { setShowUserMenu(false); onNavigate('settings'); }}
+                    onClick={() => { setShowUserMenu(false); onNavigate('settings:data'); }}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-slate-300 hover:bg-slate-800 hover:text-white text-left cursor-pointer"
                   >
-                    <ShieldAlert className="w-3.5 h-3.5 text-slate-400" />
-                    Data & Export
+                    <Database className="w-3.5 h-3.5 text-blue-400" />
+                    Data Backup, Export & Import
                   </button>
 
                   <div className="border-t border-slate-800 my-1" />

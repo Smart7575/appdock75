@@ -20,8 +20,6 @@ import { IdeasView } from './components/ideas/IdeasView';
 import { ProjectsView } from './components/projects/ProjectsView';
 import { ReleasedProjectsView } from './components/released/ReleasedProjectsView';
 import { ReleasesView } from './components/releases/ReleasesView';
-import { ArchiveView } from './components/archive/ArchiveView';
-import { ToolsView } from './components/tools/ToolsView';
 import { SettingsView } from './components/settings/SettingsView';
 
 const WorkspaceShell: React.FC = () => {
@@ -158,14 +156,6 @@ const WorkspaceShell: React.FC = () => {
 
           {currentView === 'releases' && (
             <ReleasesView />
-          )}
-
-          {currentView === 'archive' && (
-            <ArchiveView onNavigate={handleNavigate} />
-          )}
-
-          {currentView === 'tools' && (
-            <ToolsView onNavigate={handleNavigate} />
           )}
 
           {currentView === 'settings' && (

@@ -201,13 +201,13 @@ export const ReleasedProjectsView: React.FC<ReleasedProjectsViewProps> = ({
           <div>
             <h3 className="text-base font-bold text-white">
               {releasedProjects.length === 0
-                ? 'Geen Released Projects'
-                : 'Geen resultaten voor uw zoekopdracht'}
+                ? 'No Released Projects'
+                : 'No results found'}
             </h3>
             <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
               {releasedProjects.length === 0
-                ? 'U heeft momenteel geen projecten gemarkeerd als Released. Zodra een project de status "Released" krijgt in de project-instellingen, verschijnt het hier met zijn app-tegel en afbeelding.'
-                : 'Probeer een andere zoekterm of platformfilter.'}
+                ? 'You currently have no projects marked as Released. Once a project is set to "Released" status in project settings, it will appear here with its app tile and artwork.'
+                : 'Try a different search term or platform filter.'}
             </p>
           </div>
         </div>

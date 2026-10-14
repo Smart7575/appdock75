@@ -66,7 +66,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   // Metrics calculation - active projects strictly sorted alphabetically (A -> Z)
   const activeProjects = useMemo(() => {
     return [...db.projects]
-      .filter(p => p.status !== 'Archived' && p.status !== 'Released')
+      .filter(p => p.status !== 'Released')
       .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
   }, [db.projects]);
 

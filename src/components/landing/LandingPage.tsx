@@ -11,7 +11,7 @@ import {
   FolderGit2,
   Columns,
   Tag,
-  Archive,
+  Rocket,
   ShieldCheck,
   CheckCircle,
   Lightbulb,
@@ -143,11 +143,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
-              <Archive className="w-5 h-5" />
+              <Rocket className="w-5 h-5" />
             </div>
-            <h3 className="text-sm font-bold text-white">Published App Archive</h3>
+            <h3 className="text-sm font-bold text-white">App Store Showcase</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Catalog live apps, Apple IDs, pricing models, and retrospectives. Log downloads, revenue, and store ratings with 1-click project re-opening.
+              Showcase live released apps with App Store badges, icon artwork, production metadata, and direct store links.
             </p>
           </div>
 

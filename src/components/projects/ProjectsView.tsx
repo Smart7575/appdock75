@@ -72,11 +72,14 @@ import {
   ProjectColor,
   calculateSubphaseProgress,
   ProjectCustomInfo,
+  ReleaseStatus,
+  Release,
 } from '../../types';
 import { DEFAULT_CHECKLIST_TEMPLATE } from '../../services/storage';
 import { DevSubstatusPipeline } from './DevSubstatusPipeline';
 import { ProjectImagePicker } from './ProjectImagePicker';
 import { ProjectImageModal } from './ProjectImageModal';
+import { AppStoreInfoTab } from './AppStoreInfoTab';
 import { getProjectColorTheme, PROJECT_COLOR_THEMES } from '../../utils/projectColors';
 
 interface ProjectsViewProps {
@@ -105,14 +108,46 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     keepItemAsMine,
     toggleChecklist,
     resetChecklist,
+    addRelease,
+    deleteRelease,
   } = useData();
   const { user } = useAuth();
   const { formatDate } = useFormatDate();
   const bundlePrefix = (user?.settings?.bundlePrefix || 'indie').trim().toLowerCase().replace(/[^a-z0-9.-]/g, '') || 'indie';
 
+  // Project Release creation modal
+  const [showProjNewReleaseModal, setShowProjNewReleaseModal] = useState(false);
+  const [projRelVersion, setProjRelVersion] = useState('1.0.0');
+  const [projRelBuild, setProjRelBuild] = useState('1');
+  const [projRelName, setProjRelName] = useState('Initial Release');
+  const [projRelStatus, setProjRelStatus] = useState<ReleaseStatus>('Planned');
+  const [projRelDate, setProjRelDate] = useState('');
+  const [deletingRelease, setDeletingRelease] = useState<Release | null>(null);
+
+  const handleCreateProjectRelease = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentProject) return;
+    addRelease({
+      projectId: currentProject.id,
+      version: projRelVersion,
+      build: Number(projRelBuild) || 1,
+      name: projRelName,
+      status: projRelStatus,
+      plannedDate: projRelDate || undefined,
+      notes: { rejectionLog: [] },
+      locales: {
+        'en-US': `What's New in Version ${projRelVersion}:\n• Bug fixes and improvements.`,
+      },
+    });
+    setShowProjNewReleaseModal(false);
+    setProjRelVersion('1.0.1');
+    setProjRelBuild(String(Number(projRelBuild) + 1));
+    setProjRelName('');
+  };
+
   // Active Tab inside Project
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'checklists' | 'tasks' | 'board' | 'notes' | 'releases' | 'assets' | 'activity'
+    'overview' | 'checklists' | 'tasks' | 'board' | 'appstore-info' | 'notes' | 'releases' | 'activity'
   >('overview');
 
   // Kanban filters & options
@@ -186,6 +221,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   const [resDatabaseName, setResDatabaseName] = useState('');
   const [resDatabaseUrl, setResDatabaseUrl] = useState('');
   const [resVercelUrl, setResVercelUrl] = useState('');
+  const [resGithubUrl, setResGithubUrl] = useState('');
   const [resAppStoreConnectUrl, setResAppStoreConnectUrl] = useState('');
   const [resAppStoreUrl, setResAppStoreUrl] = useState('');
   const [resCustomLinks, setResCustomLinks] = useState<ProjectCustomInfo[]>([]);
@@ -202,6 +238,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
       setResDatabaseName(currentProject.databaseName || '');
       setResDatabaseUrl(currentProject.databaseUrl || '');
       setResVercelUrl(currentProject.vercelUrl || '');
+      setResGithubUrl(currentProject.githubUrl || '');
       setResAppStoreConnectUrl(currentProject.appStoreConnectUrl || '');
       setResAppStoreUrl(currentProject.appStoreUrl || '');
       setResCustomLinks(currentProject.customLinks || []);
@@ -253,6 +290,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
       databaseName: (fieldOverrides?.databaseName !== undefined ? fieldOverrides.databaseName : resDatabaseName).trim(),
       databaseUrl: (fieldOverrides?.databaseUrl !== undefined ? fieldOverrides.databaseUrl : resDatabaseUrl).trim(),
       vercelUrl: (fieldOverrides?.vercelUrl !== undefined ? fieldOverrides.vercelUrl : resVercelUrl).trim(),
+      githubUrl: (fieldOverrides?.githubUrl !== undefined ? fieldOverrides.githubUrl : resGithubUrl).trim(),
       appStoreConnectUrl: (fieldOverrides?.appStoreConnectUrl !== undefined ? fieldOverrides.appStoreConnectUrl : resAppStoreConnectUrl).trim(),
       appStoreUrl: (fieldOverrides?.appStoreUrl !== undefined ? fieldOverrides.appStoreUrl : resAppStoreUrl).trim(),
       customLinks: linksToSave,
@@ -358,28 +396,47 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   const projectChecklists = useMemo(() => {
     if (!currentProject) return [];
     const items = db.checklists.filter(c => c.projectId === currentProject.id);
-    // Default to clean, completely unchecked items for newly started projects based on active template
     const templateToUse = db.checklistTemplate && db.checklistTemplate.length > 0
       ? db.checklistTemplate
       : DEFAULT_CHECKLIST_TEMPLATE;
 
-    if (items.length > 0) {
-      // Sort existing project checklist items according to template order
-      return [...items].sort((a, b) => {
-        const indexA = templateToUse.findIndex(t => a.id.includes(t.id) || (a.title === t.title && a.category === t.category));
-        const indexB = templateToUse.findIndex(t => b.id.includes(t.id) || (b.title === t.title && b.category === t.category));
-        const posA = indexA === -1 ? 9999 : indexA;
-        const posB = indexB === -1 ? 9999 : indexB;
-        return posA - posB;
-      });
-    }
+    const matchedItemIds = new Set<string>();
 
-    return templateToUse.map(c => ({
-      ...c,
-      id: `chk-${currentProject.id}-${c.id}`,
-      projectId: currentProject.id,
-      done: false,
-    }));
+    // Reconcile each template item with project's existing checklist items
+    const reconciledItems = templateToUse.map(tpl => {
+      const existing = items.find(
+        c =>
+          c.id === `chk-${currentProject.id}-${tpl.id}` ||
+          c.id.endsWith(`-${tpl.id}`) ||
+          c.id === tpl.id ||
+          (c.title === tpl.title && c.category === tpl.category)
+      );
+
+      if (existing) {
+        matchedItemIds.add(existing.id);
+        return {
+          ...tpl,
+          ...existing,
+          title: tpl.title || existing.title,
+          description: tpl.description || existing.description,
+          category: tpl.category || existing.category,
+          required: tpl.required !== undefined ? tpl.required : existing.required,
+          done: !!existing.done,
+        };
+      }
+
+      return {
+        ...tpl,
+        id: `chk-${currentProject.id}-${tpl.id}`,
+        projectId: currentProject.id,
+        done: false,
+      };
+    });
+
+    // Also include any project-specific custom checklist items that were created outside the template
+    const customProjectItems = items.filter(c => !matchedItemIds.has(c.id));
+
+    return [...reconciledItems, ...customProjectItems];
   }, [db.checklists, db.checklistTemplate, currentProject]);
 
   const completedChecklistCount = projectChecklists.filter(c => c.done).length;
@@ -620,7 +677,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   onChange={e => setActiveProjectId(e.target.value)}
                   className="bg-transparent font-bold text-sm cursor-pointer focus:outline-none"
                 >
-                  {db.projects.map(p => (
+                  {[...db.projects].sort((a, b) => a.name.localeCompare(b.name)).map(p => (
                     <option key={p.id} value={p.id} className="bg-slate-900 text-white">
                       {p.name}
                     </option>
@@ -713,9 +770,9 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           { id: 'checklists', label: 'Checklists', icon: CheckSquare },
           { id: 'tasks', label: 'Task List', icon: List },
           { id: 'board', label: 'Kanban Board', icon: Columns },
+          { id: 'appstore-info', label: 'App Store Info', icon: Apple },
           { id: 'notes', label: 'Notes & Docs', icon: FileText },
           { id: 'releases', label: 'Releases', icon: Tag },
-          { id: 'assets', label: 'Assets & ASO', icon: ImageIcon },
           { id: 'activity', label: 'Activity', icon: Activity },
         ].map(tab => {
           const Icon = tab.icon;
@@ -1016,7 +1073,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                     </span>
                     <h4 className="text-xs font-bold text-white mt-0.5 truncate">{currentProject.name}</h4>
                     <p className="text-[11px] text-slate-400 mt-0.5 truncate">
-                      {currentProject.icon ? 'Custom artwork configured for project tiles' : 'Geen afbeelding vastgelegd. Klik om toe te voegen.'}
+                      {currentProject.icon ? 'Custom artwork configured for project tiles' : 'No artwork configured. Click to add.'}
                     </p>
                   </div>
                 </div>
@@ -1027,7 +1084,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold cursor-pointer flex items-center gap-1.5 shadow-sm shadow-blue-500/20 shrink-0"
                 >
                   <Camera className="w-3.5 h-3.5" />
-                  <span>Upload / Kies</span>
+                  <span>Upload / Choose</span>
                 </button>
               </div>
 
@@ -1376,33 +1433,64 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   </div>
                 </div>
 
-                {/* 3. Vercel Deployment */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="font-medium text-slate-300 flex items-center gap-1.5 text-slate-200">
-                      <Globe className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Vercel Deployment URL</span>
-                    </label>
-                    {resVercelUrl.trim() && (
-                      <a
-                        href={resVercelUrl.trim().startsWith('http') ? resVercelUrl.trim() : `https://${resVercelUrl.trim()}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[11px] text-emerald-400 hover:text-emerald-300 hover:underline flex items-center gap-1 font-medium"
-                      >
-                        <span>Open Web App</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* GitHub URL */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="font-medium text-slate-300 flex items-center gap-1.5 text-slate-200">
+                        <FolderGit2 className="w-3.5 h-3.5 text-blue-400" />
+                        <span>GitHub URL</span>
+                      </label>
+                      {resGithubUrl.trim() && (
+                        <a
+                          href={resGithubUrl.trim().startsWith('http') ? resGithubUrl.trim() : `https://${resGithubUrl.trim()}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[11px] text-blue-400 hover:text-blue-300 hover:underline flex items-center gap-1 font-medium"
+                        >
+                          <span>Open Repository</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                    <input
+                      type="url"
+                      placeholder="https://github.com/user/repo..."
+                      value={resGithubUrl}
+                      onChange={e => setResGithubUrl(e.target.value)}
+                      onBlur={() => handleSaveResources()}
+                      className="w-full px-3 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
+                    />
                   </div>
-                  <input
-                    type="url"
-                    placeholder="https://your-project.vercel.app..."
-                    value={resVercelUrl}
-                    onChange={e => setResVercelUrl(e.target.value)}
-                    onBlur={() => handleSaveResources()}
-                    className="w-full px-3 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
-                  />
+
+                  {/* 3. Vercel Deployment */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="font-medium text-slate-300 flex items-center gap-1.5 text-slate-200">
+                        <Globe className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Vercel Deployment URL</span>
+                      </label>
+                      {resVercelUrl.trim() && (
+                        <a
+                          href={resVercelUrl.trim().startsWith('http') ? resVercelUrl.trim() : `https://${resVercelUrl.trim()}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[11px] text-emerald-400 hover:text-emerald-300 hover:underline flex items-center gap-1 font-medium"
+                        >
+                          <span>Open Web App</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                    <input
+                      type="url"
+                      placeholder="https://your-project.vercel.app..."
+                      value={resVercelUrl}
+                      onChange={e => setResVercelUrl(e.target.value)}
+                      onBlur={() => handleSaveResources()}
+                      className="w-full px-3 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
+                    />
+                  </div>
                 </div>
 
                 {/* 4. App Store Connect & Apple Store Links */}
@@ -1802,6 +1890,11 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
         </div>
       )}
 
+      {/* TAB: APP STORE INFO */}
+      {activeTab === 'appstore-info' && (
+        <AppStoreInfoTab project={currentProject} />
+      )}
+
       {/* TAB 4: NOTES & DOCS (PRD §8.3 & §10 Security) */}
       {activeTab === 'notes' && (
         <div className="space-y-4">
@@ -1852,12 +1945,21 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
         <div className="space-y-4">
           <div className="flex items-center justify-between p-3 bg-slate-900 border border-slate-800 rounded-xl">
             <span className="text-xs font-semibold text-white">Releases for {currentProject.name}</span>
-            <button
-              onClick={() => onNavigate('releases')}
-              className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg cursor-pointer"
-            >
-              Open Full Release Manager
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowProjNewReleaseModal(true)}
+                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-lg cursor-pointer flex items-center gap-1.5 shadow-md shadow-emerald-600/20"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>New Release</span>
+              </button>
+              <button
+                onClick={() => onNavigate('releases')}
+                className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg cursor-pointer"
+              >
+                Open Full Release Manager
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1870,73 +1972,160 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   </span>
                 </div>
                 <p className="text-xs text-slate-300 font-medium">{rel.name}</p>
-                <div className="text-[11px] text-slate-400">
-                  {rel.releasedDate ? `Released: ${formatDate(rel.releasedDate)}` : `Target: ${rel.plannedDate ? formatDate(rel.plannedDate) : 'TBD'}`}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-[11px] text-slate-400">
+                  <span>{rel.releasedDate ? `Released: ${formatDate(rel.releasedDate)}` : `Target: ${rel.plannedDate ? formatDate(rel.plannedDate) : 'TBD'}`}</span>
+                  <button
+                    type="button"
+                    onClick={() => setDeletingRelease(rel)}
+                    className="p-1 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                    title="Delete release"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      )}
 
-      {/* TAB 6: ASSETS & ASO (PRD §8.3 & §8.7) */}
-      {activeTab === 'assets' && (
-        <div className="space-y-6">
-          <div className="p-5 bg-slate-900 border border-slate-800 rounded-xl space-y-4">
-            <h3 className="text-sm font-semibold text-white">App Store Screenshots & Icon Planner</h3>
-            <div className="space-y-2">
-              {currentProject.assetSpecs.map(spec => (
-                <div
-                  key={spec.id}
-                  onClick={() => {
-                    const updatedSpecs = currentProject.assetSpecs.map(s =>
-                      s.id === spec.id ? { ...s, completed: !s.completed } : s
-                    );
-                    updateProject(currentProject.id, { assetSpecs: updatedSpecs });
-                  }}
-                  className="p-3 bg-slate-800/50 hover:bg-slate-800/80 rounded-lg flex items-center justify-between text-xs cursor-pointer transition-colors border border-slate-800 hover:border-slate-700"
-                >
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={spec.completed}
-                      onChange={() => {
-                        const updatedSpecs = currentProject.assetSpecs.map(s =>
-                          s.id === spec.id ? { ...s, completed: !s.completed } : s
-                        );
-                        updateProject(currentProject.id, { assetSpecs: updatedSpecs });
-                      }}
-                      className="w-4 h-4 rounded text-blue-600 cursor-pointer accent-blue-500"
-                    />
+          {/* New Project Release Modal */}
+          {showProjNewReleaseModal && (
+            <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <h3 className="text-sm font-bold text-white">Create New Release ({currentProject.name})</h3>
+                  <button
+                    onClick={() => setShowProjNewReleaseModal(false)}
+                    className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleCreateProjectRelease} className="space-y-3 text-xs">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <span className={`font-medium ${spec.completed ? 'line-through text-slate-400' : 'text-slate-200'}`}>
-                        {spec.title}
-                      </span>
-                      <p className="text-[11px] text-slate-400 font-mono">{spec.requiredSize}</p>
+                      <label className="block text-slate-400 mb-1">Version *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="1.0.0"
+                        value={projRelVersion}
+                        onChange={e => setProjRelVersion(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:border-blue-500 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-400 mb-1">Build # *</label>
+                      <input
+                        type="number"
+                        required
+                        min="1"
+                        value={projRelBuild}
+                        onChange={e => setProjRelBuild(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:border-blue-500 font-mono"
+                      />
                     </div>
                   </div>
-                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded ${
-                    spec.completed ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-400'
-                  }`}>
-                    {spec.completed ? 'Ready ✓' : 'Pending'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
 
-          <div className="p-5 bg-slate-900 border border-slate-800 rounded-xl space-y-4">
-            <h3 className="text-sm font-semibold text-white">App Store Localized Listings</h3>
-            {currentProject.localizedListings.map(loc => (
-              <div key={loc.locale} className="p-4 bg-slate-800/40 border border-slate-800 rounded-xl space-y-2 text-xs">
-                <span className="font-bold text-slate-200">{loc.locale}</span>
-                <p className="text-slate-300"><strong>Title:</strong> {loc.title}</p>
-                <p className="text-slate-300"><strong>Subtitle:</strong> {loc.subtitle}</p>
-                <p className="text-slate-400 font-mono"><strong>Keywords ({loc.keywords.length}/100 chars):</strong> {loc.keywords}</p>
-                <p className="text-slate-300"><strong>Description:</strong> {loc.description}</p>
+                  <div>
+                    <label className="block text-slate-400 mb-1">Release Name / Title *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. iOS 18 Support & Widgets"
+                      value={projRelName}
+                      onChange={e => setProjRelName(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-400 mb-1">Status</label>
+                      <select
+                        value={projRelStatus}
+                        onChange={e => setProjRelStatus(e.target.value as ReleaseStatus)}
+                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-200 focus:outline-none cursor-pointer"
+                      >
+                        <option value="Planned">Planned</option>
+                        <option value="In development">In development</option>
+                        <option value="In TestFlight">In TestFlight</option>
+                        <option value="Submitted">Submitted</option>
+                        <option value="In review">In review</option>
+                        <option value="Released">Released</option>
+                        <option value="Rejected">Rejected</option>
+                        <option value="Withdrawn">Withdrawn</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-400 mb-1">Planned Date</label>
+                      <input
+                        type="date"
+                        value={projRelDate}
+                        onChange={e => setProjRelDate(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setShowProjNewReleaseModal(false)}
+                      className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium cursor-pointer shadow-md shadow-blue-600/20"
+                    >
+                      Create Release
+                    </button>
+                  </div>
+                </form>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
+
+          {/* Delete Release Confirmation Modal */}
+          {deletingRelease && (
+            <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4">
+                <div className="flex items-center gap-3 text-rose-400">
+                  <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20">
+                    <Trash2 className="w-5 h-5 text-rose-400" />
+                  </div>
+                  <h3 className="text-sm font-bold text-white">Delete Release</h3>
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Are you sure you want to delete release <strong>v{deletingRelease.version} ({deletingRelease.name})</strong>?
+                </p>
+                <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs text-rose-300">
+                  This will also permanently delete all linked changelog items and notes for this release.
+                </div>
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setDeletingRelease(null)}
+                    className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      deleteRelease(deletingRelease.id);
+                      setDeletingRelease(null);
+                    }}
+                    className="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-md shadow-rose-600/20"
+                  >
+                    Delete Permanently
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1983,7 +2172,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               {projectChecklists.map((chk, idx) => (
                 <div
                   key={chk.id}
-                  onClick={() => toggleChecklist(chk.id)}
+                  onClick={() => toggleChecklist(chk.id, currentProject.id)}
                   className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-start gap-3 ${
                     chk.done
                       ? 'bg-slate-800/30 border-slate-800/60 opacity-80'
@@ -1993,7 +2182,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   <input
                     type="checkbox"
                     checked={chk.done}
-                    onChange={() => toggleChecklist(chk.id)}
+                    onChange={() => toggleChecklist(chk.id, currentProject.id)}
                     className="w-4 h-4 rounded text-blue-600 mt-0.5 cursor-pointer accent-blue-500 shrink-0"
                   />
                   <div className="w-5 h-5 rounded-md bg-slate-800 text-slate-400 flex items-center justify-center font-mono font-bold text-[10px] shrink-0 mt-0.5 border border-slate-700/60" title={`Step ${idx + 1}`}>
@@ -2588,7 +2777,6 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                       <option value="In review">In review</option>
                       <option value="Released">Released</option>
                       <option value="On hold">On hold</option>
-                      <option value="Archived">Archived</option>
                     </select>
                   </div>
 

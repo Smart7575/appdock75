@@ -30,17 +30,17 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
+  Database,
+  ArrowUp,
+  ArrowDown,
+  Edit2,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { ChecklistTemplateManager } from './ChecklistTemplateManager';
-import {
-  exportUserDataAsJson,
-  exportTasksAsCsv,
-  exportChangelogAsMarkdown,
-  saveUserDatabase,
-} from '../../services/storage';
-import { saveWorkspaceToFirestore } from '../../services/firebase';
+import { AppStoreTemplateManager } from './AppStoreTemplateManager';
+import { DataBackupManager } from './DataBackupManager';
 import { WorkflowStatus, StatusType, DateFormatOption } from '../../types';
 import {
   DATE_FORMAT_OPTIONS,
@@ -147,6 +147,48 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [newStatusType, setNewStatusType] = useState<StatusType>('Active');
   const [newStatusWip, setNewStatusWip] = useState<number | undefined>(undefined);
 
+  // Status editing & reordering
+  const [editingStatus, setEditingStatus] = useState<WorkflowStatus | null>(null);
+  const [editStatusName, setEditStatusName] = useState('');
+  const [editStatusColor, setEditStatusColor] = useState('#3b82f6');
+  const [editStatusType, setEditStatusType] = useState<StatusType>('Active');
+  const [editStatusWip, setEditStatusWip] = useState<number | undefined>(undefined);
+
+  const handleMoveStatus = (index: number, direction: 'up' | 'down') => {
+    const next = [...db.statuses];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= next.length) return;
+    const [moved] = next.splice(index, 1);
+    next.splice(targetIndex, 0, moved);
+    updateStatuses(next);
+  };
+
+  const handleOpenEditStatus = (st: WorkflowStatus) => {
+    setEditingStatus(st);
+    setEditStatusName(st.name);
+    setEditStatusColor(st.color || '#3b82f6');
+    setEditStatusType(st.type || 'Active');
+    setEditStatusWip(st.wipLimit);
+  };
+
+  const handleSaveEditStatus = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingStatus || !editStatusName.trim()) return;
+    const nextStatuses = db.statuses.map(st =>
+      st.id === editingStatus.id
+        ? {
+            ...st,
+            name: editStatusName.trim(),
+            color: editStatusColor,
+            type: editStatusType,
+            wipLimit: editStatusWip || undefined,
+          }
+        : st
+    );
+    updateStatuses(nextStatuses);
+    setEditingStatus(null);
+  };
+
   // Account Deletion State (PRD §5.2)
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [reauthInput, setReauthInput] = useState('');
@@ -225,63 +267,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setNewStatusWip(undefined);
   };
 
-  // Export handlers
-  const handleExportJson = () => {
-    if (!user) return;
-    const jsonStr = exportUserDataAsJson(user, db);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ios_dev_hub_backup_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-  };
-
-  const handleExportCsv = () => {
-    const csvStr = exportTasksAsCsv(db.tasks, db.projects, db.statuses);
-    const blob = new Blob([csvStr], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ios_dev_hub_tasks_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-  };
-
-  const handleExportMarkdownChangelog = () => {
-    const currentProj = db.projects[0];
-    const mdStr = exportChangelogAsMarkdown(
-      currentProj?.name || 'iOS App',
-      db.releases,
-      db.changelogEntries
-    );
-    const blob = new Blob([mdStr], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `changelog_${new Date().toISOString().split('T')[0]}.md`;
-    a.click();
-  };
-
-  // Import JSON handler
-  const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-    const reader = new FileReader();
-    reader.onload = async event => {
-      try {
-        const parsed = JSON.parse(event.target?.result as string);
-        if (parsed.data) {
-          saveUserDatabase(user.id, parsed.data);
-          await saveWorkspaceToFirestore(user.id, parsed.data);
-          window.location.reload();
-        }
-      } catch (err) {
-        console.error('Invalid JSON backup file.', err);
-      }
-    };
-    reader.readAsText(file);
-  };
-
   // Account deletion confirmation (PRD §5.2)
   const handleConfirmDeleteAccount = async () => {
     setIsDeleting(true);
@@ -314,7 +299,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           { id: 'profile', label: 'Profile & Account', icon: User },
           { id: 'workflow', label: 'Kanban Workflow Statuses', icon: Columns },
           { id: 'checklist', label: 'Standard Checklist', icon: CheckSquare },
-          { id: 'data', label: 'Data & Demo Management', icon: Sparkles },
+          { id: 'data', label: 'Data Backup, Import & Export', icon: Database },
           { id: 'security', label: 'Danger Zone & Deletion', icon: ShieldAlert },
         ].map(tab => {
           const Icon = tab.icon;
@@ -389,10 +374,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-slate-300 font-medium">
-                    Bundle Identifier Prefix (Middelste deel)
+                    Bundle Identifier Prefix (Middle part)
                   </label>
                   <span className="text-[10px] text-slate-500 font-mono">
-                    Standaard: indie
+                    Default: indie
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 font-mono text-xs">
@@ -415,13 +400,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </span>
                 </div>
                 <div className="mt-1.5 p-2 bg-slate-950/60 border border-slate-800 rounded-lg flex items-center justify-between text-[11px]">
-                  <span className="text-slate-400">Voorbeeld Bundle Identifier:</span>
+                  <span className="text-slate-400">Example Bundle Identifier:</span>
                   <span className="font-mono text-blue-400 font-semibold">
                     com.{bundlePrefix.trim() || 'indie'}.appdock75
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Dit middelste gedeelte wordt standaard gebruikt bij het aanmaken van nieuwe projecten, het omzetten van ideeën en bij App Store configuraties (bv. <span className="font-mono text-slate-300">com.{bundlePrefix.trim() || 'indie'}.&lt;app&gt;</span>).
+                  This middle part is used by default when creating new projects, converting ideas, and in App Store configurations (e.g. <span className="font-mono text-slate-300">com.{bundlePrefix.trim() || 'indie'}.&lt;app&gt;</span>).
                 </p>
               </div>
 
@@ -778,39 +763,154 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
             {/* Statuses List */}
             <div className="space-y-2">
-              {db.statuses.map(st => (
-                <div
-                  key={st.id}
-                  className="p-3 bg-slate-800/60 rounded-xl flex items-center justify-between text-xs"
-                >
-                  <div className="flex items-center gap-3">
-                    <span
-                      className="w-3.5 h-3.5 rounded-full shrink-0"
-                      style={{ backgroundColor: st.color }}
-                    />
-                    <span className="font-semibold text-white">{st.name}</span>
-                    <span className="text-[11px] text-slate-400">({st.type})</span>
-                    {st.wipLimit && (
-                      <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                        WIP: max {st.wipLimit}
-                      </span>
-                    )}
+              {db.statuses.map((st, idx) => {
+                const isFirst = idx === 0;
+                const isLast = idx === db.statuses.length - 1;
+                return (
+                  <div
+                    key={st.id}
+                    className="p-3 bg-slate-800/60 rounded-xl flex items-center justify-between text-xs"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="w-3.5 h-3.5 rounded-full shrink-0"
+                        style={{ backgroundColor: st.color }}
+                      />
+                      <span className="font-semibold text-white">{st.name}</span>
+                      <span className="text-[11px] text-slate-400">({st.type})</span>
+                      {st.wipLimit && (
+                        <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                          WIP: max {st.wipLimit}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleMoveStatus(idx, 'up')}
+                        disabled={isFirst}
+                        className={`p-1 rounded transition-colors cursor-pointer ${
+                          isFirst ? 'text-slate-600 cursor-not-allowed' : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                        }`}
+                        title="Move up"
+                      >
+                        <ArrowUp className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleMoveStatus(idx, 'down')}
+                        disabled={isLast}
+                        className={`p-1 rounded transition-colors cursor-pointer ${
+                          isLast ? 'text-slate-600 cursor-not-allowed' : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                        }`}
+                        title="Move down"
+                      >
+                        <ArrowDown className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleOpenEditStatus(st)}
+                        className="p-1 text-slate-400 hover:text-blue-400 hover:bg-slate-700/50 rounded transition-colors cursor-pointer"
+                        title="Edit column"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      {db.statuses.length > 2 && (
+                        <button
+                          onClick={() => deleteStatus(st.id)}
+                          className="p-1 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors cursor-pointer"
+                          title="Delete column"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Edit Status Modal */}
+            {editingStatus && (
+              <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <h3 className="text-sm font-bold text-white">Edit Workflow Column</h3>
+                    <button
+                      onClick={() => setEditingStatus(null)}
+                      className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {db.statuses.length > 2 && (
+                  <form onSubmit={handleSaveEditStatus} className="space-y-3 text-xs">
+                    <div>
+                      <label className="block text-slate-400 mb-1">Column Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={editStatusName}
+                        onChange={e => setEditStatusName(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-400 mb-1">Type</label>
+                        <select
+                          value={editStatusType}
+                          onChange={e => setEditStatusType(e.target.value as any)}
+                          className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-200 focus:outline-none cursor-pointer"
+                        >
+                          <option value="Backlog">Backlog</option>
+                          <option value="Active">Active</option>
+                          <option value="Done">Done</option>
+                          <option value="Cancelled">Cancelled</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-400 mb-1">Color</label>
+                        <input
+                          type="color"
+                          value={editStatusColor}
+                          onChange={e => setEditStatusColor(e.target.value)}
+                          className="w-full h-9 bg-slate-800 border border-slate-700 rounded-xl p-0.5 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 mb-1">WIP Limit (optional)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="No limit"
+                        value={editStatusWip || ''}
+                        onChange={e => setEditStatusWip(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
                       <button
-                        onClick={() => deleteStatus(st.id)}
-                        className="text-slate-500 hover:text-rose-400 p-1"
-                        title="Delete column"
+                        type="button"
+                        onClick={() => setEditingStatus(null)}
+                        className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl cursor-pointer"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        Cancel
                       </button>
-                    )}
-                  </div>
+                      <button
+                        type="submit"
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium cursor-pointer shadow-md shadow-blue-600/20"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </form>
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
 
             {/* Add New Status Form */}
             <form onSubmit={handleAddStatus} className="pt-3 border-t border-slate-800 space-y-3 text-xs">
@@ -870,9 +970,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <ChecklistTemplateManager onNavigate={onNavigate} />
       )}
 
-      {/* TAB 3: DATA & DEMO MANAGEMENT (PRD §6 & §8.7) */}
+      {/* TAB 3: DATA BACKUP, IMPORT & EXPORT */}
       {activeTab === 'data' && (
         <div className="space-y-6">
+          {/* Full Workspace Backup, Export & Import Manager */}
+          <DataBackupManager />
+
           {/* Demo Data Management (PRD Section 6) */}
           <div className="p-5 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 rounded-xl space-y-4">
             <div className="flex items-start justify-between gap-3">
@@ -903,7 +1006,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
 
             {hasDemoData && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-center text-xs">
                 <div className="p-2 rounded-lg bg-slate-900/60 border border-slate-800">
                   <span className="text-[10px] text-slate-400">Demo Projects</span>
                   <p className="font-bold text-white mt-0.5 font-mono">{db.projects.filter(p => p.isDemo).length}</p>
@@ -915,10 +1018,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <div className="p-2 rounded-lg bg-slate-900/60 border border-slate-800">
                   <span className="text-[10px] text-slate-400">Demo Releases</span>
                   <p className="font-bold text-white mt-0.5 font-mono">{db.releases.filter(r => r.isDemo).length}</p>
-                </div>
-                <div className="p-2 rounded-lg bg-slate-900/60 border border-slate-800">
-                  <span className="text-[10px] text-slate-400">Demo Archive</span>
-                  <p className="font-bold text-white mt-0.5 font-mono">{db.archivedApps.filter(a => a.isDemo).length}</p>
                 </div>
               </div>
             )}
@@ -942,72 +1041,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </button>
             </div>
           </div>
-
-          {/* Export & Backup (PRD Section 8.7) */}
-          <div className="p-5 bg-slate-900 border border-slate-800 rounded-xl space-y-4">
-            <h3 className="text-sm font-semibold text-white">Export & Backup Workspace Data</h3>
-            <p className="text-xs text-slate-400">
-              Download complete local backups of your projects, kanban tasks, release logs, and ideas.
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <button
-                onClick={handleExportJson}
-                className="p-3 bg-slate-800/80 hover:bg-slate-800 rounded-xl border border-slate-700/60 text-left transition-colors cursor-pointer group"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-white group-hover:text-blue-400">
-                    Export All Data (JSON)
-                  </span>
-                  <Download className="w-3.5 h-3.5 text-slate-400" />
-                </div>
-                <p className="text-[11px] text-slate-400">
-                  Full dump of projects, tasks, releases, and settings.
-                </p>
-              </button>
-
-              <button
-                onClick={handleExportCsv}
-                className="p-3 bg-slate-800/80 hover:bg-slate-800 rounded-xl border border-slate-700/60 text-left transition-colors cursor-pointer group"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-white group-hover:text-blue-400">
-                    Export Tasks (CSV)
-                  </span>
-                  <Download className="w-3.5 h-3.5 text-slate-400" />
-                </div>
-                <p className="text-[11px] text-slate-400">
-                  Formatted spreadsheet of all active and completed tasks.
-                </p>
-              </button>
-
-              <button
-                onClick={handleExportMarkdownChangelog}
-                className="p-3 bg-slate-800/80 hover:bg-slate-800 rounded-xl border border-slate-700/60 text-left transition-colors cursor-pointer group"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-white group-hover:text-blue-400">
-                    Export Changelog (MD)
-                  </span>
-                  <Download className="w-3.5 h-3.5 text-slate-400" />
-                </div>
-                <p className="text-[11px] text-slate-400">
-                  Clean Markdown formatted changelog file.
-                </p>
-              </button>
-            </div>
-
-            {/* Import Data */}
-            <div className="pt-4 border-t border-slate-800 text-xs">
-              <label className="block text-slate-300 font-medium mb-1">Restore from Backup (JSON)</label>
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleImportJson}
-                className="text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 cursor-pointer"
-              />
-            </div>
-          </div>
         </div>
       )}
 
@@ -1028,7 +1061,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <li>All registered projects, Kanban tasks, and workflow statuses</li>
               <li>All brainstorm ideas and discussion notes</li>
               <li>All semantic versions, changelogs, and generated release notes</li>
-              <li>App archive records, metrics logs, and compliance trackers</li>
+              <li>Checklists, certificates, and compliance trackers</li>
               <li>
                 Revocation of Apple client authorization token (mandatory requirement for apps with Sign in with Apple)
               </li>

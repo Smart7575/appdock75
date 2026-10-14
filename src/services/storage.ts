@@ -15,6 +15,7 @@ import {
   PrivacyPermission,
   CertificateReminder,
   NotificationItem,
+  AppStoreQuestionItem,
 } from '../types';
 
 export interface UserDatabase {
@@ -27,6 +28,7 @@ export interface UserDatabase {
   archivedApps: ArchivedApp[];
   checklists: ChecklistItem[];
   checklistTemplate?: ChecklistItem[];
+  appStoreInfoTemplate?: AppStoreQuestionItem[];
   privacyPermissions: PrivacyPermission[];
   certificates: CertificateReminder[];
   notifications: NotificationItem[];
@@ -51,6 +53,102 @@ export const DEFAULT_CHECKLIST_TEMPLATE: ChecklistItem[] = [
   { id: 'chk-10', category: 'App Store Submission', title: 'Account Deletion flow present', description: 'Apple guideline 5.1.1(v) requires in-app deletion button if account creation is supported.', done: false, required: true },
 ];
 
+export const DEFAULT_APP_STORE_QUESTIONS: AppStoreQuestionItem[] = [
+  {
+    id: 'q-title',
+    question: 'App Store Name (Title)',
+    description: 'The official name of your app as it appears on the App Store (exact display name).',
+    category: 'General Information',
+    maxLength: 30,
+    order: 1,
+    placeholder: 'e.g. HabitPulse: Daily Routine Tracker',
+  },
+  {
+    id: 'q-subtitle',
+    question: 'Subtitle',
+    description: 'Short summary appearing directly below the app name in search results and product page.',
+    category: 'General Information',
+    maxLength: 30,
+    order: 2,
+    placeholder: 'e.g. Build habits and daily routines',
+  },
+  {
+    id: 'q-promotional-text',
+    question: 'Promotional Text',
+    description: 'Appears at the top of your description. Can be updated at any time without submitting a new binary build.',
+    category: 'Descriptions & Texts',
+    maxLength: 170,
+    order: 3,
+    multiline: true,
+    placeholder: 'e.g. Now updated for iOS 18 with interactive widgets and Apple Watch support!',
+  },
+  {
+    id: 'q-keywords',
+    question: 'Keywords',
+    description: 'Search terms separated by commas, no spaces after commas. Extra spaces waste character limit.',
+    category: 'Discoverability & ASO',
+    maxLength: 100,
+    order: 4,
+    placeholder: 'habit,tracker,goals,routine,streak,productivity,wellness',
+  },
+  {
+    id: 'q-description',
+    question: 'App Description',
+    description: 'Full description of your app features, unique capabilities, subscription terms, and support details.',
+    category: 'Descriptions & Texts',
+    maxLength: 4000,
+    order: 5,
+    multiline: true,
+    placeholder: 'Describe your app core features, benefits, and user workflow...',
+  },
+  {
+    id: 'q-support-url',
+    question: 'Support URL',
+    description: 'Mandatory link to a webpage where users can find support, FAQs, or contact details.',
+    category: 'Links & Legal',
+    maxLength: 255,
+    order: 6,
+    placeholder: 'https://habitpulse.app/support',
+  },
+  {
+    id: 'q-marketing-url',
+    question: 'Marketing URL (Website)',
+    description: 'Optional link to your official landing page or marketing website.',
+    category: 'Links & Legal',
+    maxLength: 255,
+    order: 7,
+    placeholder: 'https://habitpulse.app',
+  },
+  {
+    id: 'q-privacy-url',
+    question: 'Privacy Policy URL',
+    description: 'Mandatory direct link to your app public privacy policy in compliance with Apple Guideline 5.1.1.',
+    category: 'Links & Legal',
+    maxLength: 255,
+    order: 8,
+    placeholder: 'https://habitpulse.app/privacy',
+  },
+  {
+    id: 'q-review-notes',
+    question: 'App Reviewer Notes & Demo Account',
+    description: 'Login credentials (username/password) and specific testing instructions for the Apple App Review team.',
+    category: 'App Review & Submission',
+    maxLength: 4000,
+    order: 9,
+    multiline: true,
+    placeholder: 'Demo login: reviewer@appdock75.local / Password: ReviewPass2026! / No special hardware required.',
+  },
+  {
+    id: 'q-copyright',
+    question: 'Copyright Notice',
+    description: 'The year and name of the copyright owner or development studio (e.g. © 2026 Studio Name).',
+    category: 'General Information',
+    maxLength: 100,
+    order: 10,
+    placeholder: '© 2026 Indie Studio B.V.',
+  },
+];
+
 export const DEFAULT_PRIVACY_PERMISSIONS: PrivacyPermission[] = [
   { key: 'NSCameraUsageDescription', name: 'Camera Access', description: 'Capturing photos, scanning QR codes, or document capture.', enabled: true, usageDescription: 'HabitPulse requires camera access to attach proof photos to your daily habit completions.' },
   { key: 'NSPhotoLibraryUsageDescription', name: 'Photo Library', description: 'Selecting existing images or custom icons from user gallery.', enabled: true, usageDescription: 'Used to select custom avatar and habit challenge inspiration photos.' },
@@ -60,7 +158,7 @@ export const DEFAULT_PRIVACY_PERMISSIONS: PrivacyPermission[] = [
 ];
 
 export const DEFAULT_CERTIFICATES: CertificateReminder[] = [
-  { id: 'cert-1', title: 'Apple Distribution Certificate', type: 'Distribution Certificate', expiryDate: '2027-02-15', daysRemaining: 132, notes: 'Used for signing TestFlight and App Store archive IPAs in Xcode.' },
+  { id: 'cert-1', title: 'Apple Distribution Certificate', type: 'Distribution Certificate', expiryDate: '2027-02-15', daysRemaining: 132, notes: 'Used for signing TestFlight and App Store distribution builds in Xcode.' },
   { id: 'cert-2', title: 'Apple Push Notification Service (APNs) Key', type: 'Push Notification Key', expiryDate: '2027-08-30', daysRemaining: 328, notes: 'AuthKey p8 key registered on Apple Developer portal for APNs background notifications.' },
   { id: 'cert-3', title: 'Apple Developer Program Membership', type: 'Developer Program', expiryDate: '2027-04-10', daysRemaining: 186, notes: 'Annual $99 enrollment renewal via Apple Developer app.' },
 ];
@@ -120,6 +218,18 @@ export function generateDemoData(userId: string): UserDatabase {
     vercelUrl: 'https://habitpulse.vercel.app',
     appStoreConnectUrl: 'https://appstoreconnect.apple.com/apps/6481023912',
     appStoreUrl: 'https://apps.apple.com/app/habitpulse-minimal-tracker/id6481023912',
+    appStoreAnswers: {
+      'q-title': 'HabitPulse: Daily Tracker',
+      'q-subtitle': 'Build consistent routines',
+      'q-promotional-text': 'Now fully upgraded for iOS 18 with interactive Control Center widgets and seamless Apple Watch complications!',
+      'q-keywords': 'habits,routine,streak,tracker,planner,healthkit,widgets,pomodoro,focus,mindful',
+      'q-description': 'HabitPulse helps you cultivate positive daily habits and routines with zero friction and zero telemetry.\n\n• Interactive Home Screen and Control Center widgets\n• Standalone Apple Watch companion app\n• End-to-end encrypted private iCloud synchronization\n• Apple Health mindful minutes and workout automation\n• Haptic milestone celebrations and dark mode styling',
+      'q-support-url': 'https://habitpulse.app/support',
+      'q-marketing-url': 'https://habitpulse.app',
+      'q-privacy-url': 'https://habitpulse.app/privacy',
+      'q-review-notes': 'Demo Reviewer credentials:\nUsername: reviewer@appdock75.local\nPassword: ReviewPassword2026!\nNo specific Bluetooth hardware or purchase required to test.',
+      'q-copyright': '© 2026 Indie Studio B.V.',
+    },
     customLinks: [
       { id: 'info-1', title: 'Figma Design System', url: 'https://figma.com/file/habitpulse-ios', notes: 'Design componenten, iconen en kleurenpalet v2' },
       { id: 'info-2', title: 'Postman API Collectie', url: 'https://postman.com/collections/habitpulse', notes: 'Sync endpoints voor cloud backup' },
@@ -603,43 +713,6 @@ export function generateDemoData(userId: string): UserDatabase {
     { id: 'cl-10', releaseId: releaseV12Id, type: 'Security', text: 'Tightened HealthKit permission usage strings per Apple Review 5.1.1.', taskId: 'task-3' },
   ];
 
-  const demoArchivedApp: ArchivedApp = {
-    id: 'arch-demo-chronos',
-    userId,
-    name: 'Chronos Timer - Vintage Stopwatch',
-    icon: '/src/assets/images/app_icon_chronos_1791271827616.jpg',
-    storeUrl: 'https://apps.apple.com/app/chronos-timer/id6478912345',
-    appleId: '6478912345',
-    bundleId: 'com.indiechrono.chronostimer',
-    sku: 'CHRONOS-IOS-01',
-    category: 'Utilities',
-    priceModel: 'Freemium',
-    publishedDate: '2025-04-18',
-    lastUpdated: '2026-06-30',
-    supportedLocales: ['English', 'German', 'Dutch', 'French', 'Japanese'],
-    ageRating: '4+',
-    status: 'Live',
-    links: [
-      { title: 'App Store Product Page', url: 'https://apps.apple.com/app/chronos-timer/id6478912345' },
-      { title: 'Marketing Website', url: 'https://chronostimer.app' },
-      { title: 'Privacy Policy', url: 'https://chronostimer.app/privacy' },
-      { title: 'App Store Connect Analytics', url: 'https://appstoreconnect.apple.com/apps/6478912345/analytics' },
-    ],
-    metrics: [
-      { month: 'May 2026', downloads: 1420, revenue: 1850, rating: 4.8 },
-      { month: 'Jun 2026', downloads: 1890, revenue: 2420, rating: 4.9 },
-      { month: 'Jul 2026', downloads: 2310, revenue: 3100, rating: 4.8 },
-      { month: 'Aug 2026', downloads: 2750, revenue: 3840, rating: 4.9 },
-      { month: 'Sep 2026', downloads: 3120, revenue: 4290, rating: 4.9 },
-      { month: 'Oct 2026', downloads: 3450, revenue: 4890, rating: 4.9 },
-    ],
-    retrospectiveNotes: `### Chronos Launch Retrospective
-- **Key Win**: Featuring mechanical titanium sound effects and haptics went viral on iOS Twitter/Reddit (#SwiftUI showcase).
-- **Pricing Insight**: A $4.99 one-time Lifetime Pro unlock converted 3.2x better than a $0.99 monthly subscription.
-- **App Store Optimization**: Focusing on the specific keyword "mechanical stopwatch" yielded top 3 ranking in Utilities.`,
-    isDemo: true,
-  };
-
   const demoNotifications: NotificationItem[] = [
     {
       id: 'notif-1',
@@ -672,9 +745,10 @@ export function generateDemoData(userId: string): UserDatabase {
     tasks: demoTasks,
     releases: demoReleases,
     changelogEntries: demoChangelogEntries,
-    archivedApps: [demoArchivedApp],
+    archivedApps: [],
     checklists: DEFAULT_CHECKLIST_TEMPLATE.map(c => ({ ...c, done: false })),
     checklistTemplate: DEFAULT_CHECKLIST_TEMPLATE.map(c => ({ ...c })),
+    appStoreInfoTemplate: DEFAULT_APP_STORE_QUESTIONS.map(q => ({ ...q })),
     privacyPermissions: DEFAULT_PRIVACY_PERMISSIONS,
     certificates: DEFAULT_CERTIFICATES,
     notifications: demoNotifications,
@@ -695,6 +769,7 @@ export function createEmptyDatabase(): UserDatabase {
     archivedApps: [],
     checklists: DEFAULT_CHECKLIST_TEMPLATE.map(c => ({ ...c, done: false })),
     checklistTemplate: DEFAULT_CHECKLIST_TEMPLATE.map(c => ({ ...c })),
+    appStoreInfoTemplate: DEFAULT_APP_STORE_QUESTIONS.map(q => ({ ...q })),
     privacyPermissions: DEFAULT_PRIVACY_PERMISSIONS,
     certificates: DEFAULT_CERTIFICATES,
     notifications: [],
@@ -779,11 +854,56 @@ export function sanitizeDatabaseChecklists(parsed: UserDatabase, userId?: string
     devSubstatus: p.devSubstatus || (p.status === 'In development' ? 'Design' : undefined),
   }));
 
+  // Reconcile checklists for every project so all items from resolvedTemplate are always present
+  let reconciledChecklists = [...checklists];
+  for (const proj of sanitizedProjects) {
+    const projChecklists = reconciledChecklists.filter(c => c.projectId === proj.id);
+    for (const tpl of resolvedTemplate) {
+      const exists = projChecklists.some(
+        c =>
+          c.id === `chk-${proj.id}-${tpl.id}` ||
+          c.id.endsWith(`-${tpl.id}`) ||
+          c.id === tpl.id ||
+          (c.title === tpl.title && c.category === tpl.category)
+      );
+      if (!exists) {
+        reconciledChecklists.push({
+          ...tpl,
+          id: `chk-${proj.id}-${tpl.id}`,
+          projectId: proj.id,
+          done: false,
+        });
+      }
+    }
+  }
+
+  let appStoreTpl = Array.isArray(parsed.appStoreInfoTemplate) && parsed.appStoreInfoTemplate.length > 0
+    ? parsed.appStoreInfoTemplate
+    : undefined;
+
+  if (!appStoreTpl) {
+    try {
+      const backupKey = userId ? `appdock_appstore_questions_backup_${userId}` : null;
+      const backupRaw = backupKey ? localStorage.getItem(backupKey) : null;
+      const globalRaw = localStorage.getItem('appdock_global_appstore_questions');
+      const rawToUse = backupRaw || globalRaw;
+      if (rawToUse) {
+        const parsedTpl = JSON.parse(rawToUse);
+        if (Array.isArray(parsedTpl) && parsedTpl.length > 0) {
+          appStoreTpl = parsedTpl;
+        }
+      }
+    } catch {}
+  }
+
+  const resolvedAppStoreQuestions = appStoreTpl || DEFAULT_APP_STORE_QUESTIONS.map(q => ({ ...q }));
+
   return {
     ...parsed,
     projects: sanitizedProjects,
-    checklists,
+    checklists: reconciledChecklists,
     checklistTemplate: resolvedTemplate,
+    appStoreInfoTemplate: resolvedAppStoreQuestions,
   };
 }
 
@@ -851,6 +971,10 @@ export function saveUserDatabase(userId: string, data: UserDatabase): void {
     if (data.checklistTemplate && data.checklistTemplate.length > 0) {
       localStorage.setItem('appdock_global_checklist_template', JSON.stringify(data.checklistTemplate));
       localStorage.setItem(`appdock_template_backup_${userId}`, JSON.stringify(data.checklistTemplate));
+    }
+    if (data.appStoreInfoTemplate && data.appStoreInfoTemplate.length > 0) {
+      localStorage.setItem('appdock_global_appstore_questions', JSON.stringify(data.appStoreInfoTemplate));
+      localStorage.setItem(`appdock_appstore_questions_backup_${userId}`, JSON.stringify(data.appStoreInfoTemplate));
     }
   } catch (err) {
     console.error('Failed to save user database', err);
@@ -928,7 +1052,7 @@ export function restoreDemoData(userId: string): UserDatabase {
 /**
  * Mark a single demo item as user's own data (keep item action).
  */
-export function keepDemoItem(userId: string, entityType: 'idea' | 'project' | 'task' | 'release' | 'archive', itemId: string): UserDatabase {
+export function keepDemoItem(userId: string, entityType: 'idea' | 'project' | 'task' | 'release', itemId: string): UserDatabase {
   const current = loadUserDatabase(userId);
   if (entityType === 'idea') {
     current.ideas = current.ideas.map(i => i.id === itemId ? { ...i, isDemo: false } : i);
@@ -938,8 +1062,6 @@ export function keepDemoItem(userId: string, entityType: 'idea' | 'project' | 't
     current.tasks = current.tasks.map(t => t.id === itemId ? { ...t, isDemo: false } : t);
   } else if (entityType === 'release') {
     current.releases = current.releases.map(r => r.id === itemId ? { ...r, isDemo: false } : r);
-  } else if (entityType === 'archive') {
-    current.archivedApps = current.archivedApps.map(a => a.id === itemId ? { ...a, isDemo: false } : a);
   }
   saveUserDatabase(userId, current);
   return current;

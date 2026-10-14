@@ -6,7 +6,7 @@
  * - Automatic task-to-changelog suggestions
  * - App Store compliant "What's New" Generator (<= 4000 chars) with 1-click copy
  * - Version comparison diff between two releases
- * - "Mark as Released" workflow (publishes & updates Archive)
+ * - "Mark as Released" workflow (publishes & updates project status)
  * - Apple review notes, TestFlight beta links, rejection logs
  */
 
@@ -21,7 +21,6 @@ import {
   GitCompare,
   CheckCircle2,
   AlertTriangle,
-  Archive,
   ArrowRight,
   Sparkles,
   Trash2,
@@ -31,6 +30,7 @@ import {
 import { useData } from '../../context/DataContext';
 import { useFormatDate } from '../../utils/dateFormat';
 import { Release, ChangelogEntry, ChangelogType, ReleaseStatus } from '../../types';
+import { getProjectColorTheme } from '../../utils/projectColors';
 
 export const ReleasesView: React.FC = () => {
   const {
@@ -51,6 +51,7 @@ export const ReleasesView: React.FC = () => {
 
   // Current project filter
   const currentProject = db.projects.find(p => p.id === activeProjectId) || db.projects[0];
+  const colorTheme = getProjectColorTheme(currentProject);
   const releases = db.releases.filter(r => !activeProjectId || r.projectId === activeProjectId);
 
   // Selected release for inspection
@@ -73,10 +74,10 @@ export const ReleasesView: React.FC = () => {
   // Mark as Released modal
   const [showMarkReleasedModal, setShowMarkReleasedModal] = useState(false);
   const [releasePubDate, setReleasePubDate] = useState(new Date().toISOString().split('T')[0]);
-  const [syncToArchive, setSyncToArchive] = useState(true);
 
   // New Release modal
   const [showNewReleaseModal, setShowNewReleaseModal] = useState(false);
+  const [deletingRelease, setDeletingRelease] = useState<Release | null>(null);
   const [newRelForm, setNewRelForm] = useState({
     version: '1.3.0',
     build: 45,
@@ -133,7 +134,7 @@ export const ReleasesView: React.FC = () => {
 
   const handleConfirmMarkReleased = () => {
     if (!activeRelease) return;
-    markAsReleased(activeRelease.id, releasePubDate, syncToArchive);
+    markAsReleased(activeRelease.id, releasePubDate);
     setShowMarkReleasedModal(false);
   };
 
@@ -173,14 +174,36 @@ export const ReleasesView: React.FC = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-white tracking-tight">
-            Releases & Versioning
+            Releases and Builds
           </h1>
           <p className="text-xs text-slate-400 mt-1">
             Build App Store compliant changelogs, generate "What's New" release notes, and track TestFlight submissions.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          {/* Project Selector (Like on Tab Projects) */}
+          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border font-bold text-sm tracking-tight ${colorTheme.titleField} shadow-sm`}>
+            <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${colorTheme.dot}`} />
+            <select
+              value={currentProject?.id || ''}
+              onChange={e => setActiveProjectId(e.target.value)}
+              className="bg-transparent font-bold text-sm cursor-pointer focus:outline-none text-white"
+            >
+              {[...db.projects].sort((a, b) => a.name.localeCompare(b.name)).map(p => (
+                <option key={p.id} value={p.id} className="bg-slate-900 text-white font-medium">
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {currentProject?.isDemo && (
+            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
+              Demo Project
+            </span>
+          )}
+
           {releases.length >= 2 && (
             <button
               onClick={() => setShowDiffModal(true)}
@@ -200,26 +223,6 @@ export const ReleasesView: React.FC = () => {
           </button>
         </div>
       </div>
-
-      {/* Project Selector Bar */}
-      {db.projects.length > 1 && (
-        <div className="flex items-center gap-2 p-2 bg-slate-900 border border-slate-800 rounded-xl text-xs overflow-x-auto">
-          <span className="text-slate-500 px-2 font-medium">Filter Project:</span>
-          {db.projects.map(proj => (
-            <button
-              key={proj.id}
-              onClick={() => setActiveProjectId(proj.id)}
-              className={`px-3 py-1 rounded-lg transition-colors cursor-pointer whitespace-nowrap ${
-                activeProjectId === proj.id
-                  ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-              }`}
-            >
-              {proj.name}
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* Main 2-Column Layout: Releases List + Selected Release Details */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -269,11 +272,24 @@ export const ReleasesView: React.FC = () => {
 
                     <div className="flex items-center justify-between text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-800">
                       <span>{rel.releasedDate ? `Released ${formatDate(rel.releasedDate)}` : `Target: ${rel.plannedDate ? formatDate(rel.plannedDate) : 'TBD'}`}</span>
-                      {rel.isDemo && (
-                        <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-1 rounded">
-                          Demo
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1.5">
+                        {rel.isDemo && (
+                          <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-1 rounded">
+                            Demo
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeletingRelease(rel);
+                          }}
+                          className="p-1 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors cursor-pointer"
+                          title="Delete release"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -513,7 +529,7 @@ export const ReleasesView: React.FC = () => {
               Mark Version {activeRelease.version} as Released
             </h3>
             <p className="text-xs text-slate-400 mb-4 leading-relaxed">
-              Confirm App Store release date. You can also automatically update or register this app in your Archive.
+              Confirm the official App Store publication date for this production release.
             </p>
 
             <div className="space-y-3 mb-4 text-xs">
@@ -525,19 +541,6 @@ export const ReleasesView: React.FC = () => {
                   onChange={e => setReleasePubDate(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none"
                 />
-              </div>
-
-              <div className="flex items-center gap-2 p-2.5 bg-slate-800/50 rounded-lg">
-                <input
-                  type="checkbox"
-                  id="syncArchive"
-                  checked={syncToArchive}
-                  onChange={e => setSyncToArchive(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded cursor-pointer"
-                />
-                <label htmlFor="syncArchive" className="text-slate-300 cursor-pointer">
-                  Sync & publish to App Archive catalog
-                </label>
               </div>
             </div>
 
@@ -709,6 +712,45 @@ export const ReleasesView: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Release Confirmation Modal */}
+      {deletingRelease && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-rose-400">
+              <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20">
+                <Trash2 className="w-5 h-5 text-rose-400" />
+              </div>
+              <h3 className="text-sm font-bold text-white">Delete Release</h3>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Are you sure you want to delete release <strong>v{deletingRelease.version} ({deletingRelease.name})</strong>?
+            </p>
+            <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs text-rose-300">
+              This will also permanently delete all linked changelog items and notes for this release.
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeletingRelease(null)}
+                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  deleteRelease(deletingRelease.id);
+                  setDeletingRelease(null);
+                }}
+                className="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-md shadow-rose-600/20"
+              >
+                Delete Permanently
+              </button>
+            </div>
           </div>
         </div>
       )}

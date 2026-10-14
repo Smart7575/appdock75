@@ -246,6 +246,7 @@ export async function saveWorkspaceToFirestore(userId: string, data: UserDatabas
       statuses: data.statuses || [],
       checklists: data.checklists || [],
       checklistTemplate: data.checklistTemplate || [],
+      appStoreInfoTemplate: data.appStoreInfoTemplate || [],
       privacyPermissions: data.privacyPermissions || [],
       certificates: data.certificates || [],
       notifications: data.notifications || [],
@@ -290,6 +291,10 @@ export async function loadWorkspaceFromFirestore(userId: string): Promise<UserDa
           checklistTemplate:
             Array.isArray(data.checklistTemplate) && data.checklistTemplate.length > 0
               ? data.checklistTemplate
+              : undefined,
+          appStoreInfoTemplate:
+            Array.isArray(data.appStoreInfoTemplate) && data.appStoreInfoTemplate.length > 0
+              ? data.appStoreInfoTemplate
               : undefined,
           privacyPermissions: data.privacyPermissions || [],
           certificates: data.certificates || [],
@@ -340,6 +345,10 @@ export function subscribeToWorkspace(
             checklistTemplate:
               Array.isArray(data.checklistTemplate) && data.checklistTemplate.length > 0
                 ? data.checklistTemplate
+                : undefined,
+            appStoreInfoTemplate:
+              Array.isArray(data.appStoreInfoTemplate) && data.appStoreInfoTemplate.length > 0
+                ? data.appStoreInfoTemplate
                 : undefined,
             privacyPermissions: data.privacyPermissions || [],
             certificates: data.certificates || [],

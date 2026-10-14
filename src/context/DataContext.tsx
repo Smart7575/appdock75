@@ -10,11 +10,11 @@ import {
   Task,
   Release,
   ChangelogEntry,
-  ArchivedApp,
   ChecklistItem,
   PrivacyPermission,
   CertificateReminder,
   NotificationItem,
+  AppStoreQuestionItem,
 } from '../types';
 import {
   UserDatabase,
@@ -25,7 +25,9 @@ import {
   keepDemoItem,
   createEmptyDatabase,
   DEFAULT_CHECKLIST_TEMPLATE,
+  DEFAULT_APP_STORE_QUESTIONS,
   sanitizeDatabaseChecklists,
+  exportUserDataAsJson,
 } from '../services/storage';
 import {
   saveWorkspaceToFirestore,
@@ -43,7 +45,15 @@ interface DataContextType {
   // Demo data controls
   purgeDemoData: () => void;
   reloadDemoData: () => void;
-  keepItemAsMine: (type: 'idea' | 'project' | 'task' | 'release' | 'archive', id: string) => void;
+  keepItemAsMine: (type: 'idea' | 'project' | 'task' | 'release', id: string) => void;
+
+  // Full Database Import & Export
+  exportFullDatabase: () => string;
+  importDatabase: (incomingData: any, mode?: 'replace' | 'merge') => Promise<{
+    success: boolean;
+    stats: { projects: number; tasks: number; ideas: number; releases: number; changelogs: number };
+    error?: string;
+  }>;
 
   // Idea CRUD
   addIdea: (idea: Omit<Idea, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'comments' | 'timeline'>) => Idea;
@@ -75,20 +85,14 @@ interface DataContextType {
   addRelease: (release: Omit<Release, 'id' | 'createdAt' | 'updatedAt'>) => Release;
   updateRelease: (id: string, updates: Partial<Release>) => void;
   deleteRelease: (id: string) => void;
-  markAsReleased: (releaseId: string, releaseDate: string, syncArchive: boolean) => void;
+  markAsReleased: (releaseId: string, releaseDate: string) => void;
   addChangelogEntry: (entry: Omit<ChangelogEntry, 'id'>) => ChangelogEntry;
   updateChangelogEntry: (id: string, updates: Partial<ChangelogEntry>) => void;
   deleteChangelogEntry: (id: string) => void;
   generateReleaseNotes: (releaseId: string, locale?: string) => string;
 
-  // Archive CRUD
-  addArchivedApp: (app: Omit<ArchivedApp, 'id' | 'userId'>) => ArchivedApp;
-  updateArchivedApp: (id: string, updates: Partial<ArchivedApp>) => void;
-  deleteArchivedApp: (id: string) => void;
-  reopenArchivedAppAsProject: (archiveId: string) => Project;
-
   // Tools & Checklists
-  toggleChecklist: (id: string) => void;
+  toggleChecklist: (id: string, projectId?: string) => void;
   resetChecklist: (projectId?: string) => void;
   updatePrivacyPermission: (key: string, updates: Partial<PrivacyPermission>) => void;
   addCertificate: (cert: Omit<CertificateReminder, 'id' | 'daysRemaining'>) => void;
@@ -103,6 +107,15 @@ interface DataContextType {
   moveChecklistTemplateItem: (id: string, direction: 'up' | 'down') => void;
   resetChecklistTemplate: () => void;
   syncChecklistTemplateToAllProjects: () => void;
+
+  // App Store Info Q&A (Global template synchronizing across all projects)
+  appStoreQuestions: AppStoreQuestionItem[];
+  addAppStoreQuestion: (question: Omit<AppStoreQuestionItem, 'id' | 'order'>) => AppStoreQuestionItem;
+  updateAppStoreQuestion: (id: string, updates: Partial<AppStoreQuestionItem>) => void;
+  deleteAppStoreQuestion: (id: string) => void;
+  reorderAppStoreQuestion: (id: string, direction: 'up' | 'down') => void;
+  resetAppStoreQuestions: () => void;
+  updateProjectAppStoreAnswer: (projectId: string, questionId: string, answer: string) => void;
 
   // Notifications
   markNotificationRead: (id: string) => void;
@@ -302,11 +315,147 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [user?.id, activeProjectId, commit]);
 
-  const keepItemAsMine = useCallback((type: 'idea' | 'project' | 'task' | 'release' | 'archive', id: string) => {
+  const keepItemAsMine = useCallback((type: 'idea' | 'project' | 'task' | 'release', id: string) => {
     if (!user?.id) return;
-    const updated = keepDemoItem(user.id, type, id);
+    const updated = keepDemoItem(user.id, type as any, id);
     commit(updated);
   }, [user?.id, commit]);
+
+  // Full Database Import & Export Handlers
+  const exportFullDatabase = useCallback((): string => {
+    if (user) {
+      return exportUserDataAsJson(user, db);
+    }
+    const exportPayload = {
+      exportedAt: new Date().toISOString(),
+      application: 'AppDock75',
+      version: '1.0.0',
+      data: db,
+    };
+    return JSON.stringify(exportPayload, null, 2);
+  }, [user, db]);
+
+  const importDatabase = useCallback(async (
+    incomingRaw: any,
+    mode: 'replace' | 'merge' = 'replace'
+  ): Promise<{
+    success: boolean;
+    stats: { projects: number; tasks: number; ideas: number; releases: number; changelogs: number };
+    error?: string;
+  }> => {
+    if (!user?.id) {
+      return {
+        success: false,
+        stats: { projects: 0, tasks: 0, ideas: 0, releases: 0, changelogs: 0 },
+        error: 'No active user found. Please sign in to import workspace data.',
+      };
+    }
+
+    try {
+      let dataObj: any = incomingRaw;
+      if (typeof incomingRaw === 'string') {
+        dataObj = JSON.parse(incomingRaw);
+      }
+
+      // Support { data: { ... } }, { workspace: { ... } }, or root database structure
+      const src = dataObj.data || dataObj.workspace || dataObj.db || dataObj;
+
+      if (!src || typeof src !== 'object') {
+        return {
+          success: false,
+          stats: { projects: 0, tasks: 0, ideas: 0, releases: 0, changelogs: 0 },
+          error: 'Invalid file format. The file does not contain valid AppDock75 workspace data.',
+        };
+      }
+
+      let newDb: UserDatabase;
+      if (mode === 'replace') {
+        newDb = {
+          ideas: Array.isArray(src.ideas) ? src.ideas : [],
+          projects: Array.isArray(src.projects) ? src.projects : [],
+          tasks: Array.isArray(src.tasks) ? src.tasks : [],
+          releases: Array.isArray(src.releases) ? src.releases : [],
+          changelogEntries: Array.isArray(src.changelogEntries) ? src.changelogEntries : [],
+          archivedApps: [],
+          statuses: Array.isArray(src.statuses) && src.statuses.length > 0 ? src.statuses : db.statuses,
+          checklists: Array.isArray(src.checklists) ? src.checklists : [],
+          checklistTemplate: Array.isArray(src.checklistTemplate) && src.checklistTemplate.length > 0 ? src.checklistTemplate : db.checklistTemplate,
+          appStoreInfoTemplate: Array.isArray(src.appStoreInfoTemplate) && src.appStoreInfoTemplate.length > 0 ? src.appStoreInfoTemplate : db.appStoreInfoTemplate,
+          privacyPermissions: Array.isArray(src.privacyPermissions) && src.privacyPermissions.length > 0 ? src.privacyPermissions : db.privacyPermissions,
+          certificates: Array.isArray(src.certificates) ? src.certificates : db.certificates,
+          notifications: Array.isArray(src.notifications) ? src.notifications : [],
+          demoPurged: src.demoPurged ?? true,
+        };
+      } else {
+        // Merge mode: combine entities avoiding duplicate IDs
+        const existingProjectIds = new Set(db.projects.map(p => p.id));
+        const mergedProjects = [
+          ...db.projects,
+          ...(Array.isArray(src.projects) ? src.projects : []).filter((p: Project) => !existingProjectIds.has(p.id)),
+        ];
+
+        const existingIdeaIds = new Set(db.ideas.map(i => i.id));
+        const mergedIdeas = [
+          ...db.ideas,
+          ...(Array.isArray(src.ideas) ? src.ideas : []).filter((i: Idea) => !existingIdeaIds.has(i.id)),
+        ];
+
+        const existingTaskIds = new Set(db.tasks.map(t => t.id));
+        const mergedTasks = [
+          ...db.tasks,
+          ...(Array.isArray(src.tasks) ? src.tasks : []).filter((t: Task) => !existingTaskIds.has(t.id)),
+        ];
+
+        const existingReleaseIds = new Set(db.releases.map(r => r.id));
+        const mergedReleases = [
+          ...db.releases,
+          ...(Array.isArray(src.releases) ? src.releases : []).filter((r: Release) => !existingReleaseIds.has(r.id)),
+        ];
+
+        const existingChangelogIds = new Set(db.changelogEntries.map(c => c.id));
+        const mergedChangelogs = [
+          ...db.changelogEntries,
+          ...(Array.isArray(src.changelogEntries) ? src.changelogEntries : []).filter((c: ChangelogEntry) => !existingChangelogIds.has(c.id)),
+        ];
+
+        newDb = {
+          ...db,
+          projects: mergedProjects,
+          ideas: mergedIdeas,
+          tasks: mergedTasks,
+          releases: mergedReleases,
+          changelogEntries: mergedChangelogs,
+          archivedApps: [],
+          appStoreInfoTemplate: Array.isArray(src.appStoreInfoTemplate) && src.appStoreInfoTemplate.length > 0 ? src.appStoreInfoTemplate : db.appStoreInfoTemplate,
+          statuses: Array.isArray(src.statuses) && src.statuses.length > 0 ? src.statuses : db.statuses,
+        };
+      }
+
+      const sanitized = sanitizeDatabaseChecklists(newDb, user.id);
+      commit(sanitized);
+
+      if (sanitized.projects.length > 0) {
+        setActiveProjectId(sanitized.projects[0].id);
+      }
+
+      return {
+        success: true,
+        stats: {
+          projects: sanitized.projects.length,
+          tasks: sanitized.tasks.length,
+          ideas: sanitized.ideas.length,
+          releases: sanitized.releases.length,
+          changelogs: sanitized.changelogEntries.length,
+        },
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        stats: { projects: 0, tasks: 0, ideas: 0, releases: 0, changelogs: 0 },
+        error: err?.message || 'Error parsing or processing backup data.',
+      };
+    }
+  }, [user?.id, db, commit]);
 
   // Idea CRUD
   const addIdea = useCallback((ideaData: Omit<Idea, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'comments' | 'timeline'>): Idea => {
@@ -699,11 +848,9 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
     });
   }, [db, commit]);
 
-  const markAsReleased = useCallback((releaseId: string, releaseDate: string, syncArchive: boolean) => {
+  const markAsReleased = useCallback((releaseId: string, releaseDate: string) => {
     const release = db.releases.find(r => r.id === releaseId);
     if (!release) return;
-
-    const project = db.projects.find(p => p.id === release.projectId);
 
     const nextReleases = db.releases.map(r => {
       if (r.id !== releaseId) return r;
@@ -715,54 +862,24 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
       };
     });
 
-    let nextArchivedApps = [...db.archivedApps];
-
-    if (syncArchive && project) {
-      const existingArchive = db.archivedApps.find(a => a.bundleId === project.bundleId || a.projectId === project.id);
-      if (existingArchive) {
-        nextArchivedApps = nextArchivedApps.map(a => {
-          if (a.id !== existingArchive.id) return a;
-          return {
-            ...a,
-            lastUpdated: releaseDate,
-            status: 'Live' as const,
-          };
-        });
-      } else {
-        const newArchived: ArchivedApp = {
-          id: `arch-${Date.now()}`,
-          userId: user?.id || 'anonymous',
-          projectId: project.id,
-          name: project.name,
-          icon: project.icon,
-          storeUrl: `https://apps.apple.com/app/${project.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}/id${Math.floor(1000000000 + Math.random() * 9000000000)}`,
-          appleId: `${Math.floor(1000000000 + Math.random() * 9000000000)}`,
-          bundleId: project.bundleId,
-          sku: `${project.name.toUpperCase().slice(0, 8)}-IOS`,
-          category: 'Utilities',
-          priceModel: 'Freemium',
-          publishedDate: releaseDate,
-          lastUpdated: releaseDate,
-          supportedLocales: ['English', 'German', 'Dutch'],
-          ageRating: '4+',
-          status: 'Live',
-          links: project.links.map(l => ({ title: l.title, url: l.url })),
-          metrics: [
-            { month: new Date().toLocaleString('en-US', { month: 'short', year: 'numeric' }), downloads: 350, revenue: 490, rating: 5.0 },
-          ],
-          retrospectiveNotes: `Successfully released version ${release.version} to App Store production.`,
-          isDemo: false,
+    // Also update associated project to Released status if found
+    const nextProjects = db.projects.map(p => {
+      if (p.id === release.projectId && p.status !== 'Released') {
+        return {
+          ...p,
+          status: 'Released' as const,
+          updatedAt: new Date().toISOString(),
         };
-        nextArchivedApps.push(newArchived);
       }
-    }
+      return p;
+    });
 
     commit({
       ...db,
       releases: nextReleases,
-      archivedApps: nextArchivedApps,
+      projects: nextProjects,
     });
-  }, [db, user?.id, commit]);
+  }, [db, commit]);
 
   const addChangelogEntry = useCallback((entryData: Omit<ChangelogEntry, 'id'>): ChangelogEntry => {
     const newEntry: ChangelogEntry = {
@@ -806,85 +923,6 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
     return text.slice(0, 4000); // Respect 4000 App Store character boundary
   }, [db]);
 
-  // Archive CRUD
-  const addArchivedApp = useCallback((appData: Omit<ArchivedApp, 'id' | 'userId'>): ArchivedApp => {
-    const newApp: ArchivedApp = {
-      ...appData,
-      id: `arch-${Date.now()}`,
-      userId: user?.id || 'anonymous',
-      isDemo: false,
-    };
-    commit({ ...db, archivedApps: [newApp, ...db.archivedApps] });
-    return newApp;
-  }, [db, user?.id, commit]);
-
-  const updateArchivedApp = useCallback((id: string, updates: Partial<ArchivedApp>) => {
-    commit({
-      ...db,
-      archivedApps: db.archivedApps.map(a => a.id === id ? { ...a, ...updates } : a),
-    });
-  }, [db, commit]);
-
-  const deleteArchivedApp = useCallback((id: string) => {
-    commit({
-      ...db,
-      archivedApps: db.archivedApps.filter(a => a.id !== id),
-    });
-  }, [db, commit]);
-
-  // Reopen as Project: starts a new development cycle
-  const reopenArchivedAppAsProject = useCallback((archiveId: string): Project => {
-    const app = db.archivedApps.find(a => a.id === archiveId);
-    const newProjectId = `proj-${Date.now()}`;
-
-    const newProject: Project = {
-      id: newProjectId,
-      userId: user?.id || 'anonymous',
-      name: `${app?.name || 'Reopened App'} (Next Cycle)`,
-      icon: app?.icon,
-      description: `New development lifecycle cycle for ${app?.name || 'published app'}.`,
-      bundleId: app?.bundleId || `com.${(user?.settings?.bundlePrefix || 'indie').trim().toLowerCase().replace(/[^a-z0-9.-]/g, '') || 'indie'}.app`,
-      platforms: ['iPhone', 'iPad'],
-      minIOS: 'iOS 17.5',
-      stack: {
-        uiFramework: 'SwiftUI',
-        swiftVersion: '6.0',
-        xcodeVersion: '16.1',
-        minIOS: 'iOS 17.5',
-      },
-      status: 'In development',
-      dates: {
-        startDate: new Date().toISOString().split('T')[0],
-      },
-      links: app?.links.map(l => ({ id: `lnk-${Date.now()}`, title: l.title, url: l.url, category: 'Store' as const })) || [],
-      assetSpecs: [],
-      localizedListings: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      isDemo: false,
-    };
-
-    const templateToUse = (db.checklistTemplate && db.checklistTemplate.length > 0)
-      ? db.checklistTemplate
-      : DEFAULT_CHECKLIST_TEMPLATE;
-
-    const newProjectChecklists: ChecklistItem[] = templateToUse.map(c => ({
-      ...c,
-      id: `chk-${newProjectId}-${c.id}`,
-      projectId: newProjectId,
-      done: false,
-    }));
-
-    commit({
-      ...db,
-      projects: [newProject, ...db.projects],
-      checklists: [...newProjectChecklists, ...db.checklists],
-    });
-
-    setActiveProjectId(newProjectId);
-    return newProject;
-  }, [db, user?.id, commit]);
-
   // Standard Checklist Template CRUD (Global for all apps)
   const checklistTemplate = useMemo(() => {
     return db.checklistTemplate && db.checklistTemplate.length > 0
@@ -911,19 +949,37 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
       ? [templateItem, ...currentTemplate]
       : [...currentTemplate, templateItem];
 
-    // Propagate to all existing projects so every app gets the new standard checklist item!
+    // Ensure every project has all items from updatedTemplate
+    let updatedChecklists = [...db.checklists];
     const existingProjects = db.projects || [];
-    const newProjectItems: ChecklistItem[] = existingProjects.map(p => ({
-      ...templateItem,
-      id: `chk-${p.id}-${newItemId}`,
-      projectId: p.id,
-      done: false,
-    }));
+
+    for (const proj of existingProjects) {
+      const projItems = updatedChecklists.filter(c => c.projectId === proj.id);
+      for (const tpl of updatedTemplate) {
+        const hasItem = projItems.some(
+          c =>
+            c.id === `chk-${proj.id}-${tpl.id}` ||
+            c.id.endsWith(`-${tpl.id}`) ||
+            c.id === tpl.id ||
+            (c.title === tpl.title && c.category === tpl.category)
+        );
+        if (!hasItem) {
+          const newItem: ChecklistItem = {
+            ...tpl,
+            id: `chk-${proj.id}-${tpl.id}`,
+            projectId: proj.id,
+            done: false,
+          };
+          updatedChecklists.push(newItem);
+          projItems.push(newItem);
+        }
+      }
+    }
 
     commit({
       ...db,
       checklistTemplate: updatedTemplate,
-      checklists: [...db.checklists, ...newProjectItems],
+      checklists: updatedChecklists,
     });
   }, [db, commit]);
 
@@ -1028,15 +1084,21 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
       const projItems = updatedChecklists.filter(c => c.projectId === proj.id);
       for (const tpl of activeTemplate) {
         const hasItem = projItems.some(
-          c => c.id.includes(tpl.id) || (c.title === tpl.title && c.category === tpl.category)
+          c =>
+            c.id === `chk-${proj.id}-${tpl.id}` ||
+            c.id.endsWith(`-${tpl.id}`) ||
+            c.id === tpl.id ||
+            (c.title === tpl.title && c.category === tpl.category)
         );
         if (!hasItem) {
-          updatedChecklists.push({
+          const newItem: ChecklistItem = {
             ...tpl,
             id: `chk-${proj.id}-${tpl.id}`,
             projectId: proj.id,
             done: false,
-          });
+          };
+          updatedChecklists.push(newItem);
+          projItems.push(newItem);
         }
       }
     }
@@ -1048,7 +1110,7 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
   }, [db, commit]);
 
   // Checklists & Tools
-  const toggleChecklist = useCallback((id: string) => {
+  const toggleChecklist = useCallback((id: string, projectId?: string) => {
     if (db.checklists.some(c => c.id === id)) {
       commit({
         ...db,
@@ -1061,10 +1123,19 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
         : DEFAULT_CHECKLIST_TEMPLATE;
       const templateMatch = templateToUse.find(t => id.includes(t.id));
       if (templateMatch) {
+        let targetProjId = projectId || activeProjectId || undefined;
+        if (!targetProjId && id.startsWith('chk-')) {
+          const withoutPrefix = id.slice(4);
+          const tplIndex = withoutPrefix.lastIndexOf(templateMatch.id);
+          if (tplIndex > 1) {
+            targetProjId = withoutPrefix.slice(0, tplIndex - 1);
+          }
+        }
+
         const newItem: ChecklistItem = {
           ...templateMatch,
           id,
-          projectId: activeProjectId || undefined,
+          projectId: targetProjId,
           done: true,
         };
         commit({
@@ -1145,6 +1216,127 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
     commit({ ...db, notifications: [] });
   }, [db, commit]);
 
+  // App Store Info Q&A (Global template synchronizing across all projects)
+  const appStoreQuestions: AppStoreQuestionItem[] = useMemo(() => {
+    return Array.isArray(db.appStoreInfoTemplate) && db.appStoreInfoTemplate.length > 0
+      ? db.appStoreInfoTemplate
+      : DEFAULT_APP_STORE_QUESTIONS;
+  }, [db.appStoreInfoTemplate]);
+
+  const addAppStoreQuestion = useCallback((questionData: Omit<AppStoreQuestionItem, 'id' | 'order'>): AppStoreQuestionItem => {
+    const current = Array.isArray(db.appStoreInfoTemplate) && db.appStoreInfoTemplate.length > 0
+      ? [...db.appStoreInfoTemplate]
+      : DEFAULT_APP_STORE_QUESTIONS.map(q => ({ ...q }));
+
+    const newQuestion: AppStoreQuestionItem = {
+      ...questionData,
+      id: `q-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      order: current.length + 1,
+    };
+
+    const updated = [...current, newQuestion];
+    commit({
+      ...db,
+      appStoreInfoTemplate: updated,
+    });
+    return newQuestion;
+  }, [db, commit]);
+
+  const updateAppStoreQuestion = useCallback((id: string, updates: Partial<AppStoreQuestionItem>) => {
+    const current = Array.isArray(db.appStoreInfoTemplate) && db.appStoreInfoTemplate.length > 0
+      ? [...db.appStoreInfoTemplate]
+      : DEFAULT_APP_STORE_QUESTIONS.map(q => ({ ...q }));
+
+    const updated = current.map(q => q.id === id ? { ...q, ...updates } : q);
+    commit({
+      ...db,
+      appStoreInfoTemplate: updated,
+    });
+  }, [db, commit]);
+
+  const bulkUpdateAppStoreQuestions = useCallback((updates: { id: string; changes: Partial<AppStoreQuestionItem> }[]) => {
+    const current = Array.isArray(db.appStoreInfoTemplate) && db.appStoreInfoTemplate.length > 0
+      ? [...db.appStoreInfoTemplate]
+      : DEFAULT_APP_STORE_QUESTIONS.map(q => ({ ...q }));
+
+    const updated = current.map(q => {
+      const update = updates.find(u => u.id === q.id);
+      return update ? { ...q, ...update.changes } : q;
+    });
+
+    commit({
+      ...db,
+      appStoreInfoTemplate: updated,
+    });
+  }, [db, commit]);
+
+  const deleteAppStoreQuestion = useCallback((id: string) => {
+    const current = Array.isArray(db.appStoreInfoTemplate) && db.appStoreInfoTemplate.length > 0
+      ? [...db.appStoreInfoTemplate]
+      : DEFAULT_APP_STORE_QUESTIONS.map(q => ({ ...q }));
+
+    const updated = current.filter(q => q.id !== id);
+    const reindexed = updated.map((q, idx) => ({ ...q, order: idx + 1 }));
+
+    commit({
+      ...db,
+      appStoreInfoTemplate: reindexed,
+    });
+  }, [db, commit]);
+
+  const reorderAppStoreQuestion = useCallback((id: string, direction: 'up' | 'down') => {
+    const current = Array.isArray(db.appStoreInfoTemplate) && db.appStoreInfoTemplate.length > 0
+      ? [...db.appStoreInfoTemplate]
+      : DEFAULT_APP_STORE_QUESTIONS.map(q => ({ ...q }));
+
+    const index = current.findIndex(q => q.id === id);
+    if (index === -1) return;
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === current.length - 1) return;
+
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    const [moved] = current.splice(index, 1);
+    current.splice(targetIndex, 0, moved);
+
+    const reordered = current.map((q, idx) => ({ ...q, order: idx + 1 }));
+    commit({
+      ...db,
+      appStoreInfoTemplate: reordered,
+    });
+  }, [db, commit]);
+
+  const resetAppStoreQuestions = useCallback(() => {
+    commit({
+      ...db,
+      appStoreInfoTemplate: DEFAULT_APP_STORE_QUESTIONS.map(q => ({ ...q })),
+    });
+  }, [db, commit]);
+
+  const updateProjectAppStoreAnswer = useCallback((projectId: string, questionId: string, answer: string) => {
+    const project = db.projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    const currentAnswers = project.appStoreAnswers || {};
+    const updatedAnswers = {
+      ...currentAnswers,
+      [questionId]: answer,
+    };
+
+    const updatedProjects = db.projects.map(p => {
+      if (p.id !== projectId) return p;
+      return {
+        ...p,
+        appStoreAnswers: updatedAnswers,
+        updatedAt: new Date().toISOString(),
+      };
+    });
+
+    commit({
+      ...db,
+      projects: updatedProjects,
+    });
+  }, [db, commit]);
+
   return (
     <DataContext.Provider
       value={{
@@ -1155,6 +1347,8 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
         purgeDemoData,
         reloadDemoData,
         keepItemAsMine,
+        exportFullDatabase,
+        importDatabase,
         addIdea,
         updateIdea,
         deleteIdea,
@@ -1181,10 +1375,6 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
         updateChangelogEntry,
         deleteChangelogEntry,
         generateReleaseNotes,
-        addArchivedApp,
-        updateArchivedApp,
-        deleteArchivedApp,
-        reopenArchivedAppAsProject,
         toggleChecklist,
         resetChecklist,
         updatePrivacyPermission,
@@ -1198,6 +1388,14 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
         moveChecklistTemplateItem,
         resetChecklistTemplate,
         syncChecklistTemplateToAllProjects,
+        appStoreQuestions,
+        addAppStoreQuestion,
+        updateAppStoreQuestion,
+        bulkUpdateAppStoreQuestions,
+        deleteAppStoreQuestion,
+        reorderAppStoreQuestion,
+        resetAppStoreQuestions,
+        updateProjectAppStoreAnswer,
         markNotificationRead,
         clearNotifications,
       }}

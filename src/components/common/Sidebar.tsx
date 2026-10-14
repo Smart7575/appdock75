@@ -10,8 +10,6 @@ import {
   FolderGit2,
   Rocket,
   Tag,
-  Archive,
-  Wrench,
   Settings,
   ChevronRight,
   LogOut,
@@ -35,9 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
     { id: 'ideas', label: 'Ideas', icon: Lightbulb, count: db.ideas.length },
     { id: 'projects', label: 'Projects', icon: FolderGit2, count: db.projects.filter(p => p.status !== 'Released').length },
     { id: 'released', label: 'Released', icon: Rocket, count: releasedCount },
-    { id: 'releases', label: 'Releases', icon: Tag, count: db.releases.filter(r => r.status !== 'Released').length },
-    { id: 'archive', label: 'Archive', icon: Archive, count: db.archivedApps.length },
-    { id: 'tools', label: 'Tools', icon: Wrench, count: undefined },
+    { id: 'releases', label: 'Releases and Builds', icon: Tag, count: db.releases.filter(r => r.status !== 'Released').length },
     { id: 'settings', label: 'Settings', icon: Settings, count: undefined },
   ];
 
@@ -93,14 +89,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
 
       {/* Mobile Tab Bar (Bottom Nav) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-14 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 flex items-center justify-around px-2 z-40">
-        {navItems.slice(0, 5).map(item => {
+        {navItems.map(item => {
           const Icon = item.icon;
           const isActive = currentView === item.id;
           return (
             <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              className={`flex flex-col items-center justify-center w-14 h-full text-[10px] font-medium transition-colors cursor-pointer ${
+              className={`flex flex-col items-center justify-center flex-1 h-full text-[10px] font-medium transition-colors cursor-pointer ${
                 isActive ? 'text-blue-400' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -109,15 +105,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
             </button>
           );
         })}
-        <button
-          onClick={() => onNavigate('tools')}
-          className={`flex flex-col items-center justify-center w-14 h-full text-[10px] font-medium transition-colors cursor-pointer ${
-            currentView === 'tools' || currentView === 'settings' ? 'text-blue-400' : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <Wrench className="w-4 h-4 mb-0.5" />
-          <span>More</span>
-        </button>
       </nav>
     </>
   );
