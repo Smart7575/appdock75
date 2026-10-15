@@ -199,7 +199,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   // Save profile
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanPrefix = bundlePrefix.toLowerCase().trim().replace(/[^a-z0-9.-]/g, '') || 'indie';
+    const cleanPrefix = bundlePrefix.toLowerCase().trim().replace(/^com\./, '').replace(/^\.+|\.+$/g, '').replace(/[^a-z0-9.-]/g, '') || 'indie';
     setBundlePrefix(cleanPrefix);
     updateProfile({
       name,
@@ -393,6 +393,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       const val = e.target.value.toLowerCase().replace(/[^a-z0-9.-]/g, '');
                       setBundlePrefix(val);
                     }}
+                    onBlur={() => {
+                      const clean = bundlePrefix.toLowerCase().trim().replace(/^com\./, '').replace(/^\.+|\.+$/g, '').replace(/[^a-z0-9.-]/g, '') || 'indie';
+                      setBundlePrefix(clean);
+                      updateProfile({
+                        settings: {
+                          ...(user?.settings || { theme: 'dark', emailNotifications: true, compactView: false }),
+                          bundlePrefix: clean,
+                        },
+                      });
+                      setProfileSaved(true);
+                      setTimeout(() => setProfileSaved(false), 2000);
+                    }}
                     className="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-semibold focus:outline-none focus:border-blue-500"
                   />
                   <span className="px-2.5 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-slate-400 select-none">
@@ -402,7 +414,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <div className="mt-1.5 p-2 bg-slate-950/60 border border-slate-800 rounded-lg flex items-center justify-between text-[11px]">
                   <span className="text-slate-400">Example Bundle Identifier:</span>
                   <span className="font-mono text-blue-400 font-semibold">
-                    com.{bundlePrefix.trim() || 'indie'}.appdock75
+                    com.{bundlePrefix.toLowerCase().trim().replace(/^com\./, '').replace(/^\.+|\.+$/g, '') || 'indie'}.appdock75
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">

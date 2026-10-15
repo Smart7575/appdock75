@@ -113,7 +113,8 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   } = useData();
   const { user } = useAuth();
   const { formatDate } = useFormatDate();
-  const bundlePrefix = (user?.settings?.bundlePrefix || 'indie').trim().toLowerCase().replace(/[^a-z0-9.-]/g, '') || 'indie';
+  const rawPrefix = user?.settings?.bundlePrefix || 'indie';
+  const bundlePrefix = rawPrefix.trim().toLowerCase().replace(/^com\./, '').replace(/^\.+|\.+$/g, '').replace(/[^a-z0-9.-]/g, '') || 'indie';
 
   // Project Release creation modal
   const [showProjNewReleaseModal, setShowProjNewReleaseModal] = useState(false);
@@ -254,6 +255,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
       databaseName?: string;
       databaseUrl?: string;
       vercelUrl?: string;
+      githubUrl?: string;
       appStoreConnectUrl?: string;
       appStoreUrl?: string;
     }

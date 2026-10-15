@@ -157,6 +157,7 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
             emailNotifications: true,
             compactView: false,
             dateFormat: 'DD/MM/YYYY',
+            bundlePrefix: 'indie',
           },
         };
         await saveUserToFirestore(profile);
@@ -174,6 +175,7 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
           emailNotifications: profile.settings?.emailNotifications ?? true,
           compactView: profile.settings?.compactView ?? false,
           dateFormat: profile.settings?.dateFormat || 'DD/MM/YYYY',
+          bundlePrefix: profile.settings?.bundlePrefix || 'indie',
         },
       };
 

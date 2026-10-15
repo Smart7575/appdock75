@@ -112,6 +112,7 @@ interface DataContextType {
   appStoreQuestions: AppStoreQuestionItem[];
   addAppStoreQuestion: (question: Omit<AppStoreQuestionItem, 'id' | 'order'>) => AppStoreQuestionItem;
   updateAppStoreQuestion: (id: string, updates: Partial<AppStoreQuestionItem>) => void;
+  bulkUpdateAppStoreQuestions: (updates: { id: string; changes: Partial<AppStoreQuestionItem> }[]) => void;
   deleteAppStoreQuestion: (id: string) => void;
   reorderAppStoreQuestion: (id: string, direction: 'up' | 'down') => void;
   resetAppStoreQuestions: () => void;
@@ -512,16 +513,18 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
   // Convert Idea to Project (in max 3 clicks as specified by PRD §1)
   const convertIdeaToProject = useCallback((ideaId: string, overrides?: Partial<Project>): Project => {
     const idea = db.ideas.find(i => i.id === ideaId);
-    const cleanBundleSuffix = (idea?.title || 'app').toLowerCase().replace(/[^a-z0-9]/g, '');
     const newProjId = `proj-${Date.now()}`;
-    const bundlePrefix = (user?.settings?.bundlePrefix || 'indie').trim().toLowerCase().replace(/[^a-z0-9.-]/g, '') || 'indie';
+    const cleanBundleSuffix = (idea?.title || 'app').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const rawPrefix = user?.settings?.bundlePrefix || 'indie';
+    const bundlePrefix = rawPrefix.trim().toLowerCase().replace(/^com\./, '').replace(/^\.+|\.+$/g, '').replace(/[^a-z0-9.-]/g, '') || 'indie';
+    const defaultBundleId = `com.${bundlePrefix}.${cleanBundleSuffix || 'app'}`;
 
     const newProject: Project = {
       id: newProjId,
       userId: user?.id || 'anonymous',
       name: idea?.title || 'New iOS Project',
       description: idea?.description || 'Built from idea brainstorm workspace.',
-      bundleId: `com.${bundlePrefix}.${cleanBundleSuffix || 'app'}`,
+      bundleId: overrides?.bundleId || defaultBundleId,
       platforms: ['iPhone', 'iPad'],
       minIOS: 'iOS 17.0',
       stack: {
@@ -643,7 +646,7 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
 
     setActiveProjectId(newProjId);
     return newProject;
-  }, [db, user?.id, commit]);
+  }, [db, user?.id, user?.settings?.bundlePrefix, commit]);
 
   // Project CRUD
   const addProject = useCallback((projectData: Omit<Project, 'id' | 'userId' | 'createdAt' | 'updatedAt' | 'links' | 'assetSpecs' | 'localizedListings'>): Project => {

@@ -51,7 +51,8 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
   } = useData();
   const { user } = useAuth();
   const { formatDate } = useFormatDate();
-  const bundlePrefix = (user?.settings?.bundlePrefix || 'indie').trim().toLowerCase().replace(/[^a-z0-9.-]/g, '') || 'indie';
+  const rawPrefix = user?.settings?.bundlePrefix || 'indie';
+  const bundlePrefix = rawPrefix.trim().toLowerCase().replace(/^com\./, '').replace(/^\.+|\.+$/g, '').replace(/[^a-z0-9.-]/g, '') || 'indie';
 
   // Local state
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'matrix'>('grid');
@@ -65,6 +66,7 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState<Idea | null>(null);
+  const [convertBundleId, setConvertBundleId] = useState('');
   const [newCommentText, setNewCommentText] = useState('');
 
   // Edit / Create Form State
@@ -116,9 +118,17 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
     setQuickInput('');
   };
 
+  const handleOpenConvertModal = (idea: Idea) => {
+    const cleanSuffix = (idea.title || 'app').toLowerCase().replace(/[^a-z0-9]/g, '');
+    setConvertBundleId(`com.${bundlePrefix}.${cleanSuffix || 'app'}`);
+    setShowConvertModal(idea);
+  };
+
   // Convert to project in <= 3 clicks!
   const handleConvert = (idea: Idea) => {
-    const project = convertIdeaToProject(idea.id);
+    const cleanSuffix = (idea.title || 'app').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const finalBundle = convertBundleId.trim() || `com.${bundlePrefix}.${cleanSuffix || 'app'}`;
+    convertIdeaToProject(idea.id, { bundleId: finalBundle });
     setShowConvertModal(null);
     onNavigate('projects');
   };
@@ -423,7 +433,7 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
                   <div className="flex items-center gap-1">
                     {idea.status !== 'Converted' ? (
                       <button
-                        onClick={() => setShowConvertModal(idea)}
+                        onClick={() => handleOpenConvertModal(idea)}
                         className="px-2 py-1 text-[11px] font-medium bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-300 border border-emerald-500/30 rounded-md transition-colors cursor-pointer flex items-center gap-1"
                         title="Convert to iOS Project (in 3 clicks)"
                       >
@@ -484,7 +494,7 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
                       <div className="flex items-center justify-end gap-2">
                         {idea.status !== 'Converted' && (
                           <button
-                            onClick={() => setShowConvertModal(idea)}
+                            onClick={() => handleOpenConvertModal(idea)}
                             className="px-2 py-0.5 text-[11px] bg-emerald-600/15 text-emerald-300 rounded hover:bg-emerald-600/30 cursor-pointer"
                           >
                             Convert
@@ -682,7 +692,7 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
                   <button
                     onClick={() => {
                       setSelectedIdea(null);
-                      setShowConvertModal(selectedIdea);
+                      handleOpenConvertModal(selectedIdea);
                     }}
                     className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold cursor-pointer flex items-center gap-1.5"
                   >
@@ -707,18 +717,29 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
               This will automatically initialize a new project workspace for <strong>"{showConvertModal.title}"</strong>, generate starting Kanban tasks, configure SwiftUI & SwiftData defaults, and link this brainstorm idea.
             </p>
 
-            <div className="p-3 bg-slate-800/50 rounded-xl space-y-2 mb-4 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Generated Bundle ID:</span>
-                <span className="font-mono text-slate-200">com.{bundlePrefix}.{showConvertModal.title.toLowerCase().replace(/[^a-z0-9]/g, '')}</span>
+            <div className="p-3.5 bg-slate-800/60 border border-slate-700/60 rounded-xl space-y-3 mb-4 text-xs">
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-slate-300 font-medium">Bundle Identifier:</span>
+                  <span className="text-[10px] text-blue-400 font-mono">
+                    Prefix from Settings: com.{bundlePrefix}.*
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  value={convertBundleId}
+                  onChange={e => setConvertBundleId(e.target.value)}
+                  className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 font-mono text-xs focus:outline-none focus:border-blue-500"
+                  placeholder={`com.${bundlePrefix}.app`}
+                />
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between pt-2 border-t border-slate-700/40">
                 <span className="text-slate-400">Target Framework:</span>
-                <span className="text-slate-200">SwiftUI + SwiftData</span>
+                <span className="text-slate-200 font-medium">SwiftUI + SwiftData</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">Initial Tasks:</span>
-                <span className="text-slate-200">3 starter Kanban cards</span>
+                <span className="text-slate-200 font-medium">3 starter Kanban cards</span>
               </div>
             </div>
 

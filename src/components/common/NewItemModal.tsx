@@ -35,7 +35,8 @@ export const NewItemModal: React.FC<NewItemModalProps> = ({
 }) => {
   const { db, activeProjectId, addIdea, addProject, addTask, addRelease } = useData();
   const { user } = useAuth();
-  const bundlePrefix = (user?.settings?.bundlePrefix || 'indie').trim().toLowerCase().replace(/[^a-z0-9.-]/g, '') || 'indie';
+  const rawPrefix = user?.settings?.bundlePrefix || 'indie';
+  const bundlePrefix = rawPrefix.trim().toLowerCase().replace(/^com\./, '').replace(/^\.+|\.+$/g, '').replace(/[^a-z0-9.-]/g, '') || 'indie';
 
   // Idea state
   const [ideaTitle, setIdeaTitle] = useState('');
