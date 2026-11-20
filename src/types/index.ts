@@ -450,3 +450,22 @@ export interface AppStoreQuestionItem {
   multiline?: boolean;
   placeholder?: string;
 }
+
+export interface TimeLogEntry {
+  id: string;
+  projectId: string;
+  startedAt: string; // ISO timestamp
+  endedAt: string;   // ISO timestamp
+  durationSeconds: number;
+  note?: string;
+  source: 'timer' | 'manual';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ActiveTimerState {
+  projectId: string;
+  startedAt: string; // ISO timestamp
+  note?: string;
+}
+

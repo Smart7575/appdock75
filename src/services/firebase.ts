@@ -6,6 +6,12 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import {
   getAuth,
+  initializeAuth,
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
+  inMemoryPersistence,
+  browserPopupRedirectResolver,
   GoogleAuthProvider,
   OAuthProvider,
   signInWithPopup,
@@ -43,7 +49,21 @@ export const firebaseConfig = {
 };
 
 export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+export const auth = (() => {
+  try {
+    return initializeAuth(app, {
+      persistence: [
+        indexedDBLocalPersistence,
+        browserLocalPersistence,
+        browserSessionPersistence,
+        inMemoryPersistence,
+      ],
+      popupRedirectResolver: browserPopupRedirectResolver,
+    });
+  } catch {
+    return getAuth(app);
+  }
+})();
 export const db = getFirestore(app);
 
 export const googleProvider = new GoogleAuthProvider();
@@ -170,6 +190,22 @@ export interface FirestoreUserRecord {
  * Persist user account directly in Firestore /users/{userId}
  * Conforms to security rule: allow read, write: if request.auth != null && request.auth.uid == userId
  */
+function stripUndefinedDeep<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map(item => stripUndefinedDeep(item)) as unknown as T;
+  }
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (v !== undefined) {
+        out[k] = stripUndefinedDeep(v);
+      }
+    }
+    return out as T;
+  }
+  return value;
+}
+
 export async function saveUserToFirestore(userRecord: FirestoreUserRecord): Promise<boolean> {
   if (!auth.currentUser) {
     return false;
@@ -178,11 +214,12 @@ export async function saveUserToFirestore(userRecord: FirestoreUserRecord): Prom
   const path = `users/${targetId}`;
   try {
     const docRef = doc(db, 'users', targetId);
-    await setDoc(docRef, {
+    const cleaned = stripUndefinedDeep({
       ...userRecord,
       id: targetId,
       updatedAt: new Date().toISOString(),
-    }, { merge: true });
+    });
+    await setDoc(docRef, cleaned, { merge: true });
     return true;
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
@@ -202,7 +239,25 @@ export async function getUserFromFirestore(userId: string): Promise<FirestoreUse
   try {
     const snap = await getDoc(doc(db, 'users', targetId));
     if (snap.exists()) {
-      return snap.data() as FirestoreUserRecord;
+      const raw = snap.data() as Partial<FirestoreUserRecord>;
+      return {
+        id: raw.id || targetId,
+        name: raw.name || auth.currentUser.displayName || auth.currentUser.email?.split('@')[0] || 'Developer',
+        email: raw.email || auth.currentUser.email || `${targetId}@appdock75.local`,
+        avatar: raw.avatar,
+        providers: Array.isArray(raw.providers) ? raw.providers : [],
+        passwordHash: raw.passwordHash,
+        appleSubToken: raw.appleSubToken,
+        createdAt: raw.createdAt || auth.currentUser.metadata.creationTime || new Date().toISOString(),
+        updatedAt: raw.updatedAt,
+        settings: {
+          theme: raw.settings?.theme || 'dark',
+          emailNotifications: raw.settings?.emailNotifications ?? true,
+          compactView: raw.settings?.compactView ?? false,
+          dateFormat: raw.settings?.dateFormat || 'DD/MM/YYYY',
+          bundlePrefix: raw.settings?.bundlePrefix || 'indie',
+        },
+      };
     }
     return null;
   } catch (error) {
@@ -250,6 +305,8 @@ export async function saveWorkspaceToFirestore(userId: string, data: UserDatabas
       privacyPermissions: data.privacyPermissions || [],
       certificates: data.certificates || [],
       notifications: data.notifications || [],
+      timeLogs: data.timeLogs || [],
+      activeTimer: data.activeTimer || null,
       demoPurged: !!data.demoPurged,
     });
 
@@ -299,6 +356,8 @@ export async function loadWorkspaceFromFirestore(userId: string): Promise<UserDa
           privacyPermissions: data.privacyPermissions || [],
           certificates: data.certificates || [],
           notifications: data.notifications || [],
+          timeLogs: Array.isArray(data.timeLogs) ? data.timeLogs : [],
+          activeTimer: data.activeTimer || null,
           demoPurged: !!data.demoPurged,
         };
       }
@@ -353,6 +412,8 @@ export function subscribeToWorkspace(
             privacyPermissions: data.privacyPermissions || [],
             certificates: data.certificates || [],
             notifications: data.notifications || [],
+            timeLogs: Array.isArray(data.timeLogs) ? data.timeLogs : [],
+            activeTimer: data.activeTimer || null,
             demoPurged: !!data.demoPurged,
           });
         }

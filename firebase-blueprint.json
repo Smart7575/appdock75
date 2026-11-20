@@ -24,7 +24,9 @@
         "checklistTemplate": { "type": "array", "description": "Global App Store checklist template items" },
         "privacyPermissions": { "type": "array", "description": "Privacy and permission strings" },
         "certificates": { "type": "array", "description": "Certificate expiry reminders" },
-        "notifications": { "type": "array", "description": "Developer notification items" }
+        "notifications": { "type": "array", "description": "Developer notification items" },
+        "timeLogs": { "type": "array", "description": "Production time tracking history entries per app" },
+        "activeTimer": { "type": "object", "description": "Currently running production timer state if active" }
       },
       "required": ["id", "email", "name"]
     }

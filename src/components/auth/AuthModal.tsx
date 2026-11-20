@@ -108,7 +108,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (e?: React.MouseEvent<HTMLButtonElement>) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     setIsSubmitting(true);
     setError(null);
     try {
@@ -125,7 +127,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
-  const handleAppleSignIn = async () => {
+  const handleAppleSignIn = async (e?: React.MouseEvent<HTMLButtonElement>) => {
+    e?.preventDefault();
+    e?.stopPropagation();
     setIsSubmitting(true);
     setError(null);
     try {
@@ -258,9 +262,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Error / Success Feedback */}
         {error && (
-          <div className="p-3 mb-4 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-            <span>{error}</span>
+          <div className="p-3 mb-4 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs space-y-2">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-400 mt-0.5" />
+              <span>{error}</span>
+            </div>
+            {error.toLowerCase().includes('authorized domain') && typeof window !== 'undefined' && (
+              <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-rose-500/20 text-[11px]">
+                <code className="px-1.5 py-0.5 rounded bg-slate-950/80 text-rose-200 truncate">
+                  {window.location.hostname}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(window.location.hostname);
+                    setSuccessMessage(`Copied "${window.location.hostname}" to clipboard.`);
+                  }}
+                  className="px-2 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 font-medium shrink-0 cursor-pointer"
+                >
+                  Copy domain
+                </button>
+              </div>
+            )}
           </div>
         )}
 

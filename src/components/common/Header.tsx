@@ -3,7 +3,7 @@
  * Complies with Top Bar Contract: Zone 1 (Wordmark/Breadcrumbs), Zone 2 (Search/Filters), Zone 3 (Actions & Profile)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   Plus,
@@ -21,10 +21,13 @@ import {
   ChevronDown,
   Sun,
   Moon,
+  Clock,
+  Square,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { useTheme } from '../../context/ThemeContext';
+import { formatElapsedClock } from '../../utils/timeFormat';
 
 interface HeaderProps {
   currentView: string;
@@ -40,11 +43,27 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenNewModal,
 }) => {
   const { user, signOut } = useAuth();
-  const { db, markNotificationRead, clearNotifications } = useData();
+  const { db, markNotificationRead, clearNotifications, stopTimer } = useData();
   const { theme, toggleTheme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNewMenu, setShowNewMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  const activeTimer = db.activeTimer || null;
+  useEffect(() => {
+    if (!activeTimer) return;
+    setNowMs(Date.now());
+    const id = window.setInterval(() => setNowMs(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [activeTimer]);
+
+  const activeTimerProject = activeTimer
+    ? db.projects.find(p => p.id === activeTimer.projectId)
+    : undefined;
+  const elapsedSeconds = activeTimer
+    ? Math.max(0, Math.floor((nowMs - new Date(activeTimer.startedAt).getTime()) / 1000))
+    : 0;
 
   const unreadNotifs = db.notifications.filter(n => !n.read);
 
@@ -54,6 +73,7 @@ export const Header: React.FC<HeaderProps> = ({
     projects: 'Project Workspace',
     released: 'Released Projects',
     releases: 'Releases and Builds',
+    time: 'Production Time',
     settings: 'Settings & Data',
   };
 
@@ -96,6 +116,45 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Search className="w-4 h-4" />
           </button>
+
+          {/* Live Production Timer Control */}
+          {activeTimer ? (
+            <div className="flex items-center bg-emerald-500/10 border border-emerald-500/30 rounded-lg overflow-hidden shrink-0">
+              <button
+                type="button"
+                onClick={() => onNavigate('time')}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-emerald-300 hover:bg-emerald-500/15 transition-colors cursor-pointer whitespace-nowrap"
+                title={`Timer running for ${activeTimerProject?.name || 'App'} — Open Time Tracker`}
+              >
+                <Clock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span className="hidden lg:inline max-w-24 truncate font-medium">
+                  {activeTimerProject?.name || 'App'}
+                </span>
+                <span className="font-mono font-semibold tabular-nums">
+                  {formatElapsedClock(elapsedSeconds)}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => stopTimer()}
+                className="px-2 py-1.5 bg-rose-600/80 hover:bg-rose-500 text-white text-[11px] font-semibold flex items-center gap-1 border-l border-emerald-500/20 transition-colors cursor-pointer whitespace-nowrap"
+                title="End & Save Active Timer"
+              >
+                <Square className="w-2.5 h-2.5 fill-current" />
+                <span>End</span>
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onNavigate('time')}
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0"
+              title="Open Production Time Tracker"
+            >
+              <Clock className="w-3.5 h-3.5 text-blue-400" />
+              <span>Timer</span>
+            </button>
+          )}
 
           {/* Quick Create Dropdown */}
           <div className="relative">

@@ -19,6 +19,7 @@ import {
   Upload,
   Database,
   ArrowRight,
+  Clock,
 } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 
@@ -176,6 +177,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       category: 'Navigation',
       icon: Tag,
       action: () => { onClose(); onNavigate('releases'); },
+    });
+    items.push({
+      id: 'nav-time',
+      title: 'Go to Production Time Tracker',
+      category: 'Navigation',
+      icon: Clock,
+      action: () => { onClose(); onNavigate('time'); },
     });
     items.push({
       id: 'nav-settings-checklist',

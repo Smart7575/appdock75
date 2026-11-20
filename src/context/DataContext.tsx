@@ -15,6 +15,7 @@ import {
   CertificateReminder,
   NotificationItem,
   AppStoreQuestionItem,
+  TimeLogEntry,
 } from '../types';
 import {
   UserDatabase,
@@ -121,6 +122,26 @@ interface DataContextType {
   // Notifications
   markNotificationRead: (id: string) => void;
   clearNotifications: () => void;
+
+  // Production Time Tracking
+  startTimer: (projectId: string, note?: string) => void;
+  stopTimer: (noteOverride?: string) => TimeLogEntry | null;
+  updateActiveTimerNote: (note: string) => void;
+  discardActiveTimer: () => void;
+  addTimeLog: (entry: {
+    projectId: string;
+    startedAt: string;
+    endedAt: string;
+    durationSeconds?: number;
+    note?: string;
+    source?: 'timer' | 'manual';
+  }) => TimeLogEntry;
+  updateTimeLog: (
+    id: string,
+    updates: Partial<Pick<TimeLogEntry, 'projectId' | 'startedAt' | 'endedAt' | 'durationSeconds' | 'note'>>
+  ) => void;
+  deleteTimeLog: (id: string) => void;
+  clearTimeLogHistory: (projectId?: string) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -385,6 +406,8 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
           privacyPermissions: Array.isArray(src.privacyPermissions) && src.privacyPermissions.length > 0 ? src.privacyPermissions : db.privacyPermissions,
           certificates: Array.isArray(src.certificates) ? src.certificates : db.certificates,
           notifications: Array.isArray(src.notifications) ? src.notifications : [],
+          timeLogs: Array.isArray(src.timeLogs) ? src.timeLogs : [],
+          activeTimer: src.activeTimer ?? null,
           demoPurged: src.demoPurged ?? true,
         };
       } else {
@@ -419,6 +442,12 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
           ...(Array.isArray(src.changelogEntries) ? src.changelogEntries : []).filter((c: ChangelogEntry) => !existingChangelogIds.has(c.id)),
         ];
 
+        const existingTimeLogIds = new Set((db.timeLogs || []).map(tl => tl.id));
+        const mergedTimeLogs = [
+          ...(db.timeLogs || []),
+          ...(Array.isArray(src.timeLogs) ? src.timeLogs : []).filter((tl: TimeLogEntry) => !existingTimeLogIds.has(tl.id)),
+        ];
+
         newDb = {
           ...db,
           projects: mergedProjects,
@@ -426,6 +455,7 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
           tasks: mergedTasks,
           releases: mergedReleases,
           changelogEntries: mergedChangelogs,
+          timeLogs: mergedTimeLogs,
           archivedApps: [],
           appStoreInfoTemplate: Array.isArray(src.appStoreInfoTemplate) && src.appStoreInfoTemplate.length > 0 ? src.appStoreInfoTemplate : db.appStoreInfoTemplate,
           statuses: Array.isArray(src.statuses) && src.statuses.length > 0 ? src.statuses : db.statuses,
@@ -719,6 +749,8 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
       tasks: db.tasks.filter(t => t.projectId !== id),
       releases: db.releases.filter(r => r.projectId !== id),
       checklists: db.checklists.filter(c => c.projectId !== id),
+      timeLogs: (db.timeLogs || []).filter(tl => tl.projectId !== id),
+      activeTimer: db.activeTimer?.projectId === id ? null : (db.activeTimer ?? null),
       demoPurged: isPurged ? true : db.demoPurged,
     });
     if (activeProjectId === id) {
@@ -1340,6 +1372,173 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
     });
   }, [db, commit]);
 
+  // Production Time Tracking
+  const startTimer = useCallback((projectId: string, note?: string) => {
+    const nowIso = new Date().toISOString();
+    let nextLogs = db.timeLogs || [];
+
+    // Auto-save currently active timer session if one is running so no work is lost
+    if (db.activeTimer) {
+      const prevStartMs = new Date(db.activeTimer.startedAt).getTime();
+      const nowMs = new Date(nowIso).getTime();
+      const prevDuration = Math.max(1, Math.round((nowMs - prevStartMs) / 1000));
+      const savedPrev: TimeLogEntry = {
+        id: `tlog-${Date.now()}-prev`,
+        projectId: db.activeTimer.projectId,
+        startedAt: db.activeTimer.startedAt,
+        endedAt: nowIso,
+        durationSeconds: prevDuration,
+        note: db.activeTimer.note?.trim() || undefined,
+        source: 'timer',
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      };
+      nextLogs = [savedPrev, ...nextLogs];
+    }
+
+    commit({
+      ...db,
+      timeLogs: nextLogs,
+      activeTimer: {
+        projectId,
+        startedAt: nowIso,
+        note: note?.trim() || undefined,
+      },
+    });
+  }, [db, commit]);
+
+  const stopTimer = useCallback((noteOverride?: string): TimeLogEntry | null => {
+    if (!db.activeTimer) return null;
+    const endedAt = new Date().toISOString();
+    const startMs = new Date(db.activeTimer.startedAt).getTime();
+    const endMs = new Date(endedAt).getTime();
+    const durationSeconds = Math.max(1, Math.round((endMs - startMs) / 1000));
+    const resolvedNote = noteOverride !== undefined
+      ? (noteOverride.trim() || undefined)
+      : (db.activeTimer.note?.trim() || undefined);
+
+    const newEntry: TimeLogEntry = {
+      id: `tlog-${Date.now()}`,
+      projectId: db.activeTimer.projectId,
+      startedAt: db.activeTimer.startedAt,
+      endedAt,
+      durationSeconds,
+      note: resolvedNote,
+      source: 'timer',
+      createdAt: endedAt,
+      updatedAt: endedAt,
+    };
+
+    commit({
+      ...db,
+      timeLogs: [newEntry, ...(db.timeLogs || [])],
+      activeTimer: null,
+    });
+    return newEntry;
+  }, [db, commit]);
+
+  const updateActiveTimerNote = useCallback((note: string) => {
+    if (!db.activeTimer) return;
+    commit({
+      ...db,
+      activeTimer: {
+        ...db.activeTimer,
+        note: note,
+      },
+    });
+  }, [db, commit]);
+
+  const discardActiveTimer = useCallback(() => {
+    if (!db.activeTimer) return;
+    commit({
+      ...db,
+      activeTimer: null,
+    });
+  }, [db, commit]);
+
+  const addTimeLog = useCallback((entry: {
+    projectId: string;
+    startedAt: string;
+    endedAt: string;
+    durationSeconds?: number;
+    note?: string;
+    source?: 'timer' | 'manual';
+  }): TimeLogEntry => {
+    const nowIso = new Date().toISOString();
+    const startMs = new Date(entry.startedAt).getTime();
+    const endMs = new Date(entry.endedAt).getTime();
+    const computedDuration = Number.isFinite(startMs) && Number.isFinite(endMs) && endMs >= startMs
+      ? Math.max(1, Math.round((endMs - startMs) / 1000))
+      : 60;
+    const durationSeconds = entry.durationSeconds !== undefined && entry.durationSeconds > 0
+      ? Math.round(entry.durationSeconds)
+      : computedDuration;
+
+    const newEntry: TimeLogEntry = {
+      id: `tlog-${Date.now()}`,
+      projectId: entry.projectId,
+      startedAt: entry.startedAt,
+      endedAt: entry.endedAt,
+      durationSeconds,
+      note: entry.note?.trim() || undefined,
+      source: entry.source || 'manual',
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
+
+    commit({
+      ...db,
+      timeLogs: [newEntry, ...(db.timeLogs || [])],
+    });
+    return newEntry;
+  }, [db, commit]);
+
+  const updateTimeLog = useCallback((
+    id: string,
+    updates: Partial<Pick<TimeLogEntry, 'projectId' | 'startedAt' | 'endedAt' | 'durationSeconds' | 'note'>>
+  ) => {
+    const nextLogs = (db.timeLogs || []).map(tl => {
+      if (tl.id !== id) return tl;
+      const mergedStarted = updates.startedAt ?? tl.startedAt;
+      const mergedEnded = updates.endedAt ?? tl.endedAt;
+      let nextDuration = updates.durationSeconds ?? tl.durationSeconds;
+      if (updates.durationSeconds === undefined && (updates.startedAt || updates.endedAt)) {
+        const sMs = new Date(mergedStarted).getTime();
+        const eMs = new Date(mergedEnded).getTime();
+        if (Number.isFinite(sMs) && Number.isFinite(eMs) && eMs >= sMs) {
+          nextDuration = Math.max(1, Math.round((eMs - sMs) / 1000));
+        }
+      }
+      return {
+        ...tl,
+        ...updates,
+        startedAt: mergedStarted,
+        endedAt: mergedEnded,
+        durationSeconds: Math.max(1, Math.round(nextDuration)),
+        note: updates.note !== undefined ? (updates.note.trim() || undefined) : tl.note,
+        updatedAt: new Date().toISOString(),
+      };
+    });
+    commit({ ...db, timeLogs: nextLogs });
+  }, [db, commit]);
+
+  const deleteTimeLog = useCallback((id: string) => {
+    commit({
+      ...db,
+      timeLogs: (db.timeLogs || []).filter(tl => tl.id !== id),
+    });
+  }, [db, commit]);
+
+  const clearTimeLogHistory = useCallback((projectId?: string) => {
+    const nextLogs = projectId
+      ? (db.timeLogs || []).filter(tl => tl.projectId !== projectId)
+      : [];
+    commit({
+      ...db,
+      timeLogs: nextLogs,
+    });
+  }, [db, commit]);
+
   return (
     <DataContext.Provider
       value={{
@@ -1401,6 +1600,14 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
         updateProjectAppStoreAnswer,
         markNotificationRead,
         clearNotifications,
+        startTimer,
+        stopTimer,
+        updateActiveTimerNote,
+        discardActiveTimer,
+        addTimeLog,
+        updateTimeLog,
+        deleteTimeLog,
+        clearTimeLogHistory,
       }}
     >
       {children}

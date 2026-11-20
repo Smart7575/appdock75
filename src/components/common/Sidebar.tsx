@@ -13,6 +13,7 @@ import {
   Settings,
   ChevronRight,
   LogOut,
+  Clock,
 } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
@@ -34,6 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
     { id: 'projects', label: 'Projects', icon: FolderGit2, count: db.projects.filter(p => p.status !== 'Released').length },
     { id: 'released', label: 'Released', icon: Rocket, count: releasedCount },
     { id: 'releases', label: 'Releases and Builds', icon: Tag, count: db.releases.filter(r => r.status !== 'Released').length },
+    { id: 'time', label: 'Time Tracker', icon: Clock, count: (db.timeLogs || []).length },
     { id: 'settings', label: 'Settings', icon: Settings, count: undefined },
   ];
 

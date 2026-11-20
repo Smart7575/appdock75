@@ -20,6 +20,7 @@ import { IdeasView } from './components/ideas/IdeasView';
 import { ProjectsView } from './components/projects/ProjectsView';
 import { ReleasedProjectsView } from './components/released/ReleasedProjectsView';
 import { ReleasesView } from './components/releases/ReleasesView';
+import { TimeTrackerView } from './components/timetracker/TimeTrackerView';
 import { SettingsView } from './components/settings/SettingsView';
 
 const WorkspaceShell: React.FC = () => {
@@ -158,6 +159,13 @@ const WorkspaceShell: React.FC = () => {
             <ReleasesView />
           )}
 
+          {currentView === 'time' && (
+            <TimeTrackerView
+              onNavigate={handleNavigate}
+              onOpenNewModal={type => setNewItemType(type)}
+            />
+          )}
+
           {currentView === 'settings' && (
             <SettingsView
               initialTab={settingsTab}
@@ -185,12 +193,58 @@ const WorkspaceShell: React.FC = () => {
   );
 };
 
+interface ErrorBoundaryState {
+  hasError: boolean;
+  errorMessage: string;
+}
+
+class WorkspaceErrorBoundary extends React.Component<{ children: React.ReactNode }, ErrorBoundaryState> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, errorMessage: '' };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return {
+      hasError: true,
+      errorMessage: error?.message || 'An unexpected application error occurred.',
+    };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('[WorkspaceErrorBoundary]', error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
+          <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 text-center shadow-2xl">
+            <h2 className="text-base font-bold text-white">Something went wrong</h2>
+            <p className="text-xs text-slate-400 break-words">{this.state.errorMessage}</p>
+            <button
+              type="button"
+              onClick={() => this.setState({ hasError: false, errorMessage: '' })}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   return (
     <ThemeProvider>
       <AuthProviderComponent>
         <DataProviderComponent>
-          <WorkspaceShell />
+          <WorkspaceErrorBoundary>
+            <WorkspaceShell />
+          </WorkspaceErrorBoundary>
         </DataProviderComponent>
       </AuthProviderComponent>
     </ThemeProvider>

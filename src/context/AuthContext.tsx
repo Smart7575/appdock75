@@ -3,12 +3,11 @@
  * Integrated with Firebase Auth (appdock75) & local failover resilience.
  */
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { User, AuthProvider } from '../types';
 import {
   getRegisteredUsers,
   saveRegisteredUsers,
-  getCurrentSessionUser,
   setCurrentSessionUser,
   permanentlyDeleteAccount,
   generateDemoData,
@@ -20,6 +19,7 @@ import {
   deleteWorkspaceFromFirestore,
   saveUserToFirestore,
   getUserFromFirestore,
+  loadWorkspaceFromFirestore,
   saveWorkspaceToFirestore,
   ensureFirebaseAuth,
   FirestoreUserRecord,
@@ -32,6 +32,7 @@ import {
   deleteUser as firebaseDeleteUser,
   sendPasswordResetEmail,
   onAuthStateChanged,
+  User as FirebaseUser,
 } from 'firebase/auth';
 
 interface UserCredentials extends User {
@@ -80,64 +81,165 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const inFlightHydrationRef = useRef<Map<string, Promise<User>>>(new Map());
 
-  useEffect(() => {
-    // Observe Firebase Auth state and sync with Cloud Firestore (/users/{uid})
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      if (fbUser) {
-        // Fetch existing user profile & settings from Firestore
-        let profile = await getUserFromFirestore(fbUser.uid);
-        if (!profile) {
-          profile = {
-            id: fbUser.uid,
-            name: fbUser.displayName || 'Alex Vance',
-            email: fbUser.email || 'alex.swift@appdock75.local',
-            avatar: undefined,
-            providers: ['email'],
-            createdAt: fbUser.metadata.creationTime || new Date().toISOString(),
-            settings: {
-              theme: 'dark',
-              emailNotifications: true,
-              compactView: false,
-              dateFormat: 'DD/MM/YYYY',
-              bundlePrefix: 'indie',
-            },
-          };
-          await saveUserToFirestore(profile);
-        }
+  const extractProviders = (fbUser: FirebaseUser, preferredProvider?: AuthProvider): AuthProvider[] => {
+    const detected = (fbUser.providerData || [])
+      .map(p => (p.providerId.includes('google') ? 'google' : p.providerId.includes('apple') ? 'apple' : 'email'))
+      .filter((v, i, a) => a.indexOf(v) === i) as AuthProvider[];
+    if (preferredProvider && !detected.includes(preferredProvider)) {
+      detected.push(preferredProvider);
+    }
+    return detected.length > 0 ? detected : [preferredProvider || 'email'];
+  };
 
-        const mappedUser: User = {
+  const buildBaselineUser = (fbUser: FirebaseUser, preferredProvider?: AuthProvider): User => ({
+    id: fbUser.uid,
+    name: fbUser.displayName || fbUser.email?.split('@')[0] || (preferredProvider === 'google' ? 'Google Developer' : preferredProvider === 'apple' ? 'Apple Developer' : 'Alex Vance'),
+    email: fbUser.email || `${fbUser.uid}@appdock75.local`,
+    providers: extractProviders(fbUser, preferredProvider),
+    createdAt: fbUser.metadata.creationTime || new Date().toISOString(),
+    settings: {
+      theme: 'dark',
+      emailNotifications: true,
+      compactView: false,
+      dateFormat: 'DD/MM/YYYY',
+      bundlePrefix: 'indie',
+    },
+  });
+
+  const syncFirebaseUserProfile = async (fbUser: FirebaseUser, preferredProvider?: AuthProvider): Promise<User> => {
+    const cacheKey = `${fbUser.uid}:${preferredProvider || 'auto'}`;
+    const existingPromise = inFlightHydrationRef.current.get(cacheKey) || inFlightHydrationRef.current.get(`${fbUser.uid}:auto`);
+    if (existingPromise) {
+      return existingPromise;
+    }
+
+    const promise = (async () => {
+      const safeProviders = extractProviders(fbUser, preferredProvider);
+      let profile = await getUserFromFirestore(fbUser.uid);
+
+      if (!profile) {
+        profile = {
           id: fbUser.uid,
-          name: profile?.name || fbUser.displayName || fbUser.email?.split('@')[0] || 'Alex Vance',
-          email: fbUser.email || profile?.email || `${fbUser.uid}@appdock75.local`,
-          avatar: profile?.avatar,
-          providers: (fbUser.providerData.map(p => p.providerId.includes('google') ? 'google' : p.providerId.includes('apple') ? 'apple' : 'email') as AuthProvider[]),
-          createdAt: profile?.createdAt || fbUser.metadata.creationTime || new Date().toISOString(),
+          name: fbUser.displayName || fbUser.email?.split('@')[0] || (preferredProvider === 'google' ? 'Google Developer' : preferredProvider === 'apple' ? 'Apple Developer' : 'Alex Vance'),
+          email: fbUser.email || `${fbUser.uid}@appdock75.local`,
+          providers: safeProviders,
+          createdAt: fbUser.metadata.creationTime || new Date().toISOString(),
           settings: {
-            theme: profile?.settings?.theme || 'dark',
-            emailNotifications: profile?.settings?.emailNotifications ?? true,
-            compactView: profile?.settings?.compactView ?? false,
-            dateFormat: profile?.settings?.dateFormat || 'DD/MM/YYYY',
-            bundlePrefix: profile?.settings?.bundlePrefix || 'indie',
+            theme: 'dark',
+            emailNotifications: true,
+            compactView: false,
+            dateFormat: 'DD/MM/YYYY',
+            bundlePrefix: 'indie',
           },
         };
-        if (mappedUser.providers.length === 0) mappedUser.providers = ['email'];
-        setUser(mappedUser);
-        setCurrentSessionUser(mappedUser);
+        await saveUserToFirestore(profile);
+        const existingWorkspace = await loadWorkspaceFromFirestore(fbUser.uid);
+        if (!existingWorkspace) {
+          const initialWorkspace = generateDemoData(fbUser.uid);
+          await saveWorkspaceToFirestore(fbUser.uid, initialWorkspace);
+        }
+      }
+
+      const storedProviders = Array.isArray(profile.providers) ? profile.providers : [];
+      const mergedProviders = Array.from(new Set([...storedProviders, ...safeProviders])) as AuthProvider[];
+
+      const hydratedUser: User = {
+        id: fbUser.uid,
+        name: profile.name || fbUser.displayName || fbUser.email?.split('@')[0] || 'Developer',
+        email: fbUser.email || profile.email || `${fbUser.uid}@appdock75.local`,
+        avatar: profile.avatar,
+        providers: mergedProviders,
+        createdAt: profile.createdAt || fbUser.metadata.creationTime || new Date().toISOString(),
+        settings: {
+          theme: profile.settings?.theme || 'dark',
+          emailNotifications: profile.settings?.emailNotifications ?? true,
+          compactView: profile.settings?.compactView ?? false,
+          dateFormat: profile.settings?.dateFormat || 'DD/MM/YYYY',
+          bundlePrefix: profile.settings?.bundlePrefix || 'indie',
+        },
+      };
+
+      return hydratedUser;
+    })();
+
+    inFlightHydrationRef.current.set(cacheKey, promise);
+    try {
+      return await promise;
+    } finally {
+      inFlightHydrationRef.current.delete(cacheKey);
+    }
+  };
+
+  const formatPopupAuthError = (err: any, providerLabel: 'Google' | 'Apple'): string => {
+    const code = err?.code as string | undefined;
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+    console.error(`[${providerLabel} Sign-In Error]`, code || err, err?.message);
+
+    if (code === 'auth/unauthorized-domain') {
+      return `Unauthorized domain (${hostname}). Add "${hostname}" in Firebase Console → Authentication → Settings → Authorized domains.`;
+    }
+    if (code === 'auth/popup-closed-by-user') {
+      return `${providerLabel} sign-in window was closed before completing. If it closed immediately, verify that "${hostname}" is added to Firebase Authorized domains and popups are allowed.`;
+    }
+    if (code === 'auth/popup-blocked') {
+      return `Browser blocked the ${providerLabel} sign-in popup. Please allow popups for this site and try again.`;
+    }
+    if (code === 'auth/cancelled-popup-request') {
+      return `A ${providerLabel} sign-in popup is already open or was cancelled. Please try again.`;
+    }
+    if (code === 'auth/web-storage-unsupported') {
+      return `Browser storage is blocked in this embedded frame. Enable third-party cookies/storage or open this app in a dedicated browser tab to sign in with ${providerLabel}.`;
+    }
+    if (code === 'auth/operation-not-allowed') {
+      return `${providerLabel} Sign-In is disabled in Firebase Console → Authentication → Sign-in method.`;
+    }
+    if (code === 'auth/account-exists-with-different-credential') {
+      return `An account already exists with this email using a different sign-in method. Please sign in with that method.`;
+    }
+    if (code === 'auth/network-request-failed') {
+      return `Network error during ${providerLabel} sign-in. Please check your connection and try again.`;
+    }
+    return err?.message || `${providerLabel} sign-in failed (${code || 'unknown error'}). Please verify popup settings or use email sign-in.`;
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+    // Observe Firebase Auth state and sync with Cloud Firestore (/users/{uid})
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      if (!isMounted) return;
+      if (fbUser) {
+        // Transition immediately so network latency in Firestore never blocks login
+        const baselineUser = buildBaselineUser(fbUser);
+        setUser(prev => (prev && prev.id === fbUser.uid ? { ...baselineUser, ...prev, id: fbUser.uid } : baselineUser));
+        setCurrentSessionUser(baselineUser);
         setIsLoading(false);
+
+        try {
+          const hydratedUser = await syncFirebaseUserProfile(fbUser);
+          if (isMounted && auth.currentUser?.uid === fbUser.uid) {
+            setUser(hydratedUser);
+            setCurrentSessionUser(hydratedUser);
+          }
+        } catch (err) {
+          console.warn('Firestore profile hydration skipped/deferred:', err);
+        }
       } else {
-        // User is logged out / no active Firebase session: keep unauthenticated so login screen displays
-        setUser(null);
+        // User is logged out / no active Firebase session
+        setUser(prev => (prev && prev.id === 'usr-alex-indie' ? prev : null));
         setCurrentSessionUser(null);
         setIsLoading(false);
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const loginWithEmail = async (email: string, password: string, rememberMe = true) => {
-    setIsLoading(true);
     const cleanEmail = email.trim().toLowerCase();
 
     try {
@@ -181,7 +283,6 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
 
       setUser(sessionUser);
       if (rememberMe) setCurrentSessionUser(sessionUser);
-      setIsLoading(false);
       return { success: true };
     } catch (fbErr: any) {
       // Check local vault cache for demo developer accounts (offline exploration)
@@ -190,7 +291,6 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
 
       if (existing) {
         if (existing.passwordHash && existing.passwordHash !== password) {
-          setIsLoading(false);
           return { success: false, error: 'Incorrect password. Please verify and try again.' };
         }
 
@@ -206,11 +306,9 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
 
         setUser(sessionUser);
         if (rememberMe) setCurrentSessionUser(sessionUser);
-        setIsLoading(false);
         return { success: true };
       }
 
-      setIsLoading(false);
       const code = fbErr?.code;
       if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
         return { success: false, error: 'Invalid email or password. Please verify your credentials.' };
@@ -220,19 +318,16 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const registerWithEmail = async (name: string, email: string, password: string) => {
-    setIsLoading(true);
     const cleanEmail = email.trim().toLowerCase();
     const cleanName = name.trim() || cleanEmail.split('@')[0];
 
     if (password.length < 8) {
-      setIsLoading(false);
       return { success: false, error: 'Password must be at least 8 characters long.' };
     }
 
     const vault = getCredentialsVault();
     const existingInVault = vault.find(u => u.email.toLowerCase() === cleanEmail);
     if (existingInVault) {
-      setIsLoading(false);
       return { success: false, error: 'An account with this email address already exists.' };
     }
 
@@ -254,6 +349,7 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
           emailNotifications: true,
           compactView: false,
           dateFormat: 'DD/MM/YYYY',
+          bundlePrefix: 'indie',
         },
       };
 
@@ -286,10 +382,8 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
 
       setUser(sessionUser);
       setCurrentSessionUser(sessionUser);
-      setIsLoading(false);
       return { success: true };
     } catch (fbAuthErr: any) {
-      setIsLoading(false);
       if (fbAuthErr?.code === 'auth/email-already-in-use') {
         return { success: false, error: 'This email address is already registered in Firebase. Please sign in instead.' };
       }
@@ -304,118 +398,48 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const signInWithGoogle = async () => {
-    setIsLoading(true);
-
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const fbUser = result.user;
-      let userRecord = await getUserFromFirestore(fbUser.uid);
+      const baselineUser = buildBaselineUser(fbUser, 'google');
+      setUser(baselineUser);
+      setCurrentSessionUser(baselineUser);
 
-      if (!userRecord) {
-        userRecord = {
-          id: fbUser.uid,
-          name: fbUser.displayName || 'Google Developer',
-          email: fbUser.email || 'developer@gmail.com',
-          avatar: undefined,
-          providers: ['google'],
-          createdAt: fbUser.metadata.creationTime || new Date().toISOString(),
-          settings: {
-            theme: 'dark',
-            emailNotifications: true,
-            compactView: false,
-            dateFormat: 'DD/MM/YYYY',
-          },
-        };
-        // Save to Firestore /users/{userId}
-        await saveUserToFirestore(userRecord);
-        const initialWorkspace = generateDemoData(userRecord.id);
-        await saveWorkspaceToFirestore(userRecord.id, initialWorkspace);
+      try {
+        const sessionUser = await syncFirebaseUserProfile(fbUser, 'google');
+        if (auth.currentUser?.uid === fbUser.uid) {
+          setUser(sessionUser);
+          setCurrentSessionUser(sessionUser);
+        }
+      } catch (hydrationErr) {
+        console.warn('Google profile sync deferred:', hydrationErr);
       }
-
-      const sessionUser: User = {
-        id: userRecord.id,
-        name: userRecord.name,
-        email: userRecord.email,
-        avatar: undefined,
-        providers: userRecord.providers || ['google'],
-        createdAt: userRecord.createdAt,
-        settings: {
-          theme: userRecord.settings?.theme || 'dark',
-          emailNotifications: userRecord.settings?.emailNotifications ?? true,
-          compactView: userRecord.settings?.compactView ?? false,
-          dateFormat: userRecord.settings?.dateFormat || 'DD/MM/YYYY',
-          bundlePrefix: userRecord.settings?.bundlePrefix || 'indie',
-        },
-      };
-
-      setUser(sessionUser);
-      setCurrentSessionUser(sessionUser);
-      setIsLoading(false);
       return { success: true };
     } catch (err: any) {
-      setIsLoading(false);
-      const msg = err?.code === 'auth/popup-closed-by-user'
-        ? 'Google sign-in was closed before completing.'
-        : err?.message || 'Google sign-in failed. Please verify popup settings or use email sign-in.';
-      return { success: false, error: msg };
+      return { success: false, error: formatPopupAuthError(err, 'Google') };
     }
   };
 
   const signInWithApple = async () => {
-    setIsLoading(true);
-
     try {
       const result = await signInWithPopup(auth, appleProvider);
       const fbUser = result.user;
-      let userRecord = await getUserFromFirestore(fbUser.uid);
+      const baselineUser = buildBaselineUser(fbUser, 'apple');
+      setUser(baselineUser);
+      setCurrentSessionUser(baselineUser);
 
-      if (!userRecord) {
-        userRecord = {
-          id: fbUser.uid,
-          name: fbUser.displayName || 'Apple Developer',
-          email: fbUser.email || 'developer@privaterelay.appleid.com',
-          avatar: undefined,
-          providers: ['apple'],
-          createdAt: fbUser.metadata.creationTime || new Date().toISOString(),
-          settings: {
-            theme: 'dark',
-            emailNotifications: true,
-            compactView: false,
-            dateFormat: 'DD/MM/YYYY',
-          },
-        };
-        // Save to Firestore /users/{userId}
-        await saveUserToFirestore(userRecord);
-        const initialWorkspace = generateDemoData(userRecord.id);
-        await saveWorkspaceToFirestore(userRecord.id, initialWorkspace);
+      try {
+        const sessionUser = await syncFirebaseUserProfile(fbUser, 'apple');
+        if (auth.currentUser?.uid === fbUser.uid) {
+          setUser(sessionUser);
+          setCurrentSessionUser(sessionUser);
+        }
+      } catch (hydrationErr) {
+        console.warn('Apple profile sync deferred:', hydrationErr);
       }
-
-      const sessionUser: User = {
-        id: userRecord.id,
-        name: userRecord.name,
-        email: userRecord.email,
-        avatar: undefined,
-        providers: userRecord.providers || ['apple'],
-        createdAt: userRecord.createdAt,
-        settings: {
-          theme: userRecord.settings?.theme || 'dark',
-          emailNotifications: userRecord.settings?.emailNotifications ?? true,
-          compactView: userRecord.settings?.compactView ?? false,
-          dateFormat: userRecord.settings?.dateFormat || 'DD/MM/YYYY',
-          bundlePrefix: userRecord.settings?.bundlePrefix || 'indie',
-        },
-      };
-
-      setUser(sessionUser);
-      setCurrentSessionUser(sessionUser);
-      setIsLoading(false);
       return { success: true };
     } catch (err: any) {
-      setIsLoading(false);
-      const msg = err?.code === 'auth/popup-closed-by-user'
-        ? 'Apple sign-in was closed before completing.'
-        : err?.message || 'Apple sign-in failed. Please verify popup settings or use email sign-in.';
-      return { success: false, error: msg };
+      return { success: false, error: formatPopupAuthError(err, 'Apple') };
     }
   };
 

@@ -56,6 +56,7 @@ import {
   Code2,
   Cpu,
   Boxes,
+  Square,
 } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
@@ -81,6 +82,7 @@ import { ProjectImagePicker } from './ProjectImagePicker';
 import { ProjectImageModal } from './ProjectImageModal';
 import { AppStoreInfoTab } from './AppStoreInfoTab';
 import { getProjectColorTheme, PROJECT_COLOR_THEMES } from '../../utils/projectColors';
+import { formatElapsedClock, formatDurationCompact } from '../../utils/timeFormat';
 
 interface ProjectsViewProps {
   onNavigate: (view: string) => void;
@@ -110,6 +112,8 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     resetChecklist,
     addRelease,
     deleteRelease,
+    startTimer,
+    stopTimer,
   } = useData();
   const { user } = useAuth();
   const { formatDate } = useFormatDate();
@@ -124,6 +128,14 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   const [projRelStatus, setProjRelStatus] = useState<ReleaseStatus>('Planned');
   const [projRelDate, setProjRelDate] = useState('');
   const [deletingRelease, setDeletingRelease] = useState<Release | null>(null);
+  const [timerTickNow, setTimerTickNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!db.activeTimer) return;
+    setTimerTickNow(Date.now());
+    const id = window.setInterval(() => setTimerTickNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [db.activeTimer]);
 
   const handleCreateProjectRelease = (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,6 +240,53 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   const [resCustomLinks, setResCustomLinks] = useState<ProjectCustomInfo[]>([]);
   const [resSavedFeedback, setResSavedFeedback] = useState(false);
   const [finderToast, setFinderToast] = useState<string | null>(null);
+  const [statusDatesFeedback, setStatusDatesFeedback] = useState(false);
+
+  const flashStatusDatesSaved = () => {
+    setStatusDatesFeedback(true);
+    setTimeout(() => setStatusDatesFeedback(false), 2000);
+  };
+
+  const handleUpdateStatus = (newStatus: ProjectStatus) => {
+    if (!currentProject) return;
+    updateProject(currentProject.id, {
+      status: newStatus,
+      ...(newStatus === 'In development' && !currentProject.devSubstatus
+        ? { devSubstatus: 'Design' }
+        : {}),
+    });
+    flashStatusDatesSaved();
+  };
+
+  const handleUpdateDevSubstatus = (newSubstatus: DevelopmentSubstatus) => {
+    if (!currentProject) return;
+    updateProject(currentProject.id, {
+      devSubstatus: newSubstatus,
+    });
+    flashStatusDatesSaved();
+  };
+
+  const handleUpdateStartDate = (newStartDate: string) => {
+    if (!currentProject || !newStartDate) return;
+    updateProject(currentProject.id, {
+      dates: {
+        ...currentProject.dates,
+        startDate: newStartDate,
+      },
+    });
+    flashStatusDatesSaved();
+  };
+
+  const handleUpdateTargetDate = (newTargetDate: string) => {
+    if (!currentProject) return;
+    updateProject(currentProject.id, {
+      dates: {
+        ...currentProject.dates,
+        targetDate: newTargetDate ? newTargetDate : undefined,
+      },
+    });
+    flashStatusDatesSaved();
+  };
 
   useEffect(() => {
     if (currentProject) {
@@ -699,7 +758,22 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               <span aria-hidden="true">·</span>
               <span>{currentProject.stack.uiFramework} (Swift {currentProject.stack.swiftVersion})</span>
               <span aria-hidden="true">·</span>
-              <span className="text-emerald-400 font-medium">{currentProject.status}</span>
+              <div className="inline-flex items-center gap-1.5">
+                <span className="text-slate-400">Status:</span>
+                <select
+                  value={currentProject.status}
+                  onChange={e => handleUpdateStatus(e.target.value as ProjectStatus)}
+                  className="bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-emerald-400 font-semibold px-2 py-0.5 rounded text-[11px] cursor-pointer focus:outline-none focus:border-emerald-500"
+                  title="Change project status"
+                >
+                  <option value="Planning" className="bg-slate-900 text-white">Planning</option>
+                  <option value="In development" className="bg-slate-900 text-white">In development</option>
+                  <option value="Beta" className="bg-slate-900 text-white">Beta</option>
+                  <option value="In review" className="bg-slate-900 text-white">In review</option>
+                  <option value="Released" className="bg-slate-900 text-white">Released</option>
+                  <option value="On hold" className="bg-slate-900 text-white">On hold</option>
+                </select>
+              </div>
               {currentProject.status === 'In development' && (
                 <>
                   <span aria-hidden="true">·</span>
@@ -707,12 +781,9 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                     <span className="text-slate-400">Subphase:</span>
                     <select
                       value={currentProject.devSubstatus || 'Design'}
-                      onChange={e =>
-                        updateProject(currentProject.id, {
-                          devSubstatus: e.target.value as DevelopmentSubstatus,
-                        })
-                      }
+                      onChange={e => handleUpdateDevSubstatus(e.target.value as DevelopmentSubstatus)}
                       className="bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-blue-300 font-medium px-2 py-0.5 rounded text-[11px] cursor-pointer focus:outline-none focus:border-blue-500"
+                      title="Change development subphase"
                     >
                       {DEVELOPMENT_SUBSTATUSES.map(sub => (
                         <option key={sub.id} value={sub.id} className="bg-slate-900 text-white">
@@ -722,6 +793,12 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                     </select>
                   </div>
                 </>
+              )}
+              {statusDatesFeedback && (
+                <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded flex items-center gap-1 animate-in fade-in">
+                  <Check className="w-2.5 h-2.5" />
+                  <span>Saved</span>
+                </span>
               )}
             </div>
           </div>
@@ -1129,15 +1206,26 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   <p className="text-slate-200 mt-0.5 truncate">Swift {currentProject.stack.swiftVersion} · Xcode {currentProject.stack.xcodeVersion}</p>
                 </div>
                 <div
-                  onClick={openProjectSettings}
-                  className="p-3 bg-slate-800/50 hover:bg-slate-800/80 rounded-lg border border-slate-700/40 hover:border-blue-500/50 transition-all cursor-pointer group"
-                  title="Click to edit start date"
+                  className="p-3 bg-slate-800/50 hover:bg-slate-800/80 rounded-lg border border-slate-700/40 hover:border-blue-500/50 transition-all group"
+                  title="Directly edit Start Date"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-0.5">
                     <span className="text-[10px] text-slate-400">Start Date</span>
-                    <Pencil className="w-2.5 h-2.5 text-slate-500 group-hover:text-blue-400 transition-colors" />
+                    <Calendar className="w-2.5 h-2.5 text-blue-400" />
                   </div>
-                  <p className="text-slate-200 mt-0.5 font-medium">{formatDate(currentProject.dates.startDate)}</p>
+                  <input
+                    type="date"
+                    value={currentProject.dates?.startDate || ''}
+                    onChange={e => {
+                      if (e.target.value) {
+                        handleUpdateStartDate(e.target.value);
+                      }
+                    }}
+                    className="w-full bg-transparent text-slate-200 text-xs font-medium focus:outline-none cursor-pointer [color-scheme:dark]"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-0.5 truncate">
+                    {formatDate(currentProject.dates.startDate)}
+                  </p>
                 </div>
               </div>
 
@@ -1669,6 +1757,127 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           </div>
 
           <div className="space-y-6">
+            {/* DIRECT PROJECT STATUS & DATES CARD */}
+            <div className="p-5 bg-slate-900 border border-slate-800 rounded-xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-blue-500/10 text-blue-400 rounded-lg border border-blue-500/20">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-white">Project Status & Dates</h3>
+                    <p className="text-[11px] text-slate-400">Directly change lifecycle status, subphase & milestones</p>
+                  </div>
+                </div>
+
+                {statusDatesFeedback && (
+                  <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1 animate-in fade-in">
+                    <Check className="w-3 h-3" />
+                    <span>Saved!</span>
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-3.5 text-xs">
+                {/* 1. Project Status */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="font-medium text-slate-300">Project Status</label>
+                    <span className="text-[10px] text-emerald-400 font-medium bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                      {currentProject.status}
+                    </span>
+                  </div>
+                  <select
+                    value={currentProject.status}
+                    onChange={e => handleUpdateStatus(e.target.value as ProjectStatus)}
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
+                  >
+                    <option value="Planning" className="bg-slate-900 text-white">Planning</option>
+                    <option value="In development" className="bg-slate-900 text-white">In development</option>
+                    <option value="Beta" className="bg-slate-900 text-white">Beta</option>
+                    <option value="In review" className="bg-slate-900 text-white">In review</option>
+                    <option value="Released" className="bg-slate-900 text-white">Released</option>
+                    <option value="On hold" className="bg-slate-900 text-white">On hold</option>
+                  </select>
+                </div>
+
+                {/* 2. Development Subphase */}
+                {currentProject.status === 'In development' ? (
+                  <div className="p-3 bg-blue-950/20 border border-blue-500/20 rounded-lg space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="font-medium text-blue-300">Development Subphase</label>
+                      <span className="text-[10px] text-blue-400 font-mono">
+                        Phase {DEVELOPMENT_SUBSTATUSES.find(s => s.id === (currentProject.devSubstatus || 'Design'))?.step || 1}/7
+                      </span>
+                    </div>
+                    <select
+                      value={currentProject.devSubstatus || 'Design'}
+                      onChange={e => handleUpdateDevSubstatus(e.target.value as DevelopmentSubstatus)}
+                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
+                    >
+                      {DEVELOPMENT_SUBSTATUSES.map(sub => (
+                        <option key={sub.id} value={sub.id} className="bg-slate-900 text-white">
+                          {sub.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="text-[11px] text-slate-500 px-1 italic">
+                    Subphase is active when status is &quot;In development&quot;.
+                  </div>
+                )}
+
+                {/* 3. Start Date */}
+                <div>
+                  <label className="block font-medium text-slate-300 mb-1">
+                    Start Date <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={currentProject.dates?.startDate || ''}
+                    onChange={e => {
+                      if (e.target.value) {
+                        handleUpdateStartDate(e.target.value);
+                      }
+                    }}
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-blue-500 [color-scheme:dark] cursor-pointer"
+                  />
+                  <span className="text-[11px] text-slate-400 mt-1 block">
+                    Weergave: {currentProject.dates?.startDate ? formatDate(currentProject.dates.startDate) : 'Geen datum ingevoerd'}
+                  </span>
+                </div>
+
+                {/* 4. Target Release Date */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-medium text-slate-300">
+                      Target Release Date <span className="text-slate-500 font-normal">(Optioneel)</span>
+                    </label>
+                    {currentProject.dates?.targetDate && (
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateTargetDate('')}
+                        className="text-[10px] text-slate-400 hover:text-rose-400 cursor-pointer font-medium"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="date"
+                    value={currentProject.dates?.targetDate || ''}
+                    onChange={e => handleUpdateTargetDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-blue-500 [color-scheme:dark] cursor-pointer"
+                  />
+                  <span className="text-[11px] text-slate-400 mt-1 block">
+                    Weergave: {currentProject.dates?.targetDate ? formatDate(currentProject.dates.targetDate) : 'Geen streefdatum'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
             <div className="p-5 bg-slate-900 border border-slate-800 rounded-xl">
               <h3 className="text-sm font-semibold text-white mb-3">Milestone Progress</h3>
               <div className="space-y-3">
@@ -1708,6 +1917,69 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 </div>
               </div>
             </div>
+
+            {/* Production Time Card */}
+            {(() => {
+              const projLogs = (db.timeLogs || []).filter(tl => tl.projectId === currentProject.id);
+              const totalProjSeconds = projLogs.reduce((acc, tl) => acc + tl.durationSeconds, 0);
+              const isTimingCurrent = db.activeTimer?.projectId === currentProject.id;
+              const liveSeconds = isTimingCurrent && db.activeTimer
+                ? Math.max(0, Math.floor((timerTickNow - new Date(db.activeTimer.startedAt).getTime()) / 1000))
+                : 0;
+
+              return (
+                <div className={`p-5 bg-slate-900 border rounded-xl space-y-3 ${isTimingCurrent ? 'border-emerald-500/40' : 'border-slate-800'}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Clock className={`w-4 h-4 ${isTimingCurrent ? 'text-emerald-400' : 'text-blue-400'}`} />
+                      <h3 className="text-sm font-semibold text-white">Production Time</h3>
+                    </div>
+                    <span className="text-xs font-mono font-semibold tabular-nums text-slate-200">
+                      {formatDurationCompact(totalProjSeconds)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-400">
+                    <span>{projLogs.length} {projLogs.length === 1 ? 'session' : 'sessions'} logged</span>
+                    {isTimingCurrent && (
+                      <span className="font-mono font-semibold tabular-nums text-emerald-400">
+                        Running · {formatElapsedClock(liveSeconds)}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    {isTimingCurrent ? (
+                      <button
+                        type="button"
+                        onClick={() => stopTimer()}
+                        className="flex-1 py-2 px-3 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        <Square className="w-3 h-3 fill-current" />
+                        <span>End & Save Timer</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => startTimer(currentProject.id)}
+                        className="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        <Play className="w-3 h-3 fill-current" />
+                        <span>Start Timer</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => onNavigate('time')}
+                      className="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap"
+                    >
+                      History
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Development Subphases Breakdown Card */}
             {currentProject.status === 'In development' && (

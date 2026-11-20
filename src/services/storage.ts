@@ -16,6 +16,8 @@ import {
   CertificateReminder,
   NotificationItem,
   AppStoreQuestionItem,
+  TimeLogEntry,
+  ActiveTimerState,
 } from '../types';
 
 export interface UserDatabase {
@@ -32,6 +34,8 @@ export interface UserDatabase {
   privacyPermissions: PrivacyPermission[];
   certificates: CertificateReminder[];
   notifications: NotificationItem[];
+  timeLogs?: TimeLogEntry[];
+  activeTimer?: ActiveTimerState | null;
   demoPurged?: boolean;
 }
 
@@ -752,6 +756,8 @@ export function generateDemoData(userId: string): UserDatabase {
     privacyPermissions: DEFAULT_PRIVACY_PERMISSIONS,
     certificates: DEFAULT_CERTIFICATES,
     notifications: demoNotifications,
+    timeLogs: [],
+    activeTimer: null,
   };
 }
 
@@ -773,6 +779,8 @@ export function createEmptyDatabase(): UserDatabase {
     privacyPermissions: DEFAULT_PRIVACY_PERMISSIONS,
     certificates: DEFAULT_CERTIFICATES,
     notifications: [],
+    timeLogs: [],
+    activeTimer: null,
   };
 }
 
@@ -904,6 +912,8 @@ export function sanitizeDatabaseChecklists(parsed: UserDatabase, userId?: string
     checklists: reconciledChecklists,
     checklistTemplate: resolvedTemplate,
     appStoreInfoTemplate: resolvedAppStoreQuestions,
+    timeLogs: Array.isArray(parsed.timeLogs) ? parsed.timeLogs : [],
+    activeTimer: parsed.activeTimer ?? null,
   };
 }
 
@@ -1001,6 +1011,8 @@ export function removeDemoData(userId: string): UserDatabase {
     }),
     archivedApps: (current.archivedApps || []).filter(a => !a.isDemo),
     checklists: (current.checklists || []).filter(c => !c.projectId || !demoProjectIds.has(c.projectId)),
+    timeLogs: (current.timeLogs || []).filter(t => !demoProjectIds.has(t.projectId)),
+    activeTimer: current.activeTimer && demoProjectIds.has(current.activeTimer.projectId) ? null : (current.activeTimer ?? null),
     demoPurged: true,
   };
   saveUserDatabase(userId, cleaned);
