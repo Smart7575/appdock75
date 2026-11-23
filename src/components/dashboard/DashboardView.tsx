@@ -21,9 +21,14 @@ import {
   ArrowRight,
   ChevronRight,
   TrendingUp,
+  Trash2,
+  ShieldCheck,
+  RotateCcw,
+  Check,
 } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { DevSubstatusPipeline } from '../projects/DevSubstatusPipeline';
+import { DeleteDemoDataModal } from '../common/DeleteDemoDataModal';
 import {
   DevelopmentSubstatus,
   DEVELOPMENT_SUBSTATUSES,
@@ -45,9 +50,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     setActiveProjectId,
     addIdea,
     updateProject,
+    hasDemoData,
+    demoBreakdown,
+    reloadDemoData,
   } = useData();
 
   const [quickIdeaTitle, setQuickIdeaTitle] = useState('');
+  const [showDeleteDemoModal, setShowDeleteDemoModal] = useState(false);
+  const [demoAddedNotice, setDemoAddedNotice] = useState(false);
+
+  const handleAddDemoData = () => {
+    reloadDemoData();
+    setDemoAddedNotice(true);
+    window.setTimeout(() => setDemoAddedNotice(false), 3000);
+  };
 
   const handleQuickCapture = (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,6 +107,35 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         {/* Quick Actions (PRD Section 8.1) */}
         <div className="flex items-center gap-2 flex-wrap">
+          {demoAddedNotice && (
+            <span className="text-[11px] font-medium text-emerald-300 bg-emerald-500/15 border border-emerald-500/25 px-2.5 py-1 rounded-lg flex items-center gap-1">
+              <Check className="w-3 h-3" />
+              <span>Demo Data Added</span>
+            </span>
+          )}
+
+          {hasDemoData ? (
+            <button
+              type="button"
+              onClick={() => setShowDeleteDemoModal(true)}
+              className="px-3 py-1.5 text-xs font-medium text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
+              title="Inspect and remove all demo data while keeping your original data"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-amber-400" />
+              <span>Remove Demo Data</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleAddDemoData}
+              className="px-3 py-1.5 text-xs font-medium text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
+              title="Load sample demo projects, ideas, tasks, releases, and time logs"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+              <span>Add Demo Data</span>
+            </button>
+          )}
+
           <button
             onClick={() => onOpenNewModal('idea')}
             className="px-3 py-1.5 text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
@@ -114,6 +159,52 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Demo Data Banner (shows clear separation between Demo items and Original user data) */}
+      {hasDemoData && (
+        <div className="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-slate-900 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/25 shrink-0">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold text-white">Demo Data Active</span>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/25">
+                  {demoBreakdown.demo.total} Demo Records
+                </span>
+                {demoBreakdown.original.total > 0 && (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 inline-flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3" />
+                    <span>{demoBreakdown.original.total} Original Records Protected</span>
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Sample projects, ideas, tasks, releases, and time logs are tagged <span className="text-amber-300 font-semibold">Demo</span>. When you delete demo data, only <span className="text-amber-300 font-semibold">Demo</span> items are removed — all of your original data stays in the database.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+            <button
+              type="button"
+              onClick={() => onNavigate('settings:data')}
+              className="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors cursor-pointer"
+            >
+              Details
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowDeleteDemoModal(true)}
+              className="px-3.5 py-1.5 text-xs font-semibold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm shadow-amber-500/20 whitespace-nowrap"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete All Demo Data</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Quick Stats Grid - Workflow order: Ideas -> Projects -> Tasks -> Releases */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
@@ -364,6 +455,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Transparent Demo Data Deletion Modal */}
+      <DeleteDemoDataModal
+        isOpen={showDeleteDemoModal}
+        onClose={() => setShowDeleteDemoModal(false)}
+      />
     </div>
   );
 };

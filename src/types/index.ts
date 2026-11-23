@@ -334,6 +334,7 @@ export interface ChangelogEntry {
   type: ChangelogType;
   text: string;
   taskId?: string;
+  isDemo?: boolean;
 }
 
 export interface RejectionItem {
@@ -409,6 +410,7 @@ export interface ChecklistItem {
   description: string;
   done: boolean;
   required: boolean;
+  isDemo?: boolean;
 }
 
 export interface PrivacyPermission {
@@ -438,6 +440,7 @@ export interface NotificationItem {
   targetId?: string;
   read: boolean;
   createdAt: string;
+  isDemo?: boolean;
 }
 
 export interface AppStoreQuestionItem {
@@ -461,6 +464,7 @@ export interface TimeLogEntry {
   source: 'timer' | 'manual';
   createdAt: string;
   updatedAt: string;
+  isDemo?: boolean;
 }
 
 export interface ActiveTimerState {

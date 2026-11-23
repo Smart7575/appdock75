@@ -28,6 +28,7 @@ interface CommandPaletteProps {
   onClose: () => void;
   onNavigate: (view: string) => void;
   onOpenNewModal: (type: 'idea' | 'project' | 'task' | 'release') => void;
+  onOpenDeleteDemoModal?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -35,6 +36,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onClose,
   onNavigate,
   onOpenNewModal,
+  onOpenDeleteDemoModal,
 }) => {
   const { db, setActiveProjectId, purgeDemoData, hasDemoData, exportFullDatabase } = useData();
   const [query, setQuery] = useState('');
@@ -135,10 +137,17 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     if (hasDemoData) {
       items.push({
         id: 'act-purge-demo',
-        title: 'Remove Demo Data',
+        title: 'Delete All Demo Data...',
         category: 'Actions',
         icon: Trash2,
-        action: () => { onClose(); purgeDemoData(); },
+        action: () => {
+          onClose();
+          if (onOpenDeleteDemoModal) {
+            onOpenDeleteDemoModal();
+          } else {
+            purgeDemoData();
+          }
+        },
       });
     }
 
@@ -252,7 +261,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     return items.filter(
       item => item.title.toLowerCase().includes(q) || item.category.toLowerCase().includes(q)
     ).slice(0, 10);
-  }, [query, db, hasDemoData, onClose, onNavigate, onOpenNewModal, purgeDemoData, setActiveProjectId]);
+  }, [query, db, hasDemoData, onClose, onNavigate, onOpenNewModal, onOpenDeleteDemoModal, purgeDemoData, setActiveProjectId]);
 
   if (!isOpen) return null;
 

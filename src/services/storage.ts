@@ -705,16 +705,16 @@ export function generateDemoData(userId: string): UserDatabase {
   ];
 
   const demoChangelogEntries: ChangelogEntry[] = [
-    { id: 'cl-1', releaseId: releaseV1Id, type: 'Added', text: 'Initial release with daily habit streak tracking and statistics.' },
-    { id: 'cl-2', releaseId: releaseV1Id, type: 'Added', text: 'End-to-end encrypted private iCloud synchronization.' },
-    { id: 'cl-3', releaseId: releaseV1Id, type: 'Performance', text: 'Sub-150ms cold launch time on A15 Bionic and newer devices.' },
-    { id: 'cl-4', releaseId: releaseV11Id, type: 'Added', text: 'Native Apple Watch companion app with standalone complication updates.' },
-    { id: 'cl-5', releaseId: releaseV11Id, type: 'Added', text: 'Lock screen and desktop interactive widgets.' },
-    { id: 'cl-6', releaseId: releaseV11Id, type: 'Fixed', text: 'Resolved midnight timezone transition streak discrepancy.' },
-    { id: 'cl-7', releaseId: releaseV12Id, type: 'Added', text: 'iOS 18 Control Center habit button controls via AppIntents.', taskId: 'task-1' },
-    { id: 'cl-8', releaseId: releaseV12Id, type: 'Fixed', text: 'Fixed simultaneous multi-device sync conflict resolution.', taskId: 'task-2' },
-    { id: 'cl-9', releaseId: releaseV12Id, type: 'Performance', text: 'Upgraded underlying persistence engine to SwiftData.' },
-    { id: 'cl-10', releaseId: releaseV12Id, type: 'Security', text: 'Tightened HealthKit permission usage strings per Apple Review 5.1.1.', taskId: 'task-3' },
+    { id: 'cl-1', releaseId: releaseV1Id, type: 'Added', text: 'Initial release with daily habit streak tracking and statistics.', isDemo: true },
+    { id: 'cl-2', releaseId: releaseV1Id, type: 'Added', text: 'End-to-end encrypted private iCloud synchronization.', isDemo: true },
+    { id: 'cl-3', releaseId: releaseV1Id, type: 'Performance', text: 'Sub-150ms cold launch time on A15 Bionic and newer devices.', isDemo: true },
+    { id: 'cl-4', releaseId: releaseV11Id, type: 'Added', text: 'Native Apple Watch companion app with standalone complication updates.', isDemo: true },
+    { id: 'cl-5', releaseId: releaseV11Id, type: 'Added', text: 'Lock screen and desktop interactive widgets.', isDemo: true },
+    { id: 'cl-6', releaseId: releaseV11Id, type: 'Fixed', text: 'Resolved midnight timezone transition streak discrepancy.', isDemo: true },
+    { id: 'cl-7', releaseId: releaseV12Id, type: 'Added', text: 'iOS 18 Control Center habit button controls via AppIntents.', taskId: 'task-1', isDemo: true },
+    { id: 'cl-8', releaseId: releaseV12Id, type: 'Fixed', text: 'Fixed simultaneous multi-device sync conflict resolution.', taskId: 'task-2', isDemo: true },
+    { id: 'cl-9', releaseId: releaseV12Id, type: 'Performance', text: 'Upgraded underlying persistence engine to SwiftData.', isDemo: true },
+    { id: 'cl-10', releaseId: releaseV12Id, type: 'Security', text: 'Tightened HealthKit permission usage strings per Apple Review 5.1.1.', taskId: 'task-3', isDemo: true },
   ];
 
   const demoNotifications: NotificationItem[] = [
@@ -728,6 +728,7 @@ export function generateDemoData(userId: string): UserDatabase {
       targetId: releaseV12Id,
       read: false,
       createdAt: '2026-10-05T08:00:00Z',
+      isDemo: true,
     },
     {
       id: 'notif-2',
@@ -739,25 +740,78 @@ export function generateDemoData(userId: string): UserDatabase {
       targetId: 'cert-1',
       read: true,
       createdAt: '2026-10-01T09:00:00Z',
+      isDemo: true,
+    },
+  ];
+
+  const demoProjects = [demoProject, demoReleasedProject];
+
+  const demoChecklists: ChecklistItem[] = demoProjects.flatMap(proj =>
+    DEFAULT_CHECKLIST_TEMPLATE.map(c => ({
+      ...c,
+      id: `chk-${proj.id}-${c.id}`,
+      projectId: proj.id,
+      done: proj.status === 'Released',
+      isDemo: true,
+    }))
+  );
+
+  const demoTimeLogs: TimeLogEntry[] = [
+    {
+      id: 'tlog-demo-1',
+      projectId,
+      startedAt: '2026-10-04T09:00:00Z',
+      endedAt: '2026-10-04T11:30:00Z',
+      durationSeconds: 9000,
+      note: 'Built interactive iOS 18 Control Center habit toggle AppIntent',
+      source: 'timer',
+      createdAt: '2026-10-04T11:30:00Z',
+      updatedAt: '2026-10-04T11:30:00Z',
+      isDemo: true,
+    },
+    {
+      id: 'tlog-demo-2',
+      projectId,
+      startedAt: '2026-10-03T14:00:00Z',
+      endedAt: '2026-10-03T15:45:00Z',
+      durationSeconds: 6300,
+      note: 'SwiftData CloudKit dual-device conflict resolution unit tests',
+      source: 'manual',
+      createdAt: '2026-10-03T15:45:00Z',
+      updatedAt: '2026-10-03T15:45:00Z',
+      isDemo: true,
+    },
+    {
+      id: 'tlog-demo-3',
+      projectId: demoReleasedProject.id,
+      startedAt: '2026-06-28T16:15:00Z',
+      endedAt: '2026-06-28T17:15:00Z',
+      durationSeconds: 3600,
+      note: 'Final App Store submission & audio haptics polish',
+      source: 'timer',
+      createdAt: '2026-06-28T17:15:00Z',
+      updatedAt: '2026-06-28T17:15:00Z',
+      isDemo: true,
     },
   ];
 
   return {
     ideas: demoIdeas,
-    projects: [demoProject, demoReleasedProject],
+    projects: demoProjects,
     statuses: DEFAULT_WORKFLOW_STATUSES,
     tasks: demoTasks,
     releases: demoReleases,
     changelogEntries: demoChangelogEntries,
     archivedApps: [],
-    checklists: DEFAULT_CHECKLIST_TEMPLATE.map(c => ({ ...c, done: false })),
+    checklists: demoChecklists,
     checklistTemplate: DEFAULT_CHECKLIST_TEMPLATE.map(c => ({ ...c })),
     appStoreInfoTemplate: DEFAULT_APP_STORE_QUESTIONS.map(q => ({ ...q })),
     privacyPermissions: DEFAULT_PRIVACY_PERMISSIONS,
     certificates: DEFAULT_CERTIFICATES,
     notifications: demoNotifications,
-    timeLogs: [],
+    timeLogs: demoTimeLogs,
     activeTimer: null,
+    demoPurged: false,
   };
 }
 
@@ -863,7 +917,7 @@ export function sanitizeDatabaseChecklists(parsed: UserDatabase, userId?: string
   }));
 
   // Reconcile checklists for every project so all items from resolvedTemplate are always present
-  let reconciledChecklists = [...checklists];
+  let reconciledChecklists = [...checklists].filter(c => !!c.projectId);
   for (const proj of sanitizedProjects) {
     const projChecklists = reconciledChecklists.filter(c => c.projectId === proj.id);
     for (const tpl of resolvedTemplate) {
@@ -880,6 +934,7 @@ export function sanitizeDatabaseChecklists(parsed: UserDatabase, userId?: string
           id: `chk-${proj.id}-${tpl.id}`,
           projectId: proj.id,
           done: false,
+          isDemo: Boolean(proj.isDemo),
         });
       }
     }
@@ -917,13 +972,170 @@ export function sanitizeDatabaseChecklists(parsed: UserDatabase, userId?: string
   };
 }
 
+export interface DemoDataBreakdown {
+  demo: {
+    projects: number;
+    projectNames: string[];
+    ideas: number;
+    tasks: number;
+    releases: number;
+    changelogEntries: number;
+    timeLogs: number;
+    notifications: number;
+    archivedApps: number;
+    total: number;
+  };
+  original: {
+    projects: number;
+    ideas: number;
+    tasks: number;
+    releases: number;
+    changelogEntries: number;
+    timeLogs: number;
+    notifications: number;
+    certificates: number;
+    total: number;
+  };
+  attachedOriginalItems: {
+    projectIds: string[];
+    tasksCount: number;
+    releasesCount: number;
+    timeLogsCount: number;
+  };
+}
+
+export function getDemoBreakdown(db: UserDatabase): DemoDataBreakdown {
+  const demoProjects = (db.projects || []).filter(p => p.isDemo === true);
+  const demoProjectIds = new Set(demoProjects.map(p => p.id));
+
+  const demoIdeas = (db.ideas || []).filter(i => i.isDemo === true);
+  const demoTasks = (db.tasks || []).filter(t => t.isDemo === true);
+  const demoReleases = (db.releases || []).filter(r => r.isDemo === true);
+  const demoReleaseIds = new Set(demoReleases.map(r => r.id));
+  const demoChangelogs = (db.changelogEntries || []).filter(
+    c => c.isDemo === true || demoReleaseIds.has(c.releaseId)
+  );
+  const demoTimeLogs = (db.timeLogs || []).filter(tl => tl.isDemo === true);
+  const demoNotifications = (db.notifications || []).filter(n => n.isDemo === true);
+  const demoArchives = (db.archivedApps || []).filter(a => a.isDemo === true);
+
+  const origProjects = (db.projects || []).filter(p => p.isDemo !== true);
+  const origIdeas = (db.ideas || []).filter(i => i.isDemo !== true);
+  const origTasks = (db.tasks || []).filter(t => t.isDemo !== true);
+  const origReleases = (db.releases || []).filter(r => r.isDemo !== true);
+  const origChangelogs = (db.changelogEntries || []).filter(
+    c => c.isDemo !== true && !demoReleaseIds.has(c.releaseId)
+  );
+  const origTimeLogs = (db.timeLogs || []).filter(tl => tl.isDemo !== true);
+  const origNotifications = (db.notifications || []).filter(n => n.isDemo !== true);
+
+  const attachedTasks = origTasks.filter(t => demoProjectIds.has(t.projectId));
+  const attachedReleases = origReleases.filter(r => demoProjectIds.has(r.projectId));
+  const attachedTimeLogs = origTimeLogs.filter(tl => demoProjectIds.has(tl.projectId));
+  const affectedProjectIds = Array.from(
+    new Set([
+      ...attachedTasks.map(t => t.projectId),
+      ...attachedReleases.map(r => r.projectId),
+      ...attachedTimeLogs.map(tl => tl.projectId),
+    ])
+  );
+
+  return {
+    demo: {
+      projects: demoProjects.length,
+      projectNames: demoProjects.map(p => p.name),
+      ideas: demoIdeas.length,
+      tasks: demoTasks.length,
+      releases: demoReleases.length,
+      changelogEntries: demoChangelogs.length,
+      timeLogs: demoTimeLogs.length,
+      notifications: demoNotifications.length,
+      archivedApps: demoArchives.length,
+      total:
+        demoProjects.length +
+        demoIdeas.length +
+        demoTasks.length +
+        demoReleases.length +
+        demoChangelogs.length +
+        demoTimeLogs.length +
+        demoNotifications.length +
+        demoArchives.length,
+    },
+    original: {
+      projects: origProjects.length,
+      ideas: origIdeas.length,
+      tasks: origTasks.length,
+      releases: origReleases.length,
+      changelogEntries: origChangelogs.length,
+      timeLogs: origTimeLogs.length,
+      notifications: origNotifications.length,
+      certificates: (db.certificates || []).length,
+      total:
+        origProjects.length +
+        origIdeas.length +
+        origTasks.length +
+        origReleases.length +
+        origChangelogs.length +
+        origTimeLogs.length +
+        origNotifications.length,
+    },
+    attachedOriginalItems: {
+      projectIds: affectedProjectIds,
+      tasksCount: attachedTasks.length,
+      releasesCount: attachedReleases.length,
+      timeLogsCount: attachedTimeLogs.length,
+    },
+  };
+}
+
+/**
+ * Pure helper to strip only items explicitly marked isDemo === true while keeping all user data intact.
+ */
+export function purgeDemoDataFromDatabase(current: UserDatabase): UserDatabase {
+  const remainingIdeas = (current.ideas || []).filter(i => i.isDemo !== true);
+  const remainingProjects = (current.projects || []).filter(p => p.isDemo !== true);
+  const remainingProjectIds = new Set(remainingProjects.map(p => p.id));
+
+  const remainingTasks = (current.tasks || []).filter(t => t.isDemo !== true);
+  const remainingReleases = (current.releases || []).filter(r => r.isDemo !== true);
+  const remainingReleaseIds = new Set(remainingReleases.map(r => r.id));
+
+  const remainingChangelogs = (current.changelogEntries || []).filter(
+    c => c.isDemo !== true && remainingReleaseIds.has(c.releaseId)
+  );
+  const remainingArchived = (current.archivedApps || []).filter(a => a.isDemo !== true);
+  const remainingNotifications = (current.notifications || []).filter(n => n.isDemo !== true);
+  const remainingTimeLogs = (current.timeLogs || []).filter(tl => tl.isDemo !== true);
+  const remainingChecklists = (current.checklists || []).filter(
+    c => c.isDemo !== true && (!c.projectId || remainingProjectIds.has(c.projectId))
+  );
+
+  const nextActiveTimer =
+    current.activeTimer && remainingProjectIds.has(current.activeTimer.projectId)
+      ? current.activeTimer
+      : null;
+
+  return {
+    ...current,
+    ideas: remainingIdeas,
+    projects: remainingProjects,
+    tasks: remainingTasks,
+    releases: remainingReleases,
+    changelogEntries: remainingChangelogs,
+    archivedApps: remainingArchived,
+    notifications: remainingNotifications,
+    timeLogs: remainingTimeLogs,
+    checklists: remainingChecklists,
+    activeTimer: nextActiveTimer,
+    demoPurged: true,
+  };
+}
+
 export function loadUserDatabase(userId: string): UserDatabase {
   try {
     const key = `${DATA_PREFIX}${userId}`;
     const raw = localStorage.getItem(key);
-    const wasPurged =
-      localStorage.getItem(`${DATA_PREFIX}${userId}_demo_purged`) === 'true' ||
-      localStorage.getItem('ios_dev_hub_global_demo_purged') === 'true';
+    const wasPurged = localStorage.getItem(`${DATA_PREFIX}${userId}_demo_purged`) === 'true';
 
     if (!raw) {
       if (wasPurged) {
@@ -932,41 +1144,23 @@ export function loadUserDatabase(userId: string): UserDatabase {
         saveUserDatabase(userId, empty);
         return empty;
       }
-      // First time initialization: automatically populate demo data!
+      // First time initialization for this user: automatically populate demo data!
       const initial = generateDemoData(userId);
       saveUserDatabase(userId, initial);
       return initial;
     }
+
     const parsed: UserDatabase = JSON.parse(raw);
-    const shouldPurge =
-      wasPurged ||
-      parsed.demoPurged === true ||
-      ((parsed.projects || []).length > 0 && !(parsed.projects || []).some(p => p.isDemo) && !(parsed.ideas || []).some(i => i.isDemo)) ||
-      ((parsed.projects || []).length === 0 && (parsed.ideas || []).length === 0 && wasPurged);
+    const shouldPurge = wasPurged || parsed.demoPurged === true;
 
     if (shouldPurge) {
-      parsed.demoPurged = true;
-      parsed.ideas = (parsed.ideas || []).filter(i => !i.isDemo);
-      parsed.projects = (parsed.projects || []).filter(p => !p.isDemo);
-      parsed.tasks = (parsed.tasks || []).filter(t => !t.isDemo);
-      parsed.releases = (parsed.releases || []).filter(r => !r.isDemo);
-      parsed.changelogEntries = (parsed.changelogEntries || []).filter(c => {
-        const rel = (parsed.releases || []).find(r => r.id === c.releaseId);
-        return rel && !rel.isDemo;
-      });
-      parsed.archivedApps = (parsed.archivedApps || []).filter(a => !a.isDemo);
+      const cleaned = purgeDemoDataFromDatabase(parsed);
       try {
         localStorage.setItem(`${DATA_PREFIX}${userId}_demo_purged`, 'true');
       } catch {}
-    } else if ((parsed.projects || []).some(p => p.isDemo)) {
-      if (!parsed.projects.some(p => p.id === 'proj-demo-chronos')) {
-        const fullDemo = generateDemoData(userId);
-        const chronos = fullDemo.projects.find(p => p.id === 'proj-demo-chronos');
-        if (chronos) {
-          parsed.projects.push(chronos);
-        }
-      }
+      return sanitizeDatabaseChecklists(cleaned, userId);
     }
+
     return sanitizeDatabaseChecklists(parsed, userId);
   } catch (err) {
     console.error('Failed to load user database', err);
@@ -993,87 +1187,104 @@ export function saveUserDatabase(userId: string, data: UserDatabase): void {
 
 /**
  * Remove only items where isDemo === true.
- * User-created items remain completely untouched.
+ * Original user-created items remain completely untouched in the database.
  */
 export function removeDemoData(userId: string): UserDatabase {
   const current = loadUserDatabase(userId);
-  const demoProjectIds = new Set((current.projects || []).filter(p => p.isDemo).map(p => p.id));
-  const cleaned: UserDatabase = {
-    ...current,
-    ideas: (current.ideas || []).filter(i => !i.isDemo),
-    projects: (current.projects || []).filter(p => !p.isDemo),
-    tasks: (current.tasks || []).filter(t => !t.isDemo),
-    releases: (current.releases || []).filter(r => !r.isDemo),
-    changelogEntries: (current.changelogEntries || []).filter(c => {
-      // Keep entry only if release still exists
-      const rel = (current.releases || []).find(r => r.id === c.releaseId);
-      return rel && !rel.isDemo;
-    }),
-    archivedApps: (current.archivedApps || []).filter(a => !a.isDemo),
-    checklists: (current.checklists || []).filter(c => !c.projectId || !demoProjectIds.has(c.projectId)),
-    timeLogs: (current.timeLogs || []).filter(t => !demoProjectIds.has(t.projectId)),
-    activeTimer: current.activeTimer && demoProjectIds.has(current.activeTimer.projectId) ? null : (current.activeTimer ?? null),
-    demoPurged: true,
-  };
+  const cleaned = purgeDemoDataFromDatabase(current);
   saveUserDatabase(userId, cleaned);
   try {
     localStorage.setItem(`${DATA_PREFIX}${userId}_demo_purged`, 'true');
-    localStorage.setItem('ios_dev_hub_global_demo_purged', 'true');
   } catch {}
   return cleaned;
 }
 
 /**
- * Restore demo data back into user workspace.
+ * Restore demo data back into user workspace while preserving all original user items.
  */
 export function restoreDemoData(userId: string): UserDatabase {
   const current = loadUserDatabase(userId);
   const demo = generateDemoData(userId);
 
-  // Merge non-demo user items with fresh demo items
-  const nonDemoIdeas = (current.ideas || []).filter(i => !i.isDemo);
-  const nonDemoProjects = (current.projects || []).filter(p => !p.isDemo);
-  const nonDemoTasks = (current.tasks || []).filter(t => !t.isDemo);
-  const nonDemoReleases = (current.releases || []).filter(r => !r.isDemo);
-  const nonDemoChangelogs = (current.changelogEntries || []).filter(c => {
-    const rel = (current.releases || []).find(r => r.id === c.releaseId);
-    return rel && !rel.isDemo;
-  });
-  const nonDemoArchives = (current.archivedApps || []).filter(a => !a.isDemo);
+  const nonDemoIdeas = (current.ideas || []).filter(i => i.isDemo !== true);
+  const nonDemoProjects = (current.projects || []).filter(p => p.isDemo !== true);
+  const nonDemoTasks = (current.tasks || []).filter(t => t.isDemo !== true);
+  const nonDemoReleases = (current.releases || []).filter(r => r.isDemo !== true);
+  const nonDemoReleaseIds = new Set(nonDemoReleases.map(r => r.id));
+  const nonDemoChangelogs = (current.changelogEntries || []).filter(
+    c => c.isDemo !== true && nonDemoReleaseIds.has(c.releaseId)
+  );
+  const nonDemoArchives = (current.archivedApps || []).filter(a => a.isDemo !== true);
+  const nonDemoNotifications = (current.notifications || []).filter(n => n.isDemo !== true);
+  const nonDemoTimeLogs = (current.timeLogs || []).filter(tl => tl.isDemo !== true);
+  const nonDemoChecklists = (current.checklists || []).filter(c => c.isDemo !== true);
+
+  const mergeById = <T extends { id: string }>(userItems: T[], demoItems: T[]): T[] => {
+    const existingIds = new Set(userItems.map(item => item.id));
+    return [...userItems, ...demoItems.filter(item => !existingIds.has(item.id))];
+  };
 
   const merged: UserDatabase = {
     ...current,
-    ideas: [...nonDemoIdeas, ...demo.ideas],
-    projects: [...nonDemoProjects, ...demo.projects],
-    tasks: [...nonDemoTasks, ...demo.tasks],
-    releases: [...nonDemoReleases, ...demo.releases],
-    changelogEntries: [...nonDemoChangelogs, ...demo.changelogEntries],
-    archivedApps: [...nonDemoArchives, ...demo.archivedApps],
-    checklists: [...(current.checklists || []), ...demo.checklists],
+    ideas: mergeById(nonDemoIdeas, demo.ideas),
+    projects: mergeById(nonDemoProjects, demo.projects),
+    tasks: mergeById(nonDemoTasks, demo.tasks),
+    releases: mergeById(nonDemoReleases, demo.releases),
+    changelogEntries: mergeById(nonDemoChangelogs, demo.changelogEntries),
+    archivedApps: mergeById(nonDemoArchives, demo.archivedApps),
+    notifications: mergeById(nonDemoNotifications, demo.notifications),
+    timeLogs: mergeById(nonDemoTimeLogs, demo.timeLogs || []),
+    checklists: mergeById(nonDemoChecklists, demo.checklists),
     demoPurged: false,
   };
 
   saveUserDatabase(userId, merged);
   try {
     localStorage.removeItem(`${DATA_PREFIX}${userId}_demo_purged`);
-    localStorage.removeItem('ios_dev_hub_global_demo_purged');
   } catch {}
-  return merged;
+  return sanitizeDatabaseChecklists(merged, userId);
 }
 
 /**
- * Mark a single demo item as user's own data (keep item action).
+ * Mark a single demo item (or a whole demo project and its linked items) as the user's own original data.
  */
-export function keepDemoItem(userId: string, entityType: 'idea' | 'project' | 'task' | 'release', itemId: string): UserDatabase {
+export function keepDemoItem(
+  userId: string,
+  entityType: 'idea' | 'project' | 'task' | 'release' | 'timeLog',
+  itemId: string
+): UserDatabase {
   const current = loadUserDatabase(userId);
   if (entityType === 'idea') {
-    current.ideas = current.ideas.map(i => i.id === itemId ? { ...i, isDemo: false } : i);
+    current.ideas = (current.ideas || []).map(i => (i.id === itemId ? { ...i, isDemo: false } : i));
   } else if (entityType === 'project') {
-    current.projects = current.projects.map(p => p.id === itemId ? { ...p, isDemo: false } : p);
+    current.projects = (current.projects || []).map(p => (p.id === itemId ? { ...p, isDemo: false } : p));
+    current.tasks = (current.tasks || []).map(t => (t.projectId === itemId ? { ...t, isDemo: false } : t));
+    const projReleaseIds = new Set(
+      (current.releases || []).filter(r => r.projectId === itemId).map(r => r.id)
+    );
+    current.releases = (current.releases || []).map(r =>
+      r.projectId === itemId ? { ...r, isDemo: false } : r
+    );
+    current.changelogEntries = (current.changelogEntries || []).map(c =>
+      projReleaseIds.has(c.releaseId) ? { ...c, isDemo: false } : c
+    );
+    current.checklists = (current.checklists || []).map(c =>
+      c.projectId === itemId ? { ...c, isDemo: false } : c
+    );
+    current.timeLogs = (current.timeLogs || []).map(tl =>
+      tl.projectId === itemId ? { ...tl, isDemo: false } : tl
+    );
   } else if (entityType === 'task') {
-    current.tasks = current.tasks.map(t => t.id === itemId ? { ...t, isDemo: false } : t);
+    current.tasks = (current.tasks || []).map(t => (t.id === itemId ? { ...t, isDemo: false } : t));
   } else if (entityType === 'release') {
-    current.releases = current.releases.map(r => r.id === itemId ? { ...r, isDemo: false } : r);
+    current.releases = (current.releases || []).map(r => (r.id === itemId ? { ...r, isDemo: false } : r));
+    current.changelogEntries = (current.changelogEntries || []).map(c =>
+      c.releaseId === itemId ? { ...c, isDemo: false } : c
+    );
+  } else if (entityType === 'timeLog') {
+    current.timeLogs = (current.timeLogs || []).map(tl =>
+      tl.id === itemId ? { ...tl, isDemo: false } : tl
+    );
   }
   saveUserDatabase(userId, current);
   return current;
@@ -1149,35 +1360,135 @@ export function exportTasksAsCsv(tasks: Task[], projects: Project[], statuses: W
 }
 
 /**
- * Export changelog as formatted Markdown.
+ * Export changelog as formatted Markdown, organized into dedicated sections per project.
  */
-export function exportChangelogAsMarkdown(projectName: string, releases: Release[], entries: ChangelogEntry[]): string {
-  let md = `# ${projectName} - Changelog\n\n`;
-  for (const rel of releases) {
-    md += `## Version ${rel.version} (Build ${rel.build}) - ${rel.status}\n`;
-    if (rel.releasedDate) {
-      md += `*Released on ${rel.releasedDate}*\n\n`;
-    } else if (rel.plannedDate) {
-      md += `*Planned for ${rel.plannedDate}*\n\n`;
+export function exportChangelogAsMarkdown(
+  projectsOrName: Project[] | string,
+  releases: Release[],
+  entries: ChangelogEntry[],
+  archivedApps: ArchivedApp[] = []
+): string {
+  const changelogTypes: ('Added' | 'Changed' | 'Fixed' | 'Removed' | 'Security' | 'Performance')[] = [
+    'Added', 'Changed', 'Fixed', 'Removed', 'Security', 'Performance',
+  ];
+
+  const formatReleaseBlock = (rel: Release, headingLevel: '##' | '###'): string => {
+    let block = `${headingLevel} Version ${rel.version} (Build ${rel.build}) - ${rel.status}\n`;
+    if (rel.name) {
+      block += `**Release:** ${rel.name}\n`;
     }
+    if (rel.releasedDate) {
+      block += `*Released on ${rel.releasedDate}*\n\n`;
+    } else if (rel.plannedDate) {
+      block += `*Planned for ${rel.plannedDate}*\n\n`;
+    } else {
+      block += '\n';
+    }
+
     const relEntries = entries.filter(e => e.releaseId === rel.id);
     if (relEntries.length > 0) {
-      const types: ('Added' | 'Changed' | 'Fixed' | 'Removed' | 'Security' | 'Performance')[] = [
-        'Added', 'Changed', 'Fixed', 'Removed', 'Security', 'Performance'
-      ];
-      for (const t of types) {
+      const subHeading = headingLevel === '##' ? '###' : '####';
+      for (const t of changelogTypes) {
         const matches = relEntries.filter(e => e.type === t);
         if (matches.length > 0) {
-          md += `### ${t}\n`;
+          block += `${subHeading} ${t}\n`;
           for (const item of matches) {
-            md += `- ${item.text}\n`;
+            block += `- ${item.text}\n`;
           }
-          md += '\n';
+          block += '\n';
         }
       }
     } else {
-      md += '_No changelog entries registered._\n\n';
+      block += '_No changelog entries registered._\n\n';
+    }
+
+    return block;
+  };
+
+  if (typeof projectsOrName === 'string') {
+    let md = `# ${projectsOrName} - Changelog\n\n`;
+    if (releases.length === 0) {
+      md += '_No releases registered._\n';
+      return md;
+    }
+    for (const rel of releases) {
+      md += formatReleaseBlock(rel, '##');
+    }
+    return md;
+  }
+
+  const projects = projectsOrName;
+  const projectMap = new Map<string, Project>(projects.map(p => [p.id, p]));
+  const archivedByProjectId = new Map<string, ArchivedApp>();
+  for (const app of archivedApps) {
+    if (app.projectId) {
+      archivedByProjectId.set(app.projectId, app);
     }
   }
+
+  const releasesByProject = new Map<string, Release[]>();
+  for (const rel of releases) {
+    const key = rel.projectId || '__unassigned__';
+    const list = releasesByProject.get(key) || [];
+    list.push(rel);
+    releasesByProject.set(key, list);
+  }
+
+  const sortedProjects = [...projects].sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+  );
+
+  const orderedProjectIds: string[] = [];
+  for (const proj of sortedProjects) {
+    if (releasesByProject.has(proj.id)) {
+      orderedProjectIds.push(proj.id);
+    }
+  }
+  for (const projId of releasesByProject.keys()) {
+    if (!projectMap.has(projId)) {
+      orderedProjectIds.push(projId);
+    }
+  }
+
+  let md = `# AppDock75 - Changelog\n\n`;
+  md += `Exported on ${new Date().toISOString().split('T')[0]} · ${orderedProjectIds.length} ${orderedProjectIds.length === 1 ? 'project' : 'projects'} · ${releases.length} ${releases.length === 1 ? 'release' : 'releases'}\n\n`;
+
+  if (orderedProjectIds.length === 0) {
+    if (sortedProjects.length === 0) {
+      md += '_No releases or changelog entries registered._\n';
+      return md;
+    }
+    for (const proj of sortedProjects) {
+      md += `---\n\n`;
+      md += `## ${proj.name}\n\n`;
+      md += `Bundle ID: \`${proj.bundleId}\` · Status: ${proj.status}\n\n`;
+      md += `_No releases registered for this project yet._\n\n`;
+    }
+    return md;
+  }
+
+  for (const projId of orderedProjectIds) {
+    const proj = projectMap.get(projId);
+    const archived = archivedByProjectId.get(projId);
+    const projReleases = [...(releasesByProject.get(projId) || [])].sort((a, b) => {
+      const dateA = a.releasedDate || a.plannedDate || a.createdAt || '';
+      const dateB = b.releasedDate || b.plannedDate || b.createdAt || '';
+      return dateB.localeCompare(dateA);
+    });
+
+    const projTitle = proj?.name || archived?.name || 'Other / Unassigned Project';
+    md += `---\n\n`;
+    md += `## ${projTitle}\n\n`;
+    if (proj) {
+      md += `Bundle ID: \`${proj.bundleId}\` · Status: ${proj.status}\n\n`;
+    } else if (archived) {
+      md += `Bundle ID: \`${archived.bundleId}\` · Status: Archived (${archived.status})\n\n`;
+    }
+
+    for (const rel of projReleases) {
+      md += formatReleaseBlock(rel, '###');
+    }
+  }
+
   return md;
 }

@@ -19,11 +19,13 @@ import {
 } from '../types';
 import {
   UserDatabase,
+  DemoDataBreakdown,
   loadUserDatabase,
   saveUserDatabase,
-  removeDemoData,
   restoreDemoData,
   keepDemoItem,
+  purgeDemoDataFromDatabase,
+  getDemoBreakdown,
   createEmptyDatabase,
   DEFAULT_CHECKLIST_TEMPLATE,
   DEFAULT_APP_STORE_QUESTIONS,
@@ -42,11 +44,12 @@ interface DataContextType {
   activeProjectId: string | null;
   setActiveProjectId: (id: string | null) => void;
   hasDemoData: boolean;
+  demoBreakdown: DemoDataBreakdown;
 
   // Demo data controls
   purgeDemoData: () => void;
   reloadDemoData: () => void;
-  keepItemAsMine: (type: 'idea' | 'project' | 'task' | 'release', id: string) => void;
+  keepItemAsMine: (type: 'idea' | 'project' | 'task' | 'release' | 'timeLog', id: string) => void;
 
   // Full Database Import & Export
   exportFullDatabase: () => string;
@@ -141,7 +144,7 @@ interface DataContextType {
     updates: Partial<Pick<TimeLogEntry, 'projectId' | 'startedAt' | 'endedAt' | 'durationSeconds' | 'note'>>
   ) => void;
   deleteTimeLog: (id: string) => void;
-  clearTimeLogHistory: (projectId?: string) => void;
+  clearTimeLogHistory: (projectId?: string | string[]) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -164,10 +167,7 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
 
       const wasPurgedLocally =
         localDb.demoPurged === true ||
-        localStorage.getItem(`ios_dev_hub_data_${user.id}_demo_purged`) === 'true' ||
-        localStorage.getItem('ios_dev_hub_global_demo_purged') === 'true' ||
-        (localDb.projects.length === 0 && localDb.ideas.length === 0) ||
-        (!localDb.projects.some(p => p.isDemo) && !localDb.ideas.some(i => i.isDemo) && !localDb.tasks.some(t => t.isDemo));
+        localStorage.getItem(`ios_dev_hub_data_${user.id}_demo_purged`) === 'true';
 
       // Check remote Firestore workspace
       loadWorkspaceFromFirestore(user.id).then(remoteDb => {
@@ -176,9 +176,7 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
             remoteDb.demoPurged === true ||
             wasPurgedLocally ||
             localDb.demoPurged === true ||
-            localStorage.getItem(`ios_dev_hub_data_${user.id}_demo_purged`) === 'true' ||
-            localStorage.getItem('ios_dev_hub_global_demo_purged') === 'true' ||
-            (!remoteDb.projects.some(p => p.isDemo) && !remoteDb.ideas.some(i => i.isDemo));
+            localStorage.getItem(`ios_dev_hub_data_${user.id}_demo_purged`) === 'true';
 
           // Preserve custom checklist template if remote Firestore document lacked it
           if (!remoteDb.checklistTemplate || remoteDb.checklistTemplate.length === 0) {
@@ -198,22 +196,9 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
 
           let finalDb = remoteDb;
           if (isPurged) {
-            finalDb = {
-              ...remoteDb,
-              ideas: (remoteDb.ideas || []).filter(i => !i.isDemo),
-              projects: (remoteDb.projects || []).filter(p => !p.isDemo),
-              tasks: (remoteDb.tasks || []).filter(t => !t.isDemo),
-              releases: (remoteDb.releases || []).filter(r => !r.isDemo),
-              changelogEntries: (remoteDb.changelogEntries || []).filter(c => {
-                const rel = (remoteDb.releases || []).find(r => r.id === c.releaseId);
-                return rel && !rel.isDemo;
-              }),
-              archivedApps: (remoteDb.archivedApps || []).filter(a => !a.isDemo),
-              demoPurged: true,
-            };
+            finalDb = purgeDemoDataFromDatabase(remoteDb);
             try {
               localStorage.setItem(`ios_dev_hub_data_${user.id}_demo_purged`, 'true');
-              localStorage.setItem('ios_dev_hub_global_demo_purged', 'true');
             } catch {}
           }
           const sanitized = sanitizeDatabaseChecklists(finalDb, user.id);
@@ -239,11 +224,7 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
         if (remoteUpdate) {
           const isPurged =
             remoteUpdate.demoPurged === true ||
-            wasPurgedLocally ||
-            localDb.demoPurged === true ||
-            localStorage.getItem(`ios_dev_hub_data_${user.id}_demo_purged`) === 'true' ||
-            localStorage.getItem('ios_dev_hub_global_demo_purged') === 'true' ||
-            (!remoteUpdate.projects.some(p => p.isDemo) && !remoteUpdate.ideas.some(i => i.isDemo));
+            localStorage.getItem(`ios_dev_hub_data_${user.id}_demo_purged`) === 'true';
 
           // Preserve checklist template if missing in update
           if (!remoteUpdate.checklistTemplate || remoteUpdate.checklistTemplate.length === 0) {
@@ -263,19 +244,7 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
 
           let finalUpdate = remoteUpdate;
           if (isPurged) {
-            finalUpdate = {
-              ...remoteUpdate,
-              ideas: (remoteUpdate.ideas || []).filter(i => !i.isDemo),
-              projects: (remoteUpdate.projects || []).filter(p => !p.isDemo),
-              tasks: (remoteUpdate.tasks || []).filter(t => !t.isDemo),
-              releases: (remoteUpdate.releases || []).filter(r => !r.isDemo),
-              changelogEntries: (remoteUpdate.changelogEntries || []).filter(c => {
-                const rel = (remoteUpdate.releases || []).find(r => r.id === c.releaseId);
-                return rel && !rel.isDemo;
-              }),
-              archivedApps: (remoteUpdate.archivedApps || []).filter(a => !a.isDemo),
-              demoPurged: true,
-            };
+            finalUpdate = purgeDemoDataFromDatabase(remoteUpdate);
             try {
               localStorage.setItem(`ios_dev_hub_data_${user.id}_demo_purged`, 'true');
             } catch {}
@@ -305,43 +274,40 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [user?.id]);
 
+  const demoBreakdown = useMemo(() => getDemoBreakdown(db), [db]);
+
   const hasDemoData = useMemo(() => {
-    return (
-      db.ideas.some(i => i.isDemo) ||
-      db.projects.some(p => p.isDemo) ||
-      db.tasks.some(t => t.isDemo) ||
-      db.releases.some(r => r.isDemo) ||
-      db.archivedApps.some(a => a.isDemo)
-    );
-  }, [db]);
+    return demoBreakdown.demo.total > 0 || (db.checklists || []).some(c => c.isDemo === true);
+  }, [demoBreakdown, db.checklists]);
 
   const purgeDemoData = useCallback(() => {
     if (!user?.id) return;
-    const cleaned = removeDemoData(user.id);
+    const cleaned = purgeDemoDataFromDatabase(db);
     try {
       localStorage.setItem(`ios_dev_hub_data_${user.id}_demo_purged`, 'true');
-      localStorage.setItem('ios_dev_hub_global_demo_purged', 'true');
     } catch {}
     commit(cleaned);
     if (activeProjectId && !cleaned.projects.some(p => p.id === activeProjectId)) {
       setActiveProjectId(cleaned.projects[0]?.id || null);
     }
-  }, [user?.id, activeProjectId, commit]);
+  }, [user?.id, db, activeProjectId, commit]);
 
   const reloadDemoData = useCallback(() => {
     if (!user?.id) return;
+    saveUserDatabase(user.id, db);
     const restored = restoreDemoData(user.id);
     commit(restored);
     if (!activeProjectId && restored.projects.length > 0) {
       setActiveProjectId(restored.projects[0].id);
     }
-  }, [user?.id, activeProjectId, commit]);
+  }, [user?.id, db, activeProjectId, commit]);
 
-  const keepItemAsMine = useCallback((type: 'idea' | 'project' | 'task' | 'release', id: string) => {
+  const keepItemAsMine = useCallback((type: 'idea' | 'project' | 'task' | 'release' | 'timeLog', id: string) => {
     if (!user?.id) return;
-    const updated = keepDemoItem(user.id, type as any, id);
+    saveUserDatabase(user.id, db);
+    const updated = keepDemoItem(user.id, type, id);
     commit(updated);
-  }, [user?.id, commit]);
+  }, [user?.id, db, commit]);
 
   // Full Database Import & Export Handlers
   const exportFullDatabase = useCallback((): string => {
@@ -512,14 +478,15 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
   const deleteIdea = useCallback((id: string) => {
     const ideaToDelete = db.ideas.find(i => i.id === id);
     const remainingIdeas = db.ideas.filter(i => i.id !== id);
-    const noMoreDemoIdeas = !remainingIdeas.some(i => i.isDemo);
-    const isPurged = db.demoPurged === true || (ideaToDelete?.isDemo && noMoreDemoIdeas && !db.projects.some(p => p.isDemo));
+    const nextDb = { ...db, ideas: remainingIdeas };
+    const remainingDemoTotal = getDemoBreakdown(nextDb).demo.total;
+    const isPurged = db.demoPurged === true || (Boolean(ideaToDelete?.isDemo) && remainingDemoTotal === 0);
     if (isPurged && user?.id) {
       try {
         localStorage.setItem(`ios_dev_hub_data_${user.id}_demo_purged`, 'true');
       } catch {}
     }
-    commit({ ...db, ideas: remainingIdeas, demoPurged: isPurged ? true : db.demoPurged });
+    commit({ ...nextDb, demoPurged: isPurged ? true : db.demoPurged });
   }, [db, commit, user?.id]);
 
   const addIdeaComment = useCallback((ideaId: string, text: string) => {
@@ -605,7 +572,7 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
       };
     });
 
-    // Create 3 standard starting tasks for the new project
+    // Create 3 standard starting tasks for the new project (explicitly marked as user data)
     const starterTasks: Task[] = [
       {
         id: `tsk-${Date.now()}-1`,
@@ -623,6 +590,7 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
         order: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        isDemo: false,
       },
       {
         id: `tsk-${Date.now()}-2`,
@@ -637,6 +605,7 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
         order: 1,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        isDemo: false,
       },
       {
         id: `tsk-${Date.now()}-3`,
@@ -651,6 +620,7 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
         order: 2,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        isDemo: false,
       },
     ];
 
@@ -664,6 +634,7 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
       id: `chk-${newProjId}-${c.id}`,
       projectId: newProjId,
       done: false,
+      isDemo: false,
     }));
 
     commit({
@@ -717,6 +688,7 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
       id: `chk-${newProjectId}-${c.id}`,
       projectId: newProjectId,
       done: false,
+      isDemo: false,
     }));
 
     commit({
@@ -736,21 +708,26 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
   const deleteProject = useCallback((id: string) => {
     const projToDelete = db.projects.find(p => p.id === id);
     const remaining = db.projects.filter(p => p.id !== id);
-    const hasNoDemoProjects = !remaining.some(p => p.isDemo);
-    const isPurged = db.demoPurged === true || projToDelete?.isDemo || hasNoDemoProjects;
+    const nextReleaseIds = new Set(db.releases.filter(r => r.projectId !== id).map(r => r.id));
+    const nextDb: UserDatabase = {
+      ...db,
+      projects: remaining,
+      tasks: db.tasks.filter(t => t.projectId !== id),
+      releases: db.releases.filter(r => r.projectId !== id),
+      changelogEntries: db.changelogEntries.filter(c => nextReleaseIds.has(c.releaseId)),
+      checklists: db.checklists.filter(c => c.projectId !== id),
+      timeLogs: (db.timeLogs || []).filter(tl => tl.projectId !== id),
+      activeTimer: db.activeTimer?.projectId === id ? null : (db.activeTimer ?? null),
+    };
+    const remainingDemoTotal = getDemoBreakdown(nextDb).demo.total;
+    const isPurged = db.demoPurged === true || (Boolean(projToDelete?.isDemo) && remainingDemoTotal === 0);
     if (isPurged && user?.id) {
       try {
         localStorage.setItem(`ios_dev_hub_data_${user.id}_demo_purged`, 'true');
       } catch {}
     }
     commit({
-      ...db,
-      projects: remaining,
-      tasks: db.tasks.filter(t => t.projectId !== id),
-      releases: db.releases.filter(r => r.projectId !== id),
-      checklists: db.checklists.filter(c => c.projectId !== id),
-      timeLogs: (db.timeLogs || []).filter(tl => tl.projectId !== id),
-      activeTimer: db.activeTimer?.projectId === id ? null : (db.activeTimer ?? null),
+      ...nextDb,
       demoPurged: isPurged ? true : db.demoPurged,
     });
     if (activeProjectId === id) {
@@ -920,6 +897,7 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
     const newEntry: ChangelogEntry = {
       ...entryData,
       id: `cl-${Date.now()}`,
+      isDemo: false,
     };
     commit({ ...db, changelogEntries: [...db.changelogEntries, newEntry] });
     return newEntry;
@@ -1392,6 +1370,7 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
         source: 'timer',
         createdAt: nowIso,
         updatedAt: nowIso,
+        isDemo: false,
       };
       nextLogs = [savedPrev, ...nextLogs];
     }
@@ -1427,6 +1406,7 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
       source: 'timer',
       createdAt: endedAt,
       updatedAt: endedAt,
+      isDemo: false,
     };
 
     commit({
@@ -1484,6 +1464,7 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
       source: entry.source || 'manual',
       createdAt: nowIso,
       updatedAt: nowIso,
+      isDemo: false,
     };
 
     commit({
@@ -1529,10 +1510,14 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
     });
   }, [db, commit]);
 
-  const clearTimeLogHistory = useCallback((projectId?: string) => {
-    const nextLogs = projectId
-      ? (db.timeLogs || []).filter(tl => tl.projectId !== projectId)
-      : [];
+  const clearTimeLogHistory = useCallback((projectId?: string | string[]) => {
+    let nextLogs: TimeLogEntry[] = [];
+    if (typeof projectId === 'string') {
+      nextLogs = (db.timeLogs || []).filter(tl => tl.projectId !== projectId);
+    } else if (Array.isArray(projectId)) {
+      const targetIds = new Set(projectId);
+      nextLogs = (db.timeLogs || []).filter(tl => !targetIds.has(tl.projectId));
+    }
     commit({
       ...db,
       timeLogs: nextLogs,
@@ -1546,6 +1531,7 @@ export const DataProviderComponent: React.FC<{ children: React.ReactNode }> = ({
         activeProjectId,
         setActiveProjectId,
         hasDemoData,
+        demoBreakdown,
         purgeDemoData,
         reloadDemoData,
         keepItemAsMine,

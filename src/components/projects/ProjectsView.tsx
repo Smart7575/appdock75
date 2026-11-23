@@ -2704,19 +2704,33 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 </div>
               )}
 
-              <div className="flex justify-between items-center pt-2">
+              <div className="flex justify-between items-center pt-2 gap-2 flex-wrap">
                 {selectedTask ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      deleteTask(selectedTask.id);
-                      setIsEditingTask(false);
-                      setSelectedTask(null);
-                    }}
-                    className="text-rose-400 hover:underline text-xs cursor-pointer"
-                  >
-                    Delete Task
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {selectedTask.isDemo && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          keepItemAsMine('task', selectedTask.id);
+                          setSelectedTask({ ...selectedTask, isDemo: false });
+                        }}
+                        className="px-2.5 py-1 text-xs text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 rounded-lg cursor-pointer"
+                      >
+                        Keep as My Data
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        deleteTask(selectedTask.id);
+                        setIsEditingTask(false);
+                        setSelectedTask(null);
+                      }}
+                      className="text-rose-400 hover:underline text-xs cursor-pointer"
+                    >
+                      Delete Task
+                    </button>
+                  </div>
                 ) : <div />}
 
                 <div className="flex gap-2">

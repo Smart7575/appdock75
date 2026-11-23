@@ -13,6 +13,7 @@ import {
   Search,
   AlertTriangle,
   History,
+  ShieldCheck,
 } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { useFormatDate } from '../../utils/dateFormat';
@@ -47,6 +48,7 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
     updateTimeLog,
     deleteTimeLog,
     clearTimeLogHistory,
+    keepItemAsMine,
   } = useData();
   const { formatDate } = useFormatDate();
 
@@ -55,6 +57,30 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
       a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
     );
   }, [db.projects]);
+
+  // Filter between All, Active (non-Released), and Released projects
+  const [projectStatusFilter, setProjectStatusFilter] = useState<'all' | 'active' | 'released'>('active');
+
+  const activeProjects = useMemo(
+    () => sortedProjects.filter(p => p.status !== 'Released'),
+    [sortedProjects]
+  );
+
+  const releasedProjects = useMemo(
+    () => sortedProjects.filter(p => p.status === 'Released'),
+    [sortedProjects]
+  );
+
+  const filteredProjects = useMemo(() => {
+    if (projectStatusFilter === 'active') return activeProjects;
+    if (projectStatusFilter === 'released') return releasedProjects;
+    return sortedProjects;
+  }, [projectStatusFilter, sortedProjects, activeProjects, releasedProjects]);
+
+  const filteredProjectIds = useMemo(
+    () => new Set(filteredProjects.map(p => p.id)),
+    [filteredProjects]
+  );
 
   const activeTimer = db.activeTimer || null;
   const timeLogs = useMemo(() => {
@@ -65,20 +91,32 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
 
   // Selected project for timer & manual entry defaults
   const [selectedProjectId, setSelectedProjectId] = useState<string>(() => {
-    return activeTimer?.projectId || activeProjectId || sortedProjects[0]?.id || '';
+    if (activeTimer?.projectId && activeProjects.some(p => p.id === activeTimer.projectId)) {
+      return activeTimer.projectId;
+    }
+    if (activeProjectId && activeProjects.some(p => p.id === activeProjectId)) {
+      return activeProjectId;
+    }
+    return activeProjects[0]?.id || '';
   });
 
-  // Keep selectedProjectId valid if projects load/change
+  // Sync selectedProjectId when timer starts or status filter changes
   useEffect(() => {
-    if (activeTimer?.projectId) {
-      setSelectedProjectId(activeTimer.projectId);
+    if (activeTimer?.projectId && filteredProjectIds.has(activeTimer.projectId)) {
+      if (!selectedProjectId || !filteredProjectIds.has(selectedProjectId)) {
+        setSelectedProjectId(activeTimer.projectId);
+      }
       return;
     }
-    if (selectedProjectId && sortedProjects.some(p => p.id === selectedProjectId)) {
+    if (selectedProjectId && filteredProjectIds.has(selectedProjectId)) {
       return;
     }
-    setSelectedProjectId(activeProjectId || sortedProjects[0]?.id || '');
-  }, [activeTimer?.projectId, activeProjectId, sortedProjects, selectedProjectId]);
+    if (activeProjectId && filteredProjectIds.has(activeProjectId)) {
+      setSelectedProjectId(activeProjectId);
+      return;
+    }
+    setSelectedProjectId(filteredProjects[0]?.id || '');
+  }, [activeTimer?.projectId, activeProjectId, filteredProjects, filteredProjectIds, selectedProjectId]);
 
   // Live ticker for running timer
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
@@ -114,10 +152,11 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
   const [manualSavedNotice, setManualSavedNotice] = useState(false);
 
   useEffect(() => {
-    if (selectedProjectId && (!manualProjectId || !sortedProjects.some(p => p.id === manualProjectId))) {
-      setManualProjectId(selectedProjectId);
+    if (manualProjectId && filteredProjectIds.has(manualProjectId)) {
+      return;
     }
-  }, [selectedProjectId, manualProjectId, sortedProjects]);
+    setManualProjectId(selectedProjectId || filteredProjects[0]?.id || '');
+  }, [selectedProjectId, manualProjectId, filteredProjects, filteredProjectIds]);
 
   const syncDurationFromTimes = (dateStr: string, startHHMM: string, endHHMM: string) => {
     const { durationSeconds } = buildIsoRangeFromDateAndTimes(dateStr, startHHMM, endHHMM);
@@ -165,8 +204,23 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [confirmClearHistory, setConfirmClearHistory] = useState(false);
 
+  useEffect(() => {
+    if (filterProjectId !== 'all' && !filteredProjectIds.has(filterProjectId)) {
+      setFilterProjectId('all');
+    }
+  }, [filterProjectId, filteredProjectIds]);
+
+  useEffect(() => {
+    setConfirmClearHistory(false);
+  }, [projectStatusFilter, filterProjectId]);
+
+  const statusScopedLogs = useMemo(() => {
+    if (projectStatusFilter === 'all') return timeLogs;
+    return timeLogs.filter(entry => filteredProjectIds.has(entry.projectId));
+  }, [timeLogs, projectStatusFilter, filteredProjectIds]);
+
   const filteredLogs = useMemo(() => {
-    return timeLogs.filter(entry => {
+    return statusScopedLogs.filter(entry => {
       if (filterProjectId !== 'all' && entry.projectId !== filterProjectId) {
         return false;
       }
@@ -178,7 +232,7 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
       }
       return true;
     });
-  }, [timeLogs, filterProjectId, searchQuery, sortedProjects]);
+  }, [statusScopedLogs, filterProjectId, searchQuery, sortedProjects]);
 
   // Edit registered time entry modal state
   const [editingEntry, setEditingEntry] = useState<TimeLogEntry | null>(null);
@@ -234,7 +288,7 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
     let todaySeconds = 0;
     const perProject = new Map<string, { seconds: number; sessions: number }>();
 
-    for (const log of timeLogs) {
+    for (const log of statusScopedLogs) {
       totalSeconds += log.durationSeconds;
       if (toLocalDateString(log.startedAt) === todayStr) {
         todaySeconds += log.durationSeconds;
@@ -251,17 +305,17 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
     return {
       totalSeconds,
       todaySeconds,
-      sessionsCount: timeLogs.length,
+      sessionsCount: statusScopedLogs.length,
       selectedProjectSeconds: activeProjStats.seconds,
       perProject,
     };
-  }, [timeLogs, selectedProjectId]);
+  }, [statusScopedLogs, selectedProjectId]);
 
   const activeTimerProject = activeTimer ? projectMap.get(activeTimer.projectId) : undefined;
   const selectedProject = projectMap.get(selectedProjectId);
 
   const handleStartOrSwitchTimer = () => {
-    const pid = selectedProjectId || sortedProjects[0]?.id;
+    const pid = selectedProjectId || filteredProjects[0]?.id;
     if (!pid) return;
     startTimer(pid, sessionNote);
     setConfirmDiscardTimer(false);
@@ -286,7 +340,49 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+          {sortedProjects.length > 0 && (
+            <div
+              className="inline-flex items-center p-1 bg-slate-900 border border-slate-800 rounded-lg"
+              role="group"
+              aria-label="Filter projects by status"
+            >
+              <button
+                type="button"
+                onClick={() => setProjectStatusFilter('all')}
+                className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap ${
+                  projectStatusFilter === 'all'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                All ({sortedProjects.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setProjectStatusFilter('active')}
+                className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap ${
+                  projectStatusFilter === 'active'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Active ({activeProjects.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setProjectStatusFilter('released')}
+                className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap ${
+                  projectStatusFilter === 'released'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Released ({releasedProjects.length})
+              </button>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={() => setShowManualForm(prev => !prev)}
@@ -356,13 +452,22 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
                     <select
                       value={selectedProjectId}
                       onChange={e => setSelectedProjectId(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-100 font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
+                      disabled={filteredProjects.length === 0}
+                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-100 font-medium focus:outline-none focus:border-blue-500 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      {sortedProjects.map(proj => (
-                        <option key={proj.id} value={proj.id} className="bg-slate-900 text-white">
-                          {proj.name} ({proj.status})
+                      {filteredProjects.length === 0 ? (
+                        <option value="" className="bg-slate-900 text-slate-400">
+                          {projectStatusFilter === 'active'
+                            ? 'No active projects available'
+                            : 'No released projects available'}
                         </option>
-                      ))}
+                      ) : (
+                        filteredProjects.map(proj => (
+                          <option key={proj.id} value={proj.id} className="bg-slate-900 text-white">
+                            {proj.name} ({proj.status})
+                          </option>
+                        ))
+                      )}
                     </select>
                   </div>
 
@@ -405,14 +510,15 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
                   <button
                     type="button"
                     onClick={handleStartOrSwitchTimer}
-                    className="px-5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"
+                    disabled={!selectedProjectId}
+                    className="px-5 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm whitespace-nowrap"
                   >
                     <Play className="w-4 h-4 fill-current" />
                     <span>Start Timer</span>
                   </button>
                 ) : (
                   <div className="flex items-center gap-2 flex-wrap">
-                    {activeTimer.projectId !== selectedProjectId && (
+                    {selectedProjectId && activeTimer.projectId !== selectedProjectId && (
                       <button
                         type="button"
                         onClick={handleStartOrSwitchTimer}
@@ -511,13 +617,22 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
                     value={manualProjectId}
                     onChange={e => setManualProjectId(e.target.value)}
                     required
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-blue-500 cursor-pointer"
+                    disabled={filteredProjects.length === 0}
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-blue-500 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    {sortedProjects.map(p => (
-                      <option key={p.id} value={p.id} className="bg-slate-900 text-white">
-                        {p.name}
+                    {filteredProjects.length === 0 ? (
+                      <option value="" className="bg-slate-900 text-slate-400">
+                        {projectStatusFilter === 'active'
+                          ? 'No active projects available'
+                          : 'No released projects available'}
                       </option>
-                    ))}
+                    ) : (
+                      filteredProjects.map(p => (
+                        <option key={p.id} value={p.id} className="bg-slate-900 text-white">
+                          {p.name} ({p.status})
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
 
@@ -607,7 +722,8 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
                 />
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5"
+                  disabled={!manualProjectId}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap shrink-0 flex items-center justify-center gap-1.5"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Save Entry ({manualHours}h {manualMinutes}m)</span>
@@ -624,7 +740,18 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
                 {formatDurationCompact(summary.totalSeconds)}
               </p>
               <span className="text-[11px] text-slate-500 mt-0.5 block">
-                Across {sortedProjects.length} {sortedProjects.length === 1 ? 'app' : 'apps'}
+                Across {filteredProjects.length}{' '}
+                {projectStatusFilter === 'active'
+                  ? filteredProjects.length === 1
+                    ? 'active app'
+                    : 'active apps'
+                  : projectStatusFilter === 'released'
+                    ? filteredProjects.length === 1
+                      ? 'released app'
+                      : 'released apps'
+                    : filteredProjects.length === 1
+                      ? 'app'
+                      : 'apps'}
               </span>
             </div>
 
@@ -656,7 +783,11 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
                 {summary.sessionsCount}
               </p>
               <span className="text-[11px] text-slate-500 mt-0.5 block">
-                Timer & manual logs
+                {projectStatusFilter === 'active'
+                  ? 'Active projects'
+                  : projectStatusFilter === 'released'
+                    ? 'Released projects'
+                    : 'Timer & manual logs'}
               </span>
             </div>
           </div>
@@ -679,71 +810,103 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
               </div>
 
               <div className="divide-y divide-slate-800/70">
-                {sortedProjects.map(proj => {
-                  const stats = summary.perProject.get(proj.id) || { seconds: 0, sessions: 0 };
-                  const colorTheme = getProjectColorTheme(proj);
-                  const isFiltered = filterProjectId === proj.id;
-                  const isTimingThis = activeTimer?.projectId === proj.id;
-                  const sharePct =
-                    summary.totalSeconds > 0
-                      ? Math.round((stats.seconds / summary.totalSeconds) * 100)
-                      : 0;
-
-                  return (
-                    <div
-                      key={proj.id}
-                      onClick={() => setFilterProjectId(isFiltered ? 'all' : proj.id)}
-                      className={`py-3 px-2 -mx-2 rounded-lg transition-colors cursor-pointer flex items-center justify-between gap-3 ${
-                        isFiltered ? 'bg-blue-600/10' : 'hover:bg-slate-800/50'
-                      }`}
+                {filteredProjects.length === 0 ? (
+                  <div className="py-8 text-center space-y-2">
+                    <p className="text-xs font-medium text-slate-300">
+                      {projectStatusFilter === 'active'
+                        ? 'No active projects found'
+                        : 'No released projects found'}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setProjectStatusFilter('all')}
+                      className="text-[11px] text-blue-400 hover:underline cursor-pointer"
                     >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className={`w-2 h-2 rounded-full shrink-0 ${colorTheme.dot}`} />
-                          <span className="text-xs font-semibold text-slate-200 truncate">
-                            {proj.name}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5 pl-4">
-                          <span>{stats.sessions} {stats.sessions === 1 ? 'session' : 'sessions'}</span>
-                          <span aria-hidden="true">·</span>
-                          <span className="font-mono tabular-nums">{sharePct}%</span>
-                        </div>
-                      </div>
+                      Show all projects
+                    </button>
+                  </div>
+                ) : (
+                  filteredProjects.map(proj => {
+                    const stats = summary.perProject.get(proj.id) || { seconds: 0, sessions: 0 };
+                    const colorTheme = getProjectColorTheme(proj);
+                    const isFiltered = filterProjectId === proj.id;
+                    const isTimingThis = activeTimer?.projectId === proj.id;
+                    const isReleased = proj.status === 'Released';
+                    const sharePct =
+                      summary.totalSeconds > 0
+                        ? Math.round((stats.seconds / summary.totalSeconds) * 100)
+                        : 0;
 
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs font-mono font-semibold tabular-nums text-slate-200">
-                          {formatDurationCompact(stats.seconds)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={e => {
-                            e.stopPropagation();
-                            setSelectedProjectId(proj.id);
-                            setActiveProjectId(proj.id);
-                            if (isTimingThis) {
-                              stopTimer(sessionNote);
-                            } else {
-                              startTimer(proj.id);
-                            }
-                          }}
-                          className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
-                            isTimingThis
-                              ? 'bg-rose-600/20 border-rose-500/40 text-rose-400 hover:bg-rose-600/30'
-                              : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white hover:border-slate-600'
-                          }`}
-                          title={isTimingThis ? `End timer for ${proj.name}` : `Start timer for ${proj.name}`}
-                        >
-                          {isTimingThis ? (
-                            <Square className="w-3 h-3 fill-current" />
-                          ) : (
-                            <Play className="w-3 h-3 fill-current" />
-                          )}
-                        </button>
+                    return (
+                      <div
+                        key={proj.id}
+                        onClick={() => setFilterProjectId(isFiltered ? 'all' : proj.id)}
+                        className={`py-3 px-2 -mx-2 rounded-lg transition-colors cursor-pointer flex items-center justify-between gap-3 ${
+                          isFiltered ? 'bg-blue-600/10' : 'hover:bg-slate-800/50'
+                        }`}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full shrink-0 ${colorTheme.dot}`} />
+                            <span className="text-xs font-semibold text-slate-200 truncate">
+                              {proj.name}
+                            </span>
+                            <span
+                              className={`text-[9px] font-semibold px-1.5 py-0.2 rounded border shrink-0 ${
+                                isReleased
+                                  ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                                  : 'text-slate-400 bg-slate-800 border-slate-700'
+                              }`}
+                            >
+                              {proj.status}
+                            </span>
+                            {proj.isDemo && (
+                              <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/20 shrink-0">
+                                Demo
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5 pl-4">
+                            <span>{stats.sessions} {stats.sessions === 1 ? 'session' : 'sessions'}</span>
+                            <span aria-hidden="true">·</span>
+                            <span className="font-mono tabular-nums">{sharePct}%</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs font-mono font-semibold tabular-nums text-slate-200">
+                            {formatDurationCompact(stats.seconds)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={e => {
+                              e.stopPropagation();
+                              setSelectedProjectId(proj.id);
+                              setActiveProjectId(proj.id);
+                              if (isTimingThis) {
+                                stopTimer(sessionNote);
+                              } else {
+                                startTimer(proj.id);
+                              }
+                            }}
+                            className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+                              isTimingThis
+                                ? 'bg-rose-600/20 border-rose-500/40 text-rose-400 hover:bg-rose-600/30'
+                                : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white hover:border-slate-600'
+                            }`}
+                            title={isTimingThis ? `End timer for ${proj.name}` : `Start timer for ${proj.name}`}
+                          >
+                            {isTimingThis ? (
+                              <Square className="w-3 h-3 fill-current" />
+                            ) : (
+                              <Play className="w-3 h-3 fill-current" />
+                            )}
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
             </div>
 
@@ -777,15 +940,21 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
                     onChange={e => setFilterProjectId(e.target.value)}
                     className="px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 cursor-pointer"
                   >
-                    <option value="all" className="bg-slate-900 text-white">All Apps</option>
-                    {sortedProjects.map(p => (
+                    <option value="all" className="bg-slate-900 text-white">
+                      {projectStatusFilter === 'active'
+                        ? 'All Active Apps'
+                        : projectStatusFilter === 'released'
+                          ? 'All Released Apps'
+                          : 'All Apps'}
+                    </option>
+                    {filteredProjects.map(p => (
                       <option key={p.id} value={p.id} className="bg-slate-900 text-white">
                         {p.name}
                       </option>
                     ))}
                   </select>
 
-                  {filteredLogs.length > 0 && !confirmClearHistory && (
+                  {statusScopedLogs.length > 0 && filteredLogs.length > 0 && !confirmClearHistory && (
                     <button
                       type="button"
                       onClick={() => setConfirmClearHistory(true)}
@@ -793,7 +962,13 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>
-                        {filterProjectId === 'all' ? 'Delete History' : 'Clear App History'}
+                        {filterProjectId !== 'all'
+                          ? 'Clear App History'
+                          : projectStatusFilter === 'active'
+                            ? 'Clear Active History'
+                            : projectStatusFilter === 'released'
+                              ? 'Clear Released History'
+                              : 'Delete History'}
                       </span>
                     </button>
                   )}
@@ -806,16 +981,26 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
                   <div className="flex items-center gap-2 text-rose-200">
                     <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
                     <span>
-                      {filterProjectId === 'all'
-                        ? `Delete all ${timeLogs.length} registered time entries? This cannot be undone.`
-                        : `Delete all ${filteredLogs.length} time entries for ${projectMap.get(filterProjectId)?.name || 'this app'}?`}
+                      {filterProjectId !== 'all'
+                        ? `Delete all ${statusScopedLogs.filter(l => l.projectId === filterProjectId).length} time entries for ${projectMap.get(filterProjectId)?.name || 'this app'}?`
+                        : projectStatusFilter === 'active'
+                          ? `Delete all ${statusScopedLogs.length} time entries for active projects? This cannot be undone.`
+                          : projectStatusFilter === 'released'
+                            ? `Delete all ${statusScopedLogs.length} time entries for released projects? This cannot be undone.`
+                            : `Delete all ${timeLogs.length} registered time entries? This cannot be undone.`}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => {
-                        clearTimeLogHistory(filterProjectId === 'all' ? undefined : filterProjectId);
+                        if (filterProjectId !== 'all') {
+                          clearTimeLogHistory(filterProjectId);
+                        } else if (projectStatusFilter !== 'all') {
+                          clearTimeLogHistory(filteredProjects.map(p => p.id));
+                        } else {
+                          clearTimeLogHistory(undefined);
+                        }
                         setConfirmClearHistory(false);
                       }}
                       className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded font-semibold cursor-pointer"
@@ -838,7 +1023,11 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
                 <div className="py-10 text-center space-y-2 border border-dashed border-slate-800 rounded-xl">
                   <Clock className="w-7 h-7 text-slate-600 mx-auto" />
                   <p className="text-xs font-medium text-slate-300">
-                    No production time history recorded yet
+                    {projectStatusFilter === 'active'
+                      ? 'No production time history for active projects'
+                      : projectStatusFilter === 'released'
+                        ? 'No production time history for released projects'
+                        : 'No production time history recorded yet'}
                   </p>
                   <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
                     Start the live timer above while building an app, or click &quot;Register Time Afterwards&quot; to log past sessions.
@@ -869,18 +1058,30 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
                             className="hover:bg-slate-800/40 transition-colors"
                           >
                             <td className="py-2.5 pr-3 font-medium text-slate-200 whitespace-nowrap">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (proj && onNavigate) {
-                                    setActiveProjectId(proj.id);
-                                    onNavigate('projects');
-                                  }
-                                }}
-                                className="hover:text-blue-400 transition-colors cursor-pointer text-left"
-                              >
-                                {proj?.name || 'Deleted Project'}
-                              </button>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (proj && onNavigate) {
+                                      setActiveProjectId(proj.id);
+                                      onNavigate('projects');
+                                    }
+                                  }}
+                                  className="hover:text-blue-400 transition-colors cursor-pointer text-left"
+                                >
+                                  {proj?.name || 'Deleted Project'}
+                                </button>
+                                {proj?.status === 'Released' && (
+                                  <span className="text-[9px] font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
+                                    Released
+                                  </span>
+                                )}
+                                {entry.isDemo && (
+                                  <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/20">
+                                    Demo
+                                  </span>
+                                )}
+                              </div>
                             </td>
                             <td className="py-2.5 px-3 text-slate-300 whitespace-nowrap font-mono tabular-nums">
                               {formatDate(toLocalDateString(entry.startedAt))}
@@ -899,6 +1100,17 @@ export const TimeTrackerView: React.FC<TimeTrackerViewProps> = ({
                             </td>
                             <td className="py-2.5 pl-3 text-right whitespace-nowrap">
                               <div className="inline-flex items-center gap-1">
+                                {entry.isDemo && (
+                                  <button
+                                    type="button"
+                                    onClick={() => keepItemAsMine('timeLog', entry.id)}
+                                    className="px-2 py-1 text-[10px] font-medium text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 rounded-md transition-colors cursor-pointer flex items-center gap-1"
+                                    title="Keep this time entry as your original data"
+                                  >
+                                    <ShieldCheck className="w-3 h-3" />
+                                    <span>Keep</span>
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => openEditModal(entry)}

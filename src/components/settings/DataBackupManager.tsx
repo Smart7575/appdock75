@@ -128,11 +128,11 @@ export const DataBackupManager: React.FC = () => {
   // Handle Export Changelog Markdown
   const handleExportMarkdown = () => {
     try {
-      const currentProj = db.projects[0];
       const mdStr = exportChangelogAsMarkdown(
-        currentProj?.name || 'iOS Apps',
+        db.projects,
         db.releases,
-        db.changelogEntries
+        db.changelogEntries,
+        db.archivedApps
       );
       const blob = new Blob([mdStr], { type: 'text/markdown' });
       const url = URL.createObjectURL(blob);
@@ -463,7 +463,7 @@ export const DataBackupManager: React.FC = () => {
                   Changelog Notes (MD)
                 </h4>
                 <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                  Standardized Markdown release notes categorized by Added, Changed, Fixed, and Security.
+                  Standardized Markdown release notes grouped by project and categorized by Added, Changed, Fixed, and Security.
                 </p>
               </div>
             </div>

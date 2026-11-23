@@ -11,6 +11,7 @@ import { Header } from './components/common/Header';
 import { Sidebar } from './components/common/Sidebar';
 import { CommandPalette } from './components/common/CommandPalette';
 import { NewItemModal } from './components/common/NewItemModal';
+import { DeleteDemoDataModal } from './components/common/DeleteDemoDataModal';
 import { LoginView } from './components/auth/LoginView';
 import { LandingPage } from './components/landing/LandingPage';
 
@@ -31,6 +32,7 @@ const WorkspaceShell: React.FC = () => {
   const [unauthScreen, setUnauthScreen] = useState<'login' | 'landing'>('login');
   const [authInitialMode, setAuthInitialMode] = useState<'login' | 'register'>('login');
   const [newItemType, setNewItemType] = useState<'idea' | 'project' | 'task' | 'release' | null>(null);
+  const [showDeleteDemoModal, setShowDeleteDemoModal] = useState(false);
 
   const handleNavigate = (view: string) => {
     if (view === 'settings:checklist' || view === 'settings/checklist') {
@@ -181,6 +183,7 @@ const WorkspaceShell: React.FC = () => {
         onClose={() => setIsCommandPaletteOpen(false)}
         onNavigate={handleNavigate}
         onOpenNewModal={type => setNewItemType(type)}
+        onOpenDeleteDemoModal={() => setShowDeleteDemoModal(true)}
       />
 
       {/* Quick New Item Creator Modal */}
@@ -188,6 +191,12 @@ const WorkspaceShell: React.FC = () => {
         type={newItemType}
         onClose={() => setNewItemType(null)}
         onNavigate={handleNavigate}
+      />
+
+      {/* Global Demo Data Deletion Modal */}
+      <DeleteDemoDataModal
+        isOpen={showDeleteDemoModal}
+        onClose={() => setShowDeleteDemoModal(false)}
       />
     </div>
   );

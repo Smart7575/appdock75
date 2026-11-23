@@ -35,12 +35,14 @@ import {
   ArrowDown,
   Edit2,
   X,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { ChecklistTemplateManager } from './ChecklistTemplateManager';
 import { AppStoreTemplateManager } from './AppStoreTemplateManager';
 import { DataBackupManager } from './DataBackupManager';
+import { DeleteDemoDataModal } from '../common/DeleteDemoDataModal';
 import { WorkflowStatus, StatusType, DateFormatOption } from '../../types';
 import {
   DATE_FORMAT_OPTIONS,
@@ -68,7 +70,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const {
     db,
     hasDemoData,
-    purgeDemoData,
+    demoBreakdown,
     reloadDemoData,
     updateStatuses,
     addStatus,
@@ -76,6 +78,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   } = useData();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'workflow' | 'checklist' | 'data' | 'security'>(initialTab);
+  const [showDeleteDemoModal, setShowDeleteDemoModal] = useState(false);
 
   React.useEffect(() => {
     if (initialTab) {
@@ -1000,59 +1003,112 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <span>Demo Workspace Environment</span>
                     {hasDemoData ? (
                       <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30">
-                        Active
+                        Active ({demoBreakdown.demo.total} demo records)
                       </span>
                     ) : (
-                      <span className="text-[10px] font-medium text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
-                        Clean Slate
+                      <span className="text-[10px] font-medium text-emerald-300 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-500/25">
+                        Clean Slate (Only Original Data)
                       </span>
                     )}
                   </h3>
                   <p className="text-xs text-slate-300 mt-1 leading-relaxed">
                     {hasDemoData
-                      ? "You're viewing demo data. Remove it whenever you're ready to work exclusively with your own iOS projects and records."
-                      : "Your workspace is currently clean with no demo data. You can restore the sample iOS habit tracker anytime to explore features."}
+                      ? "Demo items are strictly separated and tagged with a Demo badge. Deleting demo data removes only Demo-tagged records while keeping all of your original data in the database."
+                      : "Your database contains zero demo records. All remaining items are your own original data. You can restore the sample workspace anytime without overwriting your own items."}
                   </p>
                 </div>
               </div>
             </div>
 
-            {hasDemoData && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-center text-xs">
-                <div className="p-2 rounded-lg bg-slate-900/60 border border-slate-800">
-                  <span className="text-[10px] text-slate-400">Demo Projects</span>
-                  <p className="font-bold text-white mt-0.5 font-mono">{db.projects.filter(p => p.isDemo).length}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              {/* Demo Items Summary */}
+              <div className="p-3.5 rounded-xl bg-slate-900/70 border border-amber-500/20 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300">
+                    Demo Data (Removed on Delete)
+                  </span>
+                  <span className="font-mono font-bold text-amber-300">
+                    {demoBreakdown.demo.total}
+                  </span>
                 </div>
-                <div className="p-2 rounded-lg bg-slate-900/60 border border-slate-800">
-                  <span className="text-[10px] text-slate-400">Demo Ideas</span>
-                  <p className="font-bold text-white mt-0.5 font-mono">{db.ideas.filter(i => i.isDemo).length}</p>
-                </div>
-                <div className="p-2 rounded-lg bg-slate-900/60 border border-slate-800">
-                  <span className="text-[10px] text-slate-400">Demo Releases</span>
-                  <p className="font-bold text-white mt-0.5 font-mono">{db.releases.filter(r => r.isDemo).length}</p>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800">
+                    <span className="text-[10px] text-slate-400">Projects</span>
+                    <p className="font-bold text-white mt-0.5 font-mono">{demoBreakdown.demo.projects}</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800">
+                    <span className="text-[10px] text-slate-400">Ideas / Tasks</span>
+                    <p className="font-bold text-white mt-0.5 font-mono">
+                      {demoBreakdown.demo.ideas} / {demoBreakdown.demo.tasks}
+                    </p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800">
+                    <span className="text-[10px] text-slate-400">Rel. / Time</span>
+                    <p className="font-bold text-white mt-0.5 font-mono">
+                      {demoBreakdown.demo.releases} / {demoBreakdown.demo.timeLogs}
+                    </p>
+                  </div>
                 </div>
               </div>
-            )}
+
+              {/* Original User Items Summary */}
+              <div className="p-3.5 rounded-xl bg-slate-900/70 border border-emerald-500/20 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Original User Data (Protected)</span>
+                  </span>
+                  <span className="font-mono font-bold text-emerald-300">
+                    {demoBreakdown.original.total}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800">
+                    <span className="text-[10px] text-slate-400">Projects</span>
+                    <p className="font-bold text-emerald-300 mt-0.5 font-mono">{demoBreakdown.original.projects}</p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800">
+                    <span className="text-[10px] text-slate-400">Ideas / Tasks</span>
+                    <p className="font-bold text-emerald-300 mt-0.5 font-mono">
+                      {demoBreakdown.original.ideas} / {demoBreakdown.original.tasks}
+                    </p>
+                  </div>
+                  <div className="p-2 rounded-lg bg-slate-950/60 border border-slate-800">
+                    <span className="text-[10px] text-slate-400">Rel. / Time</span>
+                    <p className="font-bold text-emerald-300 mt-0.5 font-mono">
+                      {demoBreakdown.original.releases} / {demoBreakdown.original.timeLogs}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <div className="flex items-center gap-3 pt-1 flex-wrap">
               <button
-                onClick={purgeDemoData}
+                type="button"
+                onClick={() => setShowDeleteDemoModal(true)}
                 disabled={!hasDemoData}
                 className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold disabled:opacity-40 disabled:cursor-not-allowed text-xs rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm shadow-amber-500/20"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Remove Demo Data</span>
+                <span>Delete All Demo Data...</span>
               </button>
 
               <button
+                type="button"
                 onClick={reloadDemoData}
                 className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>Restore Demo Workspace</span>
+                <span>Add/Restore Demo Workspace</span>
               </button>
             </div>
           </div>
+
+          <DeleteDemoDataModal
+            isOpen={showDeleteDemoModal}
+            onClose={() => setShowDeleteDemoModal(false)}
+          />
         </div>
       )}
 

@@ -11,6 +11,7 @@ import {
   setCurrentSessionUser,
   permanentlyDeleteAccount,
   generateDemoData,
+  saveUserDatabase,
 } from '../services/storage';
 import {
   auth,
@@ -135,11 +136,16 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
           },
         };
         await saveUserToFirestore(profile);
-        const existingWorkspace = await loadWorkspaceFromFirestore(fbUser.uid);
-        if (!existingWorkspace) {
-          const initialWorkspace = generateDemoData(fbUser.uid);
-          await saveWorkspaceToFirestore(fbUser.uid, initialWorkspace);
-        }
+      }
+
+      const existingWorkspace = await loadWorkspaceFromFirestore(fbUser.uid);
+      if (!existingWorkspace) {
+        try {
+          localStorage.removeItem(`ios_dev_hub_data_${fbUser.uid}_demo_purged`);
+        } catch {}
+        const initialWorkspace = generateDemoData(fbUser.uid);
+        saveUserDatabase(fbUser.uid, initialWorkspace);
+        await saveWorkspaceToFirestore(fbUser.uid, initialWorkspace);
       }
 
       const storedProviders = Array.isArray(profile.providers) ? profile.providers : [];
@@ -263,6 +269,15 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
           },
         };
         await saveUserToFirestore(profile);
+        const existingWorkspace = await loadWorkspaceFromFirestore(cred.user.uid);
+        if (!existingWorkspace) {
+          try {
+            localStorage.removeItem(`ios_dev_hub_data_${cred.user.uid}_demo_purged`);
+          } catch {}
+          const initialWorkspace = generateDemoData(cred.user.uid);
+          saveUserDatabase(cred.user.uid, initialWorkspace);
+          await saveWorkspaceToFirestore(cred.user.uid, initialWorkspace);
+        }
       }
 
       const sessionUser: User = {
@@ -356,8 +371,12 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
       // Save directly to Firebase Firestore database (/users/{userId})
       await saveUserToFirestore(userRecord);
 
-      // Initialize developer workspace in Firestore database (/users/{userId})
+      // Initialize developer workspace with demo data locally and in Firestore (/users/{userId})
+      try {
+        localStorage.removeItem(`ios_dev_hub_data_${targetUserId}_demo_purged`);
+      } catch {}
       const initialWorkspace = generateDemoData(targetUserId);
+      saveUserDatabase(targetUserId, initialWorkspace);
       await saveWorkspaceToFirestore(targetUserId, initialWorkspace);
 
       // Save in local vault for offline resilience
