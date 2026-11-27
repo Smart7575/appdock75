@@ -35,6 +35,7 @@ import {
   calculateSubphaseProgress,
 } from '../../types';
 import { getProjectColorTheme } from '../../utils/projectColors';
+import { resolveBundledImage } from '../../assets/bundledImages';
 
 interface DashboardViewProps {
   onNavigate: (view: string) => void;
@@ -118,7 +119,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <button
               type="button"
               onClick={() => setShowDeleteDemoModal(true)}
-              className="px-3 py-1.5 text-xs font-medium text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
+              className="px-3 py-2 min-h-[44px] sm:min-h-0 sm:py-1.5 text-xs font-medium text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
               title="Inspect and remove all demo data while keeping your original data"
             >
               <Trash2 className="w-3.5 h-3.5 text-amber-400" />
@@ -128,7 +129,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <button
               type="button"
               onClick={handleAddDemoData}
-              className="px-3 py-1.5 text-xs font-medium text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
+              className="px-3 py-2 min-h-[44px] sm:min-h-0 sm:py-1.5 text-xs font-medium text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
               title="Load sample demo projects, ideas, tasks, releases, and time logs"
             >
               <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
@@ -138,21 +139,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           <button
             onClick={() => onOpenNewModal('idea')}
-            className="px-3 py-1.5 text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
+            className="px-3 py-2 min-h-[44px] sm:min-h-0 sm:py-1.5 text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
           >
             <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
             <span>New Idea</span>
           </button>
           <button
             onClick={() => onOpenNewModal('project')}
-            className="px-3 py-1.5 text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
+            className="px-3 py-2 min-h-[44px] sm:min-h-0 sm:py-1.5 text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
           >
             <FolderGit2 className="w-3.5 h-3.5 text-blue-400" />
             <span>New Project</span>
           </button>
           <button
             onClick={() => onOpenNewModal('release')}
-            className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm shadow-blue-500/20"
+            className="px-3 py-2 min-h-[44px] sm:min-h-0 sm:py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm shadow-blue-500/20"
           >
             <Tag className="w-3.5 h-3.5" />
             <span>New Release</span>
@@ -186,18 +187,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center flex-wrap">
             <button
               type="button"
               onClick={() => onNavigate('settings:data')}
-              className="px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors cursor-pointer"
+              className="px-3 py-2 min-h-[44px] sm:min-h-0 sm:py-1.5 text-xs font-medium text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors cursor-pointer"
             >
               Details
             </button>
             <button
               type="button"
               onClick={() => setShowDeleteDemoModal(true)}
-              className="px-3.5 py-1.5 text-xs font-semibold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm shadow-amber-500/20 whitespace-nowrap"
+              className="px-3.5 py-2 min-h-[44px] sm:min-h-0 sm:py-1.5 text-xs font-semibold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm shadow-amber-500/20 whitespace-nowrap"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>Delete All Demo Data</span>
@@ -279,7 +280,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Quick Idea Capture Input (PRD §8.2) */}
       <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl">
-        <form onSubmit={handleQuickCapture} className="flex items-center gap-3">
+        <form onSubmit={handleQuickCapture} className="flex items-center gap-2 sm:gap-3 min-w-0">
           <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 shrink-0">
             <Lightbulb className="w-4 h-4" />
           </div>
@@ -288,12 +289,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             placeholder='Quick capture: "Type an idea and press Enter"...'
             value={quickIdeaTitle}
             onChange={e => setQuickIdeaTitle(e.target.value)}
-            className="flex-1 bg-transparent text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none"
+            className="flex-1 min-w-0 bg-transparent text-base sm:text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none"
           />
           <button
             type="submit"
             disabled={!quickIdeaTitle.trim()}
-            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white rounded-lg text-xs font-medium transition-colors cursor-pointer"
+            className="px-3 py-2 min-h-[44px] sm:min-h-0 sm:py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0"
           >
             Capture
           </button>
@@ -366,10 +367,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <div className="flex items-center gap-3.5 min-w-0">
                         {proj.icon ? (
                           <img
-                            src={proj.icon}
+                            src={resolveBundledImage(proj.icon)}
                             alt={proj.name}
                             className="w-12 h-12 rounded-xl object-cover ring-1 ring-slate-700/80 shadow-md shrink-0"
-                            referrerPolicy="no-referrer"
                           />
                         ) : (
                           <div className="w-12 h-12 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center font-bold text-sm border border-slate-700 shrink-0 shadow-sm">

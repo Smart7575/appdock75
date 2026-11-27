@@ -249,7 +249,7 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
 
         <button
           onClick={() => openEditModal()}
-          className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm shadow-blue-500/20"
+          className="px-3.5 py-2 min-h-[44px] sm:min-h-0 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm shadow-blue-500/20"
         >
           <Plus className="w-4 h-4" />
           <span>New Idea</span>
@@ -258,7 +258,7 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
 
       {/* Quick Capture Input (PRD Section 8.2) */}
       <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl">
-        <form onSubmit={handleQuickCapture} className="flex items-center gap-3">
+        <form onSubmit={handleQuickCapture} className="flex items-center gap-2 sm:gap-3 min-w-0">
           <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 shrink-0">
             <Lightbulb className="w-4 h-4" />
           </div>
@@ -267,12 +267,12 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
             placeholder='Type an idea and press Enter...'
             value={quickInput}
             onChange={e => setQuickInput(e.target.value)}
-            className="flex-1 bg-transparent text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none"
+            className="flex-1 min-w-0 bg-transparent text-base sm:text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none"
           />
           <button
             type="submit"
             disabled={!quickInput.trim()}
-            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white rounded-lg text-xs font-medium transition-colors cursor-pointer"
+            className="px-3 py-2 min-h-[44px] sm:min-h-0 sm:py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0"
           >
             Capture
           </button>
@@ -282,22 +282,22 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
       {/* Filter and View Controls Bar */}
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-3 bg-slate-900/60 border border-slate-800 rounded-xl">
         {/* Left: Search & Filters */}
-        <div className="flex items-center gap-2 flex-wrap flex-1">
-          <div className="relative flex-1 min-w-44 max-w-xs">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
+        <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+          <div className="relative flex-1 min-w-0 w-full sm:w-auto sm:min-w-44 sm:max-w-xs">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-3 sm:top-2.5 text-slate-500" />
             <input
               type="text"
               placeholder="Search ideas or tags..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 bg-slate-800/80 border border-slate-700/60 rounded-lg text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none"
+              className="w-full min-w-0 pl-8 pr-3 py-2 sm:py-1.5 bg-slate-800/80 border border-slate-700/60 rounded-lg text-base sm:text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none"
             />
           </div>
 
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            className="px-2.5 py-1.5 bg-slate-800/80 border border-slate-700/60 rounded-lg text-xs text-slate-300 focus:outline-none cursor-pointer"
+            className="min-w-0 min-h-[44px] sm:min-h-0 px-2.5 py-2 sm:py-1.5 bg-slate-800/80 border border-slate-700/60 rounded-lg text-base sm:text-xs text-slate-300 focus:outline-none cursor-pointer"
           >
             <option value="All">All Statuses</option>
             {statuses.map(s => (
@@ -308,7 +308,7 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
           <select
             value={categoryFilter}
             onChange={e => setCategoryFilter(e.target.value)}
-            className="px-2.5 py-1.5 bg-slate-800/80 border border-slate-700/60 rounded-lg text-xs text-slate-300 focus:outline-none cursor-pointer"
+            className="min-w-0 min-h-[44px] sm:min-h-0 px-2.5 py-2 sm:py-1.5 bg-slate-800/80 border border-slate-700/60 rounded-lg text-base sm:text-xs text-slate-300 focus:outline-none cursor-pointer"
           >
             <option value="All">All Categories</option>
             {categories.map(c => (
@@ -319,7 +319,7 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value as any)}
-            className="px-2.5 py-1.5 bg-slate-800/80 border border-slate-700/60 rounded-lg text-xs text-slate-300 focus:outline-none cursor-pointer"
+            className="min-w-0 min-h-[44px] sm:min-h-0 px-2.5 py-2 sm:py-1.5 bg-slate-800/80 border border-slate-700/60 rounded-lg text-base sm:text-xs text-slate-300 focus:outline-none cursor-pointer"
           >
             <option value="recent">Sort by Newest</option>
             <option value="title">Sort by Title</option>
@@ -327,10 +327,10 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
         </div>
 
         {/* Right: View Switcher (Grid, List, Matrix/Whiteboard) */}
-        <div className="flex items-center gap-1 p-1 bg-slate-800/80 rounded-lg self-end md:self-auto">
+        <div className="flex items-center gap-1 p-1 bg-slate-800/80 rounded-lg self-end md:self-auto shrink-0">
           <button
             onClick={() => setViewMode('grid')}
-            className={`p-1.5 rounded-md text-xs transition-colors cursor-pointer ${
+            className={`min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center p-1.5 rounded-md text-xs transition-colors cursor-pointer ${
               viewMode === 'grid' ? 'bg-slate-900 text-blue-400' : 'text-slate-400 hover:text-slate-200'
             }`}
             title="Card Grid View"
@@ -339,7 +339,7 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
           </button>
           <button
             onClick={() => setViewMode('list')}
-            className={`p-1.5 rounded-md text-xs transition-colors cursor-pointer ${
+            className={`min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center p-1.5 rounded-md text-xs transition-colors cursor-pointer ${
               viewMode === 'list' ? 'bg-slate-900 text-blue-400' : 'text-slate-400 hover:text-slate-200'
             }`}
             title="Table List View"
@@ -348,7 +348,7 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
           </button>
           <button
             onClick={() => setViewMode('matrix')}
-            className={`p-1.5 rounded-md text-xs transition-colors cursor-pointer ${
+            className={`min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center p-1.5 rounded-md text-xs transition-colors cursor-pointer ${
               viewMode === 'matrix' ? 'bg-slate-900 text-blue-400' : 'text-slate-400 hover:text-slate-200'
             }`}
             title="Category Board View"
@@ -434,7 +434,7 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
                     {idea.status !== 'Converted' ? (
                       <button
                         onClick={() => handleOpenConvertModal(idea)}
-                        className="px-2 py-1 text-[11px] font-medium bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-300 border border-emerald-500/30 rounded-md transition-colors cursor-pointer flex items-center gap-1"
+                        className="px-2.5 py-2 sm:py-1 min-h-[44px] sm:min-h-0 text-[11px] font-medium bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-300 border border-emerald-500/30 rounded-md transition-colors cursor-pointer flex items-center gap-1"
                         title="Convert to iOS Project (in 3 clicks)"
                       >
                         <span>Convert</span>
@@ -447,7 +447,7 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
                     )}
                     <button
                       onClick={() => openEditModal(idea)}
-                      className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors cursor-pointer"
+                      className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 p-1.5 flex items-center justify-center text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors cursor-pointer"
                       title="Edit Idea"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
@@ -521,7 +521,7 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
             const catIdeas = filteredIdeas.filter(i => i.category === cat);
             if (catIdeas.length === 0) return null;
             return (
-              <div key={cat} className="w-72 shrink-0 bg-slate-900 border border-slate-800 rounded-xl p-3 flex flex-col max-h-[70vh]">
+              <div key={cat} className="w-72 shrink-0 bg-slate-900 border border-slate-800 rounded-xl p-3 flex flex-col max-h-[70dvh]">
                 <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
                   <h3 className="text-xs font-semibold text-slate-200">{cat}</h3>
                   <span className="text-[10px] font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">
@@ -552,11 +552,11 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
 
       {/* Idea Detail Modal */}
       {selectedIdea && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-5 sm:p-6 max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem)] overflow-y-auto">
             <div className="flex items-start justify-between gap-3 pb-4 border-b border-slate-800">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <span className="text-xs text-slate-400">{selectedIdea.category}</span>
                   <span className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-500/10 text-blue-400">{selectedIdea.status}</span>
                   {selectedIdea.isDemo && (
@@ -565,11 +565,13 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
                     </span>
                   )}
                 </div>
-                <h2 className="text-lg font-bold text-white">{selectedIdea.title}</h2>
+                <h2 className="text-lg font-bold text-white break-words">{selectedIdea.title}</h2>
               </div>
               <button
+                type="button"
                 onClick={() => setSelectedIdea(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 cursor-pointer"
+                className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 cursor-pointer shrink-0"
+                aria-label="Close modal"
               >
                 ✕
               </button>
@@ -620,17 +622,17 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
                   )}
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 min-w-0">
                   <input
                     type="text"
                     placeholder="Add validation feedback or technical note..."
                     value={newCommentText}
                     onChange={e => setNewCommentText(e.target.value)}
-                    className="flex-1 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none"
+                    className="flex-1 min-w-0 px-3 py-2 sm:py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200 focus:outline-none"
                   />
                   <button
                     onClick={() => handleAddComment(selectedIdea.id)}
-                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium cursor-pointer"
+                    className="px-3 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium cursor-pointer shrink-0"
                   >
                     Post
                   </button>
@@ -646,7 +648,7 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
                   <div className="space-y-1 text-slate-400">
                     {selectedIdea.timeline.map(tl => (
                       <div key={tl.id} className="flex items-center gap-2">
-                        <Clock className="w-3 h-3 text-slate-500" />
+                        <Clock className="w-3 h-3 text-slate-500 shrink-0" />
                         <span className="font-mono text-[10px] text-slate-500">{formatDate(tl.date)}:</span>
                         <span>{tl.event}</span>
                       </div>
@@ -657,15 +659,15 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
             </div>
 
             {/* Modal Footer Actions */}
-            <div className="pt-4 mt-2 border-t border-slate-800 flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="pt-4 mt-2 border-t border-slate-800 flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
                 {selectedIdea.isDemo && (
                   <button
                     onClick={() => {
                       keepItemAsMine('idea', selectedIdea.id);
                       setSelectedIdea({ ...selectedIdea, isDemo: false });
                     }}
-                    className="px-2.5 py-1 text-xs text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-lg cursor-pointer"
+                    className="px-2.5 py-2 sm:py-1 min-h-[44px] sm:min-h-0 text-xs text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-lg cursor-pointer"
                   >
                     Keep as My Data
                   </button>
@@ -675,16 +677,16 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
                     deleteIdea(selectedIdea.id);
                     setSelectedIdea(null);
                   }}
-                  className="px-2.5 py-1 text-xs text-rose-400 hover:bg-rose-500/10 rounded-lg cursor-pointer"
+                  className="px-2.5 py-2 sm:py-1 min-h-[44px] sm:min-h-0 text-xs text-rose-400 hover:bg-rose-500/10 rounded-lg cursor-pointer"
                 >
                   Delete Idea
                 </button>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap ml-auto">
                 <button
                   onClick={() => openEditModal(selectedIdea)}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium cursor-pointer"
+                  className="px-3 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium cursor-pointer"
                 >
                   Edit
                 </button>
@@ -694,7 +696,7 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
                       setSelectedIdea(null);
                       handleOpenConvertModal(selectedIdea);
                     }}
-                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold cursor-pointer flex items-center gap-1.5"
+                    className="px-3.5 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold cursor-pointer flex items-center gap-1.5"
                   >
                     <span>Convert to Project</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -708,8 +710,8 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
 
       {/* Convert Idea To Project Confirmation Modal (3 Clicks Flow) */}
       {showConvertModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem)] overflow-y-auto bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-5 sm:p-6">
             <h3 className="text-sm font-bold text-white mb-2">
               Convert Idea to iOS Project
             </h3>
@@ -718,8 +720,8 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
             </p>
 
             <div className="p-3.5 bg-slate-800/60 border border-slate-700/60 rounded-xl space-y-3 mb-4 text-xs">
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
+              <div className="min-w-0">
+                <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
                   <span className="text-slate-300 font-medium">Bundle Identifier:</span>
                   <span className="text-[10px] text-blue-400 font-mono">
                     Prefix from Settings: com.{bundlePrefix}.*
@@ -729,7 +731,7 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
                   type="text"
                   value={convertBundleId}
                   onChange={e => setConvertBundleId(e.target.value)}
-                  className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 font-mono text-xs focus:outline-none focus:border-blue-500"
+                  className="w-full min-w-0 px-2.5 py-2 sm:py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 font-mono text-base sm:text-xs focus:outline-none focus:border-blue-500"
                   placeholder={`com.${bundlePrefix}.app`}
                 />
               </div>
@@ -746,13 +748,13 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowConvertModal(null)}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium cursor-pointer"
+                className="px-3 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleConvert(showConvertModal)}
-                className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold cursor-pointer shadow-sm shadow-emerald-500/20"
+                className="px-4 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold cursor-pointer shadow-sm shadow-emerald-500/20"
               >
                 Confirm & Open Project
               </button>
@@ -763,14 +765,14 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
 
       {/* Edit / Create Idea Modal */}
       {isEditing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-5 sm:p-6 max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem)] overflow-y-auto">
             <h3 className="text-sm font-bold text-white mb-3">
               {selectedIdea ? 'Edit Idea' : 'Capture New Idea'}
             </h3>
 
             <form onSubmit={handleSaveIdea} className="space-y-4 text-xs">
-              <div>
+              <div className="min-w-0">
                 <label className="block font-medium text-slate-300 mb-1">Title</label>
                 <input
                   type="text"
@@ -778,11 +780,11 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
                   placeholder="e.g. Lumina RAW Camera"
                   value={formData.title}
                   onChange={e => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                  className="w-full min-w-0 px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
                 />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block font-medium text-slate-300 mb-1">Description (Markdown supported)</label>
                 <textarea
                   rows={3}
@@ -790,17 +792,17 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
                   placeholder="What user pain point does this solve? What Apple frameworks will it use?"
                   value={formData.description}
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                  className="w-full min-w-0 px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="min-w-0">
                   <label className="block font-medium text-slate-300 mb-1">Category</label>
                   <select
                     value={formData.category}
                     onChange={e => setFormData({ ...formData, category: e.target.value as any })}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none"
+                    className="w-full min-w-0 px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200 focus:outline-none"
                   >
                     {categories.map(c => (
                       <option key={c} value={c}>{c}</option>
@@ -808,12 +810,12 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
                   </select>
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <label className="block font-medium text-slate-300 mb-1">Status</label>
                   <select
                     value={formData.status}
                     onChange={e => setFormData({ ...formData, status: e.target.value as any })}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none"
+                    className="w-full min-w-0 px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200 focus:outline-none"
                   >
                     {statuses.map(s => (
                       <option key={s} value={s}>{s}</option>
@@ -822,14 +824,14 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
                 </div>
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block font-medium text-slate-300 mb-1">Tags (comma separated)</label>
                 <input
                   type="text"
                   placeholder="SwiftUI, HealthKit, Metal, iOS18"
                   value={formData.tags}
                   onChange={e => setFormData({ ...formData, tags: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none"
+                  className="w-full min-w-0 px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none"
                 />
               </div>
 
@@ -837,13 +839,13 @@ export const IdeasView: React.FC<IdeasViewProps> = ({ onNavigate }) => {
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
-                  className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium cursor-pointer"
+                  className="px-3 py-2 min-h-[44px] sm:min-h-0 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold cursor-pointer"
+                  className="px-4 py-2 min-h-[44px] sm:min-h-0 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold cursor-pointer"
                 >
                   Save Idea
                 </button>

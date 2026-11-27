@@ -83,6 +83,8 @@ import { ProjectImageModal } from './ProjectImageModal';
 import { AppStoreInfoTab } from './AppStoreInfoTab';
 import { getProjectColorTheme, PROJECT_COLOR_THEMES } from '../../utils/projectColors';
 import { formatElapsedClock, formatDurationCompact } from '../../utils/timeFormat';
+import { resolveBundledImage } from '../../assets/bundledImages';
+import { openExternalUrl } from '../../utils/fileExport';
 
 interface ProjectsViewProps {
   onNavigate: (view: string) => void;
@@ -365,7 +367,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     if (!raw) return;
 
     if (raw.startsWith('http://') || raw.startsWith('https://')) {
-      window.open(raw, '_blank', 'noreferrer');
+      void openExternalUrl(raw);
     } else {
       const cleanPath = raw.replace(/^file:\/\//, '');
       const fileUrl = raw.startsWith('file://') ? raw : `file://${raw.startsWith('/') ? '' : '/'}${raw}`;
@@ -376,13 +378,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
         setTimeout(() => setFinderToast(null), 4000);
       } catch {}
 
-      const a = document.createElement('a');
-      a.href = fileUrl;
-      a.target = '_blank';
-      a.rel = 'noreferrer';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      void openExternalUrl(fileUrl);
     }
   };
 
@@ -706,7 +702,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     <div className="space-y-5 max-w-7xl mx-auto pb-12">
       {/* Project Switcher Bar & Meta */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
           <div
             className="relative group/avatar cursor-pointer shrink-0"
             onClick={() => setShowImageModal(true)}
@@ -714,10 +710,9 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           >
             {currentProject.icon ? (
               <img
-                src={currentProject.icon}
+                src={resolveBundledImage(currentProject.icon)}
                 alt={currentProject.name}
                 className="w-11 h-11 rounded-2xl object-cover ring-1 ring-slate-700 shadow-sm group-hover/avatar:ring-blue-500 transition-all bg-slate-800"
-                referrerPolicy="no-referrer"
               />
             ) : (
               <div className="w-11 h-11 rounded-2xl bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center justify-center font-bold text-sm group-hover/avatar:border-blue-500 transition-colors">
@@ -729,14 +724,14 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
             </div>
           </div>
 
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-bold text-sm tracking-tight ${colorTheme.titleField}`}>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap min-w-0">
+              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-bold text-sm tracking-tight max-w-full min-w-0 ${colorTheme.titleField}`}>
                 <span className={`w-2 h-2 rounded-full shrink-0 ${colorTheme.dot}`} />
                 <select
                   value={currentProject.id}
                   onChange={e => setActiveProjectId(e.target.value)}
-                  className="bg-transparent font-bold text-sm cursor-pointer focus:outline-none"
+                  className="bg-transparent font-bold text-base sm:text-sm cursor-pointer focus:outline-none min-w-0 max-w-full truncate"
                 >
                   {[...db.projects].sort((a, b) => a.name.localeCompare(b.name)).map(p => (
                     <option key={p.id} value={p.id} className="bg-slate-900 text-white">
@@ -747,23 +742,23 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               </div>
 
               {currentProject.isDemo && (
-                <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 shrink-0">
                   Demo
                 </span>
               )}
             </div>
 
-            <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5 flex-wrap">
-              <span className="font-mono text-slate-300">{currentProject.bundleId}</span>
+            <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-1 flex-wrap">
+              <span className="font-mono text-slate-300 break-all">{currentProject.bundleId}</span>
               <span aria-hidden="true">·</span>
               <span>{currentProject.stack.uiFramework} (Swift {currentProject.stack.swiftVersion})</span>
               <span aria-hidden="true">·</span>
-              <div className="inline-flex items-center gap-1.5">
+              <div className="inline-flex items-center gap-1.5 min-w-0">
                 <span className="text-slate-400">Status:</span>
                 <select
                   value={currentProject.status}
                   onChange={e => handleUpdateStatus(e.target.value as ProjectStatus)}
-                  className="bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-emerald-400 font-semibold px-2 py-0.5 rounded text-[11px] cursor-pointer focus:outline-none focus:border-emerald-500"
+                  className="min-w-0 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-emerald-400 font-semibold px-2 py-1 sm:py-0.5 rounded text-xs sm:text-[11px] cursor-pointer focus:outline-none focus:border-emerald-500"
                   title="Change project status"
                 >
                   <option value="Planning" className="bg-slate-900 text-white">Planning</option>
@@ -777,12 +772,12 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               {currentProject.status === 'In development' && (
                 <>
                   <span aria-hidden="true">·</span>
-                  <div className="inline-flex items-center gap-1.5">
+                  <div className="inline-flex items-center gap-1.5 min-w-0">
                     <span className="text-slate-400">Subphase:</span>
                     <select
                       value={currentProject.devSubstatus || 'Design'}
                       onChange={e => handleUpdateDevSubstatus(e.target.value as DevelopmentSubstatus)}
-                      className="bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-blue-300 font-medium px-2 py-0.5 rounded text-[11px] cursor-pointer focus:outline-none focus:border-blue-500"
+                      className="min-w-0 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 text-blue-300 font-medium px-2 py-1 sm:py-0.5 rounded text-xs sm:text-[11px] cursor-pointer focus:outline-none focus:border-blue-500"
                       title="Change development subphase"
                     >
                       {DEVELOPMENT_SUBSTATUSES.map(sub => (
@@ -804,11 +799,11 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-center">
+        <div className="flex items-center gap-2 flex-wrap self-stretch sm:self-center shrink-0">
           {currentProject.isDemo && (
             <button
               onClick={() => keepItemAsMine('project', currentProject.id)}
-              className="px-2.5 py-1 text-xs text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-lg cursor-pointer"
+              className="min-h-[44px] sm:min-h-0 px-2.5 py-1.5 sm:py-1 text-xs text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-lg cursor-pointer"
             >
               Keep as My Data
             </button>
@@ -816,7 +811,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
 
           <button
             onClick={openProjectSettings}
-            className="px-3 py-1.5 text-xs text-slate-200 bg-slate-800 hover:bg-slate-700 hover:text-white rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 border border-slate-700/80 shadow-sm"
+            className="min-h-[44px] sm:min-h-0 px-3 py-2 sm:py-1.5 text-xs text-slate-200 bg-slate-800 hover:bg-slate-700 hover:text-white rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 border border-slate-700/80 shadow-sm"
             title="Edit project name, bundle identifier, deployment target, Swift & Xcode, platforms, and dates"
           >
             <Edit2 className="w-3.5 h-3.5 text-blue-400" />
@@ -825,7 +820,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
 
           <button
             onClick={() => openNewTaskModal()}
-            className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm shadow-blue-500/10"
+            className="min-h-[44px] sm:min-h-0 px-3 py-2 sm:py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm shadow-blue-500/10"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Task</span>
@@ -841,6 +836,95 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           showDescriptions
         />
       )}
+
+      {/* Production Time Single-Line Bar */}
+      {(() => {
+        const projLogs = (db.timeLogs || []).filter(tl => tl.projectId === currentProject.id);
+        const totalProjSeconds = projLogs.reduce((acc, tl) => acc + tl.durationSeconds, 0);
+        const isTimingCurrent = db.activeTimer?.projectId === currentProject.id;
+        const liveSeconds = isTimingCurrent && db.activeTimer
+          ? Math.max(0, Math.floor((timerTickNow - new Date(db.activeTimer.startedAt).getTime()) / 1000))
+          : 0;
+        const otherRunningProject = !isTimingCurrent && db.activeTimer
+          ? db.projects.find(p => p.id === db.activeTimer?.projectId)
+          : undefined;
+
+        return (
+          <div
+            className={`px-4 py-2.5 bg-slate-900/90 border rounded-xl flex flex-wrap items-center justify-between gap-3 ${
+              isTimingCurrent ? 'border-emerald-500/40' : 'border-slate-800'
+            }`}
+          >
+            <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <Clock className={`w-4 h-4 shrink-0 ${isTimingCurrent ? 'text-emerald-400' : 'text-blue-400'}`} />
+                <span className="text-xs font-semibold text-white whitespace-nowrap">
+                  Production Time
+                </span>
+              </div>
+
+              <span className="text-xs font-mono font-bold tabular-nums text-slate-100 whitespace-nowrap">
+                {formatDurationCompact(totalProjSeconds)}
+              </span>
+
+              <span className="text-slate-600 hidden sm:inline" aria-hidden="true">·</span>
+
+              <span className="text-[11px] text-slate-400 whitespace-nowrap">
+                {projLogs.length} {projLogs.length === 1 ? 'session' : 'sessions'} logged
+              </span>
+
+              {isTimingCurrent && (
+                <>
+                  <span className="text-slate-600 hidden sm:inline" aria-hidden="true">·</span>
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold tabular-nums text-emerald-400 whitespace-nowrap">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Running · {formatElapsedClock(liveSeconds)}
+                  </span>
+                </>
+              )}
+
+              {otherRunningProject && (
+                <>
+                  <span className="text-slate-600 hidden sm:inline" aria-hidden="true">·</span>
+                  <span className="text-[11px] text-slate-400 whitespace-nowrap truncate max-w-full">
+                    Timer running on <span className="text-slate-200 font-medium">{otherRunningProject.name}</span>
+                  </span>
+                </>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {isTimingCurrent ? (
+                <button
+                  type="button"
+                  onClick={() => stopTimer()}
+                  className="min-h-[44px] sm:min-h-0 py-2 sm:py-1.5 px-3 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  <Square className="w-3 h-3 fill-current" />
+                  <span>End & Save Timer</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => startTimer(currentProject.id)}
+                  className="min-h-[44px] sm:min-h-0 py-2 sm:py-1.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  <Play className="w-3 h-3 fill-current" />
+                  <span>Start Timer</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => onNavigate('time')}
+                className="min-h-[44px] sm:min-h-0 py-2 sm:py-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap"
+              >
+                History
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Navigation Tabs inside Project (PRD Section 8.3) */}
       <div className="flex items-center gap-1 overflow-x-auto border-b border-slate-800/80 pb-1 scrollbar-none text-xs">
@@ -860,7 +944,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium whitespace-nowrap transition-colors cursor-pointer ${
+              className={`min-h-[44px] sm:min-h-0 shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium whitespace-nowrap transition-colors cursor-pointer ${
                 isActive
                   ? 'bg-slate-800 text-blue-400 font-semibold'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
@@ -878,22 +962,22 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
         <div className="space-y-4">
           {/* Board Controls Bar */}
           <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-3 bg-slate-900 border border-slate-800 rounded-xl">
-            <div className="flex items-center gap-2 flex-wrap flex-1">
-              <div className="relative min-w-40">
-                <Search className="w-3 h-3 absolute left-2.5 top-2.5 text-slate-500" />
+            <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+              <div className="relative min-w-0 w-full sm:w-44">
+                <Search className="w-3 h-3 absolute left-2.5 top-3.5 sm:top-2.5 text-slate-500" />
                 <input
                   type="text"
                   placeholder="Filter cards..."
                   value={boardSearch}
                   onChange={e => setBoardSearch(e.target.value)}
-                  className="w-full pl-7 pr-3 py-1 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none"
+                  className="w-full min-w-0 pl-7 pr-3 py-2 sm:py-1 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none"
                 />
               </div>
 
               <select
                 value={typeFilter}
                 onChange={e => setTypeFilter(e.target.value)}
-                className="px-2 py-1 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-300 focus:outline-none cursor-pointer"
+                className="min-w-0 min-h-[44px] sm:min-h-0 px-2.5 py-2 sm:py-1 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-300 focus:outline-none cursor-pointer"
               >
                 <option value="All">All Types</option>
                 <option value="Feature">Feature</option>
@@ -906,7 +990,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               <select
                 value={priorityFilter}
                 onChange={e => setPriorityFilter(e.target.value)}
-                className="px-2 py-1 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-300 focus:outline-none cursor-pointer"
+                className="min-w-0 min-h-[44px] sm:min-h-0 px-2.5 py-2 sm:py-1 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-300 focus:outline-none cursor-pointer"
               >
                 <option value="All">All Priorities</option>
                 <option value="Urgent">Urgent</option>
@@ -918,7 +1002,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               <select
                 value={swimlaneMode}
                 onChange={e => setSwimlaneMode(e.target.value as any)}
-                className="px-2 py-1 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-300 focus:outline-none cursor-pointer"
+                className="min-w-0 min-h-[44px] sm:min-h-0 px-2.5 py-2 sm:py-1 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-300 focus:outline-none cursor-pointer"
               >
                 <option value="none">No Swimlanes</option>
                 <option value="priority">Swimlanes: Priority</option>
@@ -926,13 +1010,13 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               </select>
             </div>
 
-            <div className="flex items-center gap-2 text-xs text-slate-400">
+            <div className="flex items-center gap-2 text-xs text-slate-400 shrink-0">
               <span className="font-mono tabular-nums">{doneTasks.length}/{projectTasks.length} Done ({progressPercent}%)</span>
             </div>
           </div>
 
           {/* Kanban Columns Canvas */}
-          <div className="flex gap-4 overflow-x-auto pb-4 items-start min-h-[600px]">
+          <div className="flex gap-4 overflow-x-auto pb-4 items-start min-h-[50dvh]">
             {db.statuses.map(status => {
               const columnTasks = filteredTasks.filter(t => t.statusId === status.id);
               const isOverWip = status.wipLimit && columnTasks.length > status.wipLimit;
@@ -940,7 +1024,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               return (
                 <div
                   key={status.id}
-                  className="w-72 shrink-0 bg-slate-900 border border-slate-800/80 rounded-xl p-3 flex flex-col max-h-[calc(100vh-14rem)]"
+                  className="w-72 shrink-0 bg-slate-900 border border-slate-800/80 rounded-xl p-3 flex flex-col max-h-[calc(100dvh-14rem)]"
                 >
                   {/* Column Header */}
                   <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
@@ -970,7 +1054,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                       </span>
                       <button
                         onClick={() => openNewTaskModal(status.id)}
-                        className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 cursor-pointer"
+                        className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 cursor-pointer"
                         title="Add task in this column"
                       >
                         <Plus className="w-3.5 h-3.5" />
@@ -1106,15 +1190,15 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
       {/* TAB 2: OVERVIEW (PRD §8.3) */}
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 space-y-6">
-            <div className="p-5 bg-slate-900 border border-slate-800 rounded-xl space-y-4">
-              <div className="flex items-center justify-between">
+          <div className="md:col-span-2 space-y-6 min-w-0">
+            <div className="p-4 sm:p-5 bg-slate-900 border border-slate-800 rounded-xl space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="text-sm font-semibold text-white">Project Identity & Scope</h3>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <button
                     type="button"
                     onClick={openProjectSettings}
-                    className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1.5 px-2.5 py-1 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-lg transition-colors cursor-pointer"
+                    className="min-h-[44px] sm:min-h-0 text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1.5 px-2.5 py-1.5 sm:py-1 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-lg transition-colors cursor-pointer"
                     title="Edit all project details"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
@@ -1123,7 +1207,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowImageModal(true)}
-                    className="text-xs text-slate-300 hover:text-white flex items-center gap-1 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+                    className="min-h-[44px] sm:min-h-0 text-xs text-slate-300 hover:text-white flex items-center gap-1 px-2.5 py-1.5 sm:py-1 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
                   >
                     <Camera className="w-3.5 h-3.5" />
                     <span>Change Icon</span>
@@ -1132,14 +1216,13 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               </div>
 
               {/* App Icon / Visual Artwork Display */}
-              <div className="flex items-center justify-between p-3.5 bg-slate-800/40 border border-slate-800 rounded-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-slate-800/40 border border-slate-800 rounded-xl">
                 <div className="flex items-center gap-3.5 min-w-0">
                   {currentProject.icon ? (
                     <img
-                      src={currentProject.icon}
+                      src={resolveBundledImage(currentProject.icon)}
                       alt={currentProject.name}
                       className="w-14 h-14 rounded-2xl object-cover ring-2 ring-slate-700 shadow-md bg-slate-800 shrink-0"
-                      referrerPolicy="no-referrer"
                     />
                   ) : (
                     <div className="w-14 h-14 rounded-2xl bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center justify-center font-bold text-base shrink-0">
@@ -1160,7 +1243,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowImageModal(true)}
-                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold cursor-pointer flex items-center gap-1.5 shadow-sm shadow-blue-500/20 shrink-0"
+                  className="min-h-[44px] sm:min-h-0 px-3 py-2 sm:py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold cursor-pointer flex items-center justify-center gap-1.5 shadow-sm shadow-blue-500/20 shrink-0"
                 >
                   <Camera className="w-3.5 h-3.5" />
                   <span>Upload / Choose</span>
@@ -1171,10 +1254,10 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 {currentProject.description}
               </p>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                 <div
                   onClick={openProjectSettings}
-                  className="p-3 bg-slate-800/50 hover:bg-slate-800/80 rounded-lg border border-slate-700/40 hover:border-blue-500/50 transition-all cursor-pointer group"
+                  className="min-w-0 p-3 bg-slate-800/50 hover:bg-slate-800/80 rounded-lg border border-slate-700/40 hover:border-blue-500/50 transition-all cursor-pointer group"
                   title="Click to edit bundle identifier"
                 >
                   <div className="flex items-center justify-between">
@@ -1185,7 +1268,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 </div>
                 <div
                   onClick={openProjectSettings}
-                  className="p-3 bg-slate-800/50 hover:bg-slate-800/80 rounded-lg border border-slate-700/40 hover:border-blue-500/50 transition-all cursor-pointer group"
+                  className="min-w-0 p-3 bg-slate-800/50 hover:bg-slate-800/80 rounded-lg border border-slate-700/40 hover:border-blue-500/50 transition-all cursor-pointer group"
                   title="Click to edit deployment target"
                 >
                   <div className="flex items-center justify-between">
@@ -1196,7 +1279,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 </div>
                 <div
                   onClick={openProjectSettings}
-                  className="p-3 bg-slate-800/50 hover:bg-slate-800/80 rounded-lg border border-slate-700/40 hover:border-blue-500/50 transition-all cursor-pointer group"
+                  className="min-w-0 p-3 bg-slate-800/50 hover:bg-slate-800/80 rounded-lg border border-slate-700/40 hover:border-blue-500/50 transition-all cursor-pointer group"
                   title="Click to edit Swift & Xcode versions"
                 >
                   <div className="flex items-center justify-between">
@@ -1206,7 +1289,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   <p className="text-slate-200 mt-0.5 truncate">Swift {currentProject.stack.swiftVersion} · Xcode {currentProject.stack.xcodeVersion}</p>
                 </div>
                 <div
-                  className="p-3 bg-slate-800/50 hover:bg-slate-800/80 rounded-lg border border-slate-700/40 hover:border-blue-500/50 transition-all group"
+                  className="min-w-0 p-3 bg-slate-800/50 hover:bg-slate-800/80 rounded-lg border border-slate-700/40 hover:border-blue-500/50 transition-all group"
                   title="Directly edit Start Date"
                 >
                   <div className="flex items-center justify-between mb-0.5">
@@ -1221,7 +1304,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                         handleUpdateStartDate(e.target.value);
                       }
                     }}
-                    className="w-full bg-transparent text-slate-200 text-xs font-medium focus:outline-none cursor-pointer [color-scheme:dark]"
+                    className="w-full min-w-0 bg-transparent text-slate-200 text-base sm:text-xs font-medium focus:outline-none cursor-pointer [color-scheme:dark]"
                   />
                   <p className="text-[10px] text-slate-400 mt-0.5 truncate">
                     {formatDate(currentProject.dates.startDate)}
@@ -1287,7 +1370,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   <button
                     type="button"
                     onClick={() => handleSaveResources()}
-                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold cursor-pointer flex items-center gap-1.5 shadow-sm shadow-blue-500/20 transition-all"
+                    className="min-h-[44px] sm:min-h-0 px-3 py-2 sm:py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold cursor-pointer flex items-center gap-1.5 shadow-sm shadow-blue-500/20 transition-all"
                   >
                     <Save className="w-3.5 h-3.5" />
                     <span>Save</span>
@@ -1368,7 +1451,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                         )}
                       </div>
 
-                      <div className="relative">
+                      <div className="relative min-w-0">
                         <input
                           type="text"
                           placeholder="https://onedrive.live.com/... OR /Volumes/ExternalDrive/Projects/..."
@@ -1385,7 +1468,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                             }
                           }}
                           onBlur={() => handleSaveResources(undefined, { projectFolder: resProjectFolder })}
-                          className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 font-mono text-xs"
+                          className="w-full min-w-0 px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 font-mono text-base sm:text-xs"
                         />
                       </div>
                     </div>
@@ -1393,7 +1476,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                     /* DUAL 2 FIELDS MODE */
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 pt-1">
                       {/* OneDrive Field */}
-                      <div>
+                      <div className="min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <label className="font-medium text-slate-300 flex items-center gap-1.5 text-slate-200">
                             <Folder className="w-3.5 h-3.5 text-sky-400" />
@@ -1421,12 +1504,12 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                             setResProjectFolder(e.target.value);
                           }}
                           onBlur={() => handleSaveResources(undefined, { oneDriveUrl: resOneDriveUrl })}
-                          className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                          className="w-full min-w-0 px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-lg text-base sm:text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
                         />
                       </div>
 
                       {/* Local Disk Path Field */}
-                      <div>
+                      <div className="min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <label className="font-medium text-slate-300 flex items-center gap-1.5 text-slate-200">
                             <HardDrive className="w-3.5 h-3.5 text-blue-400" />
@@ -1464,7 +1547,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                             setResProjectFolder(e.target.value);
                           }}
                           onBlur={() => handleSaveResources(undefined, { externalDiskPath: resExternalDiskPath })}
-                          className="w-full px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 font-mono text-[11px]"
+                          className="w-full min-w-0 px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 font-mono text-base sm:text-[11px]"
                         />
                       </div>
                     </div>
@@ -1480,7 +1563,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
 
                 {/* 2. Database Name & Link */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
+                  <div className="min-w-0">
                     <label className="block font-medium text-slate-300 mb-1 flex items-center gap-1.5">
                       <Database className="w-3.5 h-3.5 text-purple-400" />
                       <span>Database Name</span>
@@ -1491,10 +1574,10 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                       value={resDatabaseName}
                       onChange={e => setResDatabaseName(e.target.value)}
                       onBlur={() => handleSaveResources()}
-                      className="w-full px-3 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
+                      className="w-full min-w-0 px-3 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-base sm:text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
                     />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <label className="font-medium text-slate-300 flex items-center gap-1.5 text-slate-200">
                         <Link2 className="w-3.5 h-3.5 text-purple-400" />
@@ -1518,14 +1601,14 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                       value={resDatabaseUrl}
                       onChange={e => setResDatabaseUrl(e.target.value)}
                       onBlur={() => handleSaveResources()}
-                      className="w-full px-3 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
+                      className="w-full min-w-0 px-3 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-base sm:text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* GitHub URL */}
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <label className="font-medium text-slate-300 flex items-center gap-1.5 text-slate-200">
                         <FolderGit2 className="w-3.5 h-3.5 text-blue-400" />
@@ -1549,12 +1632,12 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                       value={resGithubUrl}
                       onChange={e => setResGithubUrl(e.target.value)}
                       onBlur={() => handleSaveResources()}
-                      className="w-full px-3 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
+                      className="w-full min-w-0 px-3 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-base sm:text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
                     />
                   </div>
 
                   {/* 3. Vercel Deployment */}
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <label className="font-medium text-slate-300 flex items-center gap-1.5 text-slate-200">
                         <Globe className="w-3.5 h-3.5 text-emerald-400" />
@@ -1578,14 +1661,14 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                       value={resVercelUrl}
                       onChange={e => setResVercelUrl(e.target.value)}
                       onBlur={() => handleSaveResources()}
-                      className="w-full px-3 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
+                      className="w-full min-w-0 px-3 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-base sm:text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
                     />
                   </div>
                 </div>
 
                 {/* 4. App Store Connect & Apple Store Links */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <label className="font-medium text-slate-300 flex items-center gap-1.5 text-slate-200">
                         <Apple className="w-3.5 h-3.5 text-blue-400" />
@@ -1609,10 +1692,10 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                       value={resAppStoreConnectUrl}
                       onChange={e => setResAppStoreConnectUrl(e.target.value)}
                       onBlur={() => handleSaveResources()}
-                      className="w-full px-3 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
+                      className="w-full min-w-0 px-3 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-base sm:text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
                     />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <label className="font-medium text-slate-300 flex items-center gap-1.5 text-slate-200">
                         <Store className="w-3.5 h-3.5 text-amber-400" />
@@ -1636,7 +1719,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                       value={resAppStoreUrl}
                       onChange={e => setResAppStoreUrl(e.target.value)}
                       onBlur={() => handleSaveResources()}
-                      className="w-full px-3 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
+                      className="w-full min-w-0 px-3 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-base sm:text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
                     />
                   </div>
                 </div>
@@ -1660,7 +1743,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   <button
                     type="button"
                     onClick={handleAddCustomInfoRow}
-                    className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm shadow-blue-500/20 shrink-0"
+                    className="min-h-[44px] sm:min-h-0 px-3 py-2 sm:py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm shadow-blue-500/20 shrink-0"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add Row</span>
@@ -1701,25 +1784,25 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                               value={row.title}
                               onChange={e => handleUpdateCustomInfoRow(row.id, 'title', e.target.value)}
                               onBlur={() => handleSaveResources()}
-                              className="w-full px-2.5 py-1.5 bg-slate-800 border border-slate-700/80 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 font-medium"
+                              className="w-full min-w-0 px-2.5 py-1.5 bg-slate-800 border border-slate-700/80 rounded-lg text-base sm:text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 font-medium"
                             />
                           </td>
                           <td className="py-2.5 px-3 align-top">
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 min-w-0">
                               <input
                                 type="url"
                                 placeholder="https://..."
                                 value={row.url}
                                 onChange={e => handleUpdateCustomInfoRow(row.id, 'url', e.target.value)}
                                 onBlur={() => handleSaveResources()}
-                                className="flex-1 px-2.5 py-1.5 bg-slate-800 border border-slate-700/80 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                                className="flex-1 min-w-0 px-2.5 py-1.5 bg-slate-800 border border-slate-700/80 rounded-lg text-base sm:text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
                               />
                               {row.url && row.url.trim() && (
                                 <a
                                   href={row.url.trim().startsWith('http') ? row.url.trim() : `https://${row.url.trim()}`}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="p-1.5 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-colors shrink-0"
+                                  className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center p-1.5 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 transition-colors shrink-0"
                                   title="Open link in new tab"
                                 >
                                   <ExternalLink className="w-3.5 h-3.5" />
@@ -1734,14 +1817,14 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                               value={row.notes || ''}
                               onChange={e => handleUpdateCustomInfoRow(row.id, 'notes', e.target.value)}
                               onBlur={() => handleSaveResources()}
-                              className="w-full px-2.5 py-1.5 bg-slate-800 border border-slate-700/80 rounded-lg text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 resize-y min-h-[34px]"
+                              className="w-full min-w-0 px-2.5 py-1.5 bg-slate-800 border border-slate-700/80 rounded-lg text-base sm:text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 resize-y min-h-[34px]"
                             />
                           </td>
                           <td className="py-2.5 px-2 align-top text-center">
                             <button
                               type="button"
                               onClick={() => handleRemoveCustomInfoRow(row.id)}
-                              className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-rose-500/20"
+                              className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 inline-flex items-center justify-center p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer border border-transparent hover:border-rose-500/20"
                               title="Delete row"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -1756,22 +1839,22 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-6 min-w-0">
             {/* DIRECT PROJECT STATUS & DATES CARD */}
-            <div className="p-5 bg-slate-900 border border-slate-800 rounded-xl space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-blue-500/10 text-blue-400 rounded-lg border border-blue-500/20">
+            <div className="p-4 sm:p-5 bg-slate-900 border border-slate-800 rounded-xl space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800 gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="p-1.5 bg-blue-500/10 text-blue-400 rounded-lg border border-blue-500/20 shrink-0">
                     <Calendar className="w-4 h-4" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <h3 className="text-sm font-semibold text-white">Project Status & Dates</h3>
                     <p className="text-[11px] text-slate-400">Directly change lifecycle status, subphase & milestones</p>
                   </div>
                 </div>
 
                 {statusDatesFeedback && (
-                  <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1 animate-in fade-in">
+                  <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1 animate-in fade-in shrink-0">
                     <Check className="w-3 h-3" />
                     <span>Saved!</span>
                   </span>
@@ -1780,7 +1863,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
 
               <div className="space-y-3.5 text-xs">
                 {/* 1. Project Status */}
-                <div>
+                <div className="min-w-0">
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="font-medium text-slate-300">Project Status</label>
                     <span className="text-[10px] text-emerald-400 font-medium bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
@@ -1790,7 +1873,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   <select
                     value={currentProject.status}
                     onChange={e => handleUpdateStatus(e.target.value as ProjectStatus)}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
+                    className="w-full min-w-0 min-h-[44px] sm:min-h-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
                   >
                     <option value="Planning" className="bg-slate-900 text-white">Planning</option>
                     <option value="In development" className="bg-slate-900 text-white">In development</option>
@@ -1803,7 +1886,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
 
                 {/* 2. Development Subphase */}
                 {currentProject.status === 'In development' ? (
-                  <div className="p-3 bg-blue-950/20 border border-blue-500/20 rounded-lg space-y-1.5">
+                  <div className="p-3 bg-blue-950/20 border border-blue-500/20 rounded-lg space-y-1.5 min-w-0">
                     <div className="flex items-center justify-between">
                       <label className="font-medium text-blue-300">Development Subphase</label>
                       <span className="text-[10px] text-blue-400 font-mono">
@@ -1813,7 +1896,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                     <select
                       value={currentProject.devSubstatus || 'Design'}
                       onChange={e => handleUpdateDevSubstatus(e.target.value as DevelopmentSubstatus)}
-                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
+                      className="w-full min-w-0 min-h-[44px] sm:min-h-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
                     >
                       {DEVELOPMENT_SUBSTATUSES.map(sub => (
                         <option key={sub.id} value={sub.id} className="bg-slate-900 text-white">
@@ -1829,7 +1912,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 )}
 
                 {/* 3. Start Date */}
-                <div>
+                <div className="min-w-0">
                   <label className="block font-medium text-slate-300 mb-1">
                     Start Date <span className="text-rose-400">*</span>
                   </label>
@@ -1842,7 +1925,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                         handleUpdateStartDate(e.target.value);
                       }
                     }}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-blue-500 [color-scheme:dark] cursor-pointer"
+                    className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 focus:outline-none focus:border-blue-500 [color-scheme:dark] cursor-pointer"
                   />
                   <span className="text-[11px] text-slate-400 mt-1 block">
                     Weergave: {currentProject.dates?.startDate ? formatDate(currentProject.dates.startDate) : 'Geen datum ingevoerd'}
@@ -1850,7 +1933,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 </div>
 
                 {/* 4. Target Release Date */}
-                <div>
+                <div className="min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <label className="font-medium text-slate-300">
                       Target Release Date <span className="text-slate-500 font-normal">(Optioneel)</span>
@@ -1869,7 +1952,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                     type="date"
                     value={currentProject.dates?.targetDate || ''}
                     onChange={e => handleUpdateTargetDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-blue-500 [color-scheme:dark] cursor-pointer"
+                    className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 focus:outline-none focus:border-blue-500 [color-scheme:dark] cursor-pointer"
                   />
                   <span className="text-[11px] text-slate-400 mt-1 block">
                     Weergave: {currentProject.dates?.targetDate ? formatDate(currentProject.dates.targetDate) : 'Geen streefdatum'}
@@ -1901,7 +1984,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                     <span className="font-mono text-slate-300 font-medium">{progressPercent}% ({doneTasks.length}/{projectTasks.length})</span>
                   </div>
                   <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-slate-600 rounded-full transition-all duration-500" style={{ width: `${progressPercent}%` }} />
+                    <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${progressPercent}%` }} />
                   </div>
                 </div>
 
@@ -1917,69 +2000,6 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 </div>
               </div>
             </div>
-
-            {/* Production Time Card */}
-            {(() => {
-              const projLogs = (db.timeLogs || []).filter(tl => tl.projectId === currentProject.id);
-              const totalProjSeconds = projLogs.reduce((acc, tl) => acc + tl.durationSeconds, 0);
-              const isTimingCurrent = db.activeTimer?.projectId === currentProject.id;
-              const liveSeconds = isTimingCurrent && db.activeTimer
-                ? Math.max(0, Math.floor((timerTickNow - new Date(db.activeTimer.startedAt).getTime()) / 1000))
-                : 0;
-
-              return (
-                <div className={`p-5 bg-slate-900 border rounded-xl space-y-3 ${isTimingCurrent ? 'border-emerald-500/40' : 'border-slate-800'}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Clock className={`w-4 h-4 ${isTimingCurrent ? 'text-emerald-400' : 'text-blue-400'}`} />
-                      <h3 className="text-sm font-semibold text-white">Production Time</h3>
-                    </div>
-                    <span className="text-xs font-mono font-semibold tabular-nums text-slate-200">
-                      {formatDurationCompact(totalProjSeconds)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-[11px] text-slate-400">
-                    <span>{projLogs.length} {projLogs.length === 1 ? 'session' : 'sessions'} logged</span>
-                    {isTimingCurrent && (
-                      <span className="font-mono font-semibold tabular-nums text-emerald-400">
-                        Running · {formatElapsedClock(liveSeconds)}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-1">
-                    {isTimingCurrent ? (
-                      <button
-                        type="button"
-                        onClick={() => stopTimer()}
-                        className="flex-1 py-2 px-3 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-                      >
-                        <Square className="w-3 h-3 fill-current" />
-                        <span>End & Save Timer</span>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => startTimer(currentProject.id)}
-                        className="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-                      >
-                        <Play className="w-3 h-3 fill-current" />
-                        <span>Start Timer</span>
-                      </button>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => onNavigate('time')}
-                      className="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap"
-                    >
-                      History
-                    </button>
-                  </div>
-                </div>
-              );
-            })()}
 
             {/* Development Subphases Breakdown Card */}
             {currentProject.status === 'In development' && (
@@ -2056,19 +2076,19 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
       {/* TAB 3: TASKS LIST (PRD §8.3) */}
       {activeTab === 'tasks' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-3 p-3 bg-slate-900 border border-slate-800 rounded-xl">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-900 border border-slate-800 rounded-xl">
             <span className="text-xs font-semibold text-white">All Tasks ({projectTasks.length})</span>
             <button
               onClick={() => openNewTaskModal()}
-              className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg cursor-pointer flex items-center gap-1"
+              className="min-h-[44px] sm:min-h-0 px-3 py-2 sm:py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg cursor-pointer flex items-center gap-1"
             >
               <Plus className="w-3 h-3" />
               <span>Add Task</span>
             </button>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-            <table className="w-full text-left text-xs">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-x-auto">
+            <table className="w-full text-left text-xs min-w-[600px]">
               <thead className="bg-slate-800/60 text-slate-400 border-b border-slate-800">
                 <tr>
                   <th className="py-2.5 pl-4 pr-1 w-12 text-center" title="Mark as Done">
@@ -2098,7 +2118,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                         <button
                           type="button"
                           onClick={(e) => handleToggleTaskDone(task.id, e)}
-                          className={`w-5 h-5 mx-auto rounded-md flex items-center justify-center transition-all cursor-pointer ${
+                          className={`w-6 h-6 sm:w-5 sm:h-5 mx-auto rounded-md flex items-center justify-center transition-all cursor-pointer ${
                             isDone
                               ? 'bg-emerald-500 text-white shadow-sm ring-1 ring-emerald-400'
                               : 'border-2 border-slate-600 hover:border-emerald-400 bg-slate-800/80 text-transparent hover:text-emerald-400/50'
@@ -2139,17 +2159,17 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                       <td className="py-3 px-3 text-slate-400 font-mono">
                         {task.subtasks.filter(s => s.completed).length}/{task.subtasks.length}
                       </td>
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
                         <button
                           onClick={() => openEditTaskModal(task)}
-                          className="p-1 text-slate-400 hover:text-white cursor-pointer mr-2"
+                          className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 inline-flex items-center justify-center p-1 text-slate-400 hover:text-white cursor-pointer mr-1"
                           title="Edit Task"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => deleteTask(task.id)}
-                          className="p-1 text-slate-400 hover:text-rose-400 cursor-pointer"
+                          className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 inline-flex items-center justify-center p-1 text-slate-400 hover:text-rose-400 cursor-pointer"
                           title="Delete Task"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -2179,8 +2199,8 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
             </span>
           </div>
 
-          <div className="p-5 bg-slate-900 border border-slate-800 rounded-xl">
-            <div className="flex items-center justify-between mb-3">
+          <div className="p-4 sm:p-5 bg-slate-900 border border-slate-800 rounded-xl">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <h3 className="text-sm font-semibold text-white">Architecture & ADR Notes</h3>
               <button
                 onClick={() => {
@@ -2192,7 +2212,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                     setIsEditingNotes(true);
                   }
                 }}
-                className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs rounded-lg cursor-pointer"
+                className="min-h-[44px] sm:min-h-0 px-3 py-2 sm:py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs rounded-lg cursor-pointer"
               >
                 {isEditingNotes ? 'Save Notes' : 'Edit Markdown'}
               </button>
@@ -2203,7 +2223,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 rows={10}
                 value={notesText}
                 onChange={e => setNotesText(e.target.value)}
-                className="w-full p-3 bg-slate-800 border border-slate-700 rounded-lg text-xs font-mono text-slate-200 focus:outline-none focus:border-blue-500"
+                className="w-full min-w-0 p-3 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs font-mono text-slate-200 focus:outline-none focus:border-blue-500"
               />
             ) : (
               <div className="p-4 bg-slate-800/40 border border-slate-800 rounded-lg text-xs text-slate-200 whitespace-pre-line leading-relaxed font-sans">
@@ -2217,19 +2237,19 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
       {/* TAB 5: RELEASES SUBTAB */}
       {activeTab === 'releases' && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-3 bg-slate-900 border border-slate-800 rounded-xl">
+          <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-slate-900 border border-slate-800 rounded-xl">
             <span className="text-xs font-semibold text-white">Releases for {currentProject.name}</span>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => setShowProjNewReleaseModal(true)}
-                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-lg cursor-pointer flex items-center gap-1.5 shadow-md shadow-emerald-600/20"
+                className="min-h-[44px] sm:min-h-0 px-3 py-2 sm:py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-lg cursor-pointer flex items-center gap-1.5 shadow-md shadow-emerald-600/20"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>New Release</span>
               </button>
               <button
                 onClick={() => onNavigate('releases')}
-                className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg cursor-pointer"
+                className="min-h-[44px] sm:min-h-0 px-3 py-2 sm:py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg cursor-pointer"
               >
                 Open Full Release Manager
               </button>
@@ -2239,9 +2259,9 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {releasesForProject.map(rel => (
               <div key={rel.id} className="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <span className="font-mono font-bold text-white text-sm">v{rel.version} (Build {rel.build})</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 shrink-0">
                     {rel.status}
                   </span>
                 </div>
@@ -2251,7 +2271,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setDeletingRelease(rel)}
-                    className="p-1 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                    className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center p-1 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
                     title="Delete release"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -2263,21 +2283,22 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
 
           {/* New Project Release Modal */}
           {showProjNewReleaseModal && (
-            <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <h3 className="text-sm font-bold text-white">Create New Release ({currentProject.name})</h3>
+            <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] pl-[calc(1rem+env(safe-area-inset-left))] pr-[calc(1rem+env(safe-area-inset-right))]">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md max-h-[calc(100dvh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-y-auto p-5 shadow-2xl space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3 gap-2">
+                  <h3 className="text-sm font-bold text-white truncate">Create New Release ({currentProject.name})</h3>
                   <button
                     onClick={() => setShowProjNewReleaseModal(false)}
-                    className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
+                    aria-label="Close modal"
+                    className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer shrink-0"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
 
                 <form onSubmit={handleCreateProjectRelease} className="space-y-3 text-xs">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="min-w-0">
                       <label className="block text-slate-400 mb-1">Version *</label>
                       <input
                         type="text"
@@ -2285,10 +2306,10 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                         placeholder="1.0.0"
                         value={projRelVersion}
                         onChange={e => setProjRelVersion(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:border-blue-500 font-mono"
+                        className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-base sm:text-xs text-slate-100 focus:outline-none focus:border-blue-500 font-mono"
                       />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <label className="block text-slate-400 mb-1">Build # *</label>
                       <input
                         type="number"
@@ -2296,12 +2317,12 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                         min="1"
                         value={projRelBuild}
                         onChange={e => setProjRelBuild(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:border-blue-500 font-mono"
+                        className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-base sm:text-xs text-slate-100 focus:outline-none focus:border-blue-500 font-mono"
                       />
                     </div>
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <label className="block text-slate-400 mb-1">Release Name / Title *</label>
                     <input
                       type="text"
@@ -2309,17 +2330,17 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                       placeholder="e.g. iOS 18 Support & Widgets"
                       value={projRelName}
                       onChange={e => setProjRelName(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:border-blue-500"
+                      className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-base sm:text-xs text-slate-100 focus:outline-none focus:border-blue-500"
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="min-w-0">
                       <label className="block text-slate-400 mb-1">Status</label>
                       <select
                         value={projRelStatus}
                         onChange={e => setProjRelStatus(e.target.value as ReleaseStatus)}
-                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-200 focus:outline-none cursor-pointer"
+                        className="w-full min-w-0 min-h-[44px] sm:min-h-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-base sm:text-xs text-slate-200 focus:outline-none cursor-pointer"
                       >
                         <option value="Planned">Planned</option>
                         <option value="In development">In development</option>
@@ -2331,13 +2352,13 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                         <option value="Withdrawn">Withdrawn</option>
                       </select>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <label className="block text-slate-400 mb-1">Planned Date</label>
                       <input
                         type="date"
                         value={projRelDate}
                         onChange={e => setProjRelDate(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 focus:outline-none"
+                        className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-base sm:text-xs text-slate-100 focus:outline-none [color-scheme:dark]"
                       />
                     </div>
                   </div>
@@ -2346,13 +2367,13 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setShowProjNewReleaseModal(false)}
-                      className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl cursor-pointer"
+                      className="min-h-[44px] sm:min-h-0 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl cursor-pointer"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium cursor-pointer shadow-md shadow-blue-600/20"
+                      className="min-h-[44px] sm:min-h-0 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium cursor-pointer shadow-md shadow-blue-600/20"
                     >
                       Create Release
                     </button>
@@ -2364,8 +2385,8 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
 
           {/* Delete Release Confirmation Modal */}
           {deletingRelease && (
-            <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4">
+            <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] pl-[calc(1rem+env(safe-area-inset-left))] pr-[calc(1rem+env(safe-area-inset-right))]">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md max-h-[calc(100dvh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-y-auto p-5 shadow-2xl space-y-4">
                 <div className="flex items-center gap-3 text-rose-400">
                   <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20">
                     <Trash2 className="w-5 h-5 text-rose-400" />
@@ -2382,7 +2403,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setDeletingRelease(null)}
-                    className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl cursor-pointer"
+                    className="min-h-[44px] sm:min-h-0 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -2392,7 +2413,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                       deleteRelease(deletingRelease.id);
                       setDeletingRelease(null);
                     }}
-                    className="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-md shadow-rose-600/20"
+                    className="min-h-[44px] sm:min-h-0 px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-md shadow-rose-600/20"
                   >
                     Delete Permanently
                   </button>
@@ -2406,7 +2427,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
       {/* TAB 7: CHECKLISTS (PRD §8.7) */}
       {activeTab === 'checklists' && (
         <div className="space-y-4">
-          <div className="p-5 bg-slate-900 border border-slate-800 rounded-xl">
+          <div className="p-4 sm:p-5 bg-slate-900 border border-slate-800 rounded-xl">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
               <div>
                 <h3 className="text-sm font-semibold text-white">App Store Pre-Submission Checklist</h3>
@@ -2415,7 +2436,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                 <div className="w-28 sm:w-36 h-2 bg-slate-800 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-emerald-500 rounded-full transition-all duration-300"
@@ -2425,7 +2446,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => onNavigate('settings:checklist')}
-                  className="px-2.5 py-1 text-[11px] font-medium bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 hover:text-blue-300 border border-blue-500/30 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
+                  className="min-h-[44px] sm:min-h-0 px-2.5 py-1.5 sm:py-1 text-[11px] font-medium bg-blue-600/15 hover:bg-blue-600/25 text-blue-400 hover:text-blue-300 border border-blue-500/30 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
                   title="Open standard checklist template manager in Settings"
                 >
                   <Edit2 className="w-3 h-3" />
@@ -2434,7 +2455,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => resetChecklist(currentProject.id)}
-                  className="px-2.5 py-1 text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors cursor-pointer flex items-center gap-1 border border-slate-700/60"
+                  className="min-h-[44px] sm:min-h-0 px-2.5 py-1.5 sm:py-1 text-[11px] font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors cursor-pointer flex items-center gap-1 border border-slate-700/60"
                   title="Reset all checklist items for this project to unchecked"
                 >
                   <span>Deselect All</span>
@@ -2506,14 +2527,14 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
 
       {/* Task Edit / Add Modal */}
       {isEditingTask && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] pl-[calc(1rem+env(safe-area-inset-left))] pr-[calc(1rem+env(safe-area-inset-right))] bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-5 sm:p-6 max-h-[calc(100dvh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-y-auto">
             <h3 className="text-sm font-bold text-white mb-3">
               {selectedTask ? 'Edit Task' : 'New Kanban Task'}
             </h3>
 
             <form onSubmit={handleSaveTask} className="space-y-4 text-xs">
-              <div>
+              <div className="min-w-0">
                 <label className="block font-medium text-slate-300 mb-1">Task Title</label>
                 <input
                   type="text"
@@ -2521,28 +2542,28 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   placeholder="e.g. Implement StoreKit 2 paywall"
                   value={taskForm.title}
                   onChange={e => setTaskForm({ ...taskForm, title: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-blue-500"
+                  className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 focus:outline-none focus:border-blue-500"
                 />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block font-medium text-slate-300 mb-1">Description</label>
                 <textarea
                   rows={2}
                   placeholder="Technical details, edge cases, acceptance criteria"
                   value={taskForm.description}
                   onChange={e => setTaskForm({ ...taskForm, description: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-blue-500"
+                  className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 focus:outline-none focus:border-blue-500"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="min-w-0">
                   <label className="block font-medium text-slate-300 mb-1">Type</label>
                   <select
                     value={taskForm.type}
                     onChange={e => setTaskForm({ ...taskForm, type: e.target.value as any })}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none"
+                    className="w-full min-w-0 min-h-[44px] sm:min-h-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200 focus:outline-none"
                   >
                     <option value="Feature">Feature</option>
                     <option value="Bug">Bug</option>
@@ -2552,12 +2573,12 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   </select>
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <label className="block font-medium text-slate-300 mb-1">Priority</label>
                   <select
                     value={taskForm.priority}
                     onChange={e => setTaskForm({ ...taskForm, priority: e.target.value as any })}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none"
+                    className="w-full min-w-0 min-h-[44px] sm:min-h-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200 focus:outline-none"
                   >
                     <option value="Low">Low</option>
                     <option value="Medium">Medium</option>
@@ -2579,15 +2600,15 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                     if (doneStatus) setTaskForm({ ...taskForm, statusId: doneStatus.id });
                   }
                 }}
-                className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                className={`min-h-[44px] p-3 rounded-xl border flex items-center justify-between gap-2 cursor-pointer transition-all ${
                   db.statuses.find(s => s.id === taskForm.statusId)?.type === 'Done'
                     ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
                     : 'bg-slate-800/60 border-slate-700/60 hover:border-slate-600 text-slate-300'
                 }`}
               >
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2.5 min-w-0">
                   <div
-                    className={`w-5 h-5 rounded-md flex items-center justify-center transition-all ${
+                    className={`w-5 h-5 rounded-md flex items-center justify-center transition-all shrink-0 ${
                       db.statuses.find(s => s.id === taskForm.statusId)?.type === 'Done'
                         ? 'bg-emerald-500 text-white shadow-sm ring-1 ring-emerald-400'
                         : 'border-2 border-slate-600 bg-slate-800 text-transparent'
@@ -2595,7 +2616,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   >
                     <Check className="w-3.5 h-3.5 stroke-[3]" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-xs font-semibold block">Mark as Done</span>
                     <span className="text-[11px] text-slate-400">
                       {db.statuses.find(s => s.id === taskForm.statusId)?.type === 'Done'
@@ -2604,20 +2625,20 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                     </span>
                   </div>
                 </div>
-                <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded shrink-0 ${
                   db.statuses.find(s => s.id === taskForm.statusId)?.type === 'Done' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-700 text-slate-300'
                 }`}>
                   {db.statuses.find(s => s.id === taskForm.statusId)?.name}
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="min-w-0">
                   <label className="block font-medium text-slate-300 mb-1">Column Status</label>
                   <select
                     value={taskForm.statusId}
                     onChange={e => setTaskForm({ ...taskForm, statusId: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none"
+                    className="w-full min-w-0 min-h-[44px] sm:min-h-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200 focus:outline-none"
                   >
                     {db.statuses.map(s => (
                       <option key={s.id} value={s.id}>{s.name}</option>
@@ -2625,23 +2646,23 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   </select>
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <label className="block font-medium text-slate-300 mb-1">Due Date</label>
                   <input
                     type="date"
                     value={taskForm.dueDate}
                     onChange={e => setTaskForm({ ...taskForm, dueDate: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none"
+                    className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200 focus:outline-none [color-scheme:dark]"
                   />
                 </div>
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block font-medium text-slate-300 mb-1">Target Release</label>
                 <select
                   value={taskForm.releaseId}
                   onChange={e => setTaskForm({ ...taskForm, releaseId: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none"
+                  className="w-full min-w-0 min-h-[44px] sm:min-h-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200 focus:outline-none"
                 >
                   <option value="">None</option>
                   {releasesForProject.map(r => (
@@ -2650,14 +2671,14 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 </select>
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block font-medium text-slate-300 mb-1">Labels (comma separated)</label>
                 <input
                   type="text"
                   placeholder="SwiftUI, HealthKit, iOS18"
                   value={taskForm.labels}
                   onChange={e => setTaskForm({ ...taskForm, labels: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none"
+                  className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200 focus:outline-none"
                 />
               </div>
 
@@ -2667,12 +2688,12 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   <span className="font-semibold text-slate-300 block">Subtasks Checklist</span>
                   <div className="space-y-1">
                     {selectedTask.subtasks.map(st => (
-                      <div key={st.id} className="flex items-center gap-2">
+                      <div key={st.id} className="flex items-center gap-2 min-h-[36px] sm:min-h-0">
                         <input
                           type="checkbox"
                           checked={st.completed}
                           onChange={() => toggleSubtask(selectedTask.id, st.id)}
-                          className="w-3.5 h-3.5 rounded text-blue-500 cursor-pointer"
+                          className="w-4 h-4 sm:w-3.5 sm:h-3.5 rounded text-blue-500 cursor-pointer shrink-0"
                         />
                         <span className={st.completed ? 'line-through text-slate-500' : 'text-slate-300'}>
                           {st.title}
@@ -2681,13 +2702,13 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                     ))}
                   </div>
 
-                  <div className="flex gap-2 pt-2">
+                  <div className="flex flex-col sm:flex-row gap-2 pt-2">
                     <input
                       type="text"
                       placeholder="Add subtask..."
                       value={newSubtaskTitle}
                       onChange={e => setNewSubtaskTitle(e.target.value)}
-                      className="flex-1 px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs text-slate-200 focus:outline-none"
+                      className="w-full min-w-0 flex-1 px-2.5 py-2 sm:py-1 bg-slate-800 border border-slate-700 rounded text-base sm:text-xs text-slate-200 focus:outline-none"
                     />
                     <button
                       type="button"
@@ -2696,7 +2717,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                         addSubtask(selectedTask.id, newSubtaskTitle.trim());
                         setNewSubtaskTitle('');
                       }}
-                      className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs"
+                      className="min-h-[44px] sm:min-h-0 px-3 py-2 sm:py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs shrink-0"
                     >
                       Add
                     </button>
@@ -2706,7 +2727,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
 
               <div className="flex justify-between items-center pt-2 gap-2 flex-wrap">
                 {selectedTask ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     {selectedTask.isDemo && (
                       <button
                         type="button"
@@ -2714,7 +2735,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                           keepItemAsMine('task', selectedTask.id);
                           setSelectedTask({ ...selectedTask, isDemo: false });
                         }}
-                        className="px-2.5 py-1 text-xs text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 rounded-lg cursor-pointer"
+                        className="min-h-[44px] sm:min-h-0 px-2.5 py-1.5 sm:py-1 text-xs text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 rounded-lg cursor-pointer"
                       >
                         Keep as My Data
                       </button>
@@ -2726,7 +2747,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                         setIsEditingTask(false);
                         setSelectedTask(null);
                       }}
-                      className="text-rose-400 hover:underline text-xs cursor-pointer"
+                      className="min-h-[44px] sm:min-h-0 px-2 py-1 text-rose-400 hover:underline text-xs cursor-pointer"
                     >
                       Delete Task
                     </button>
@@ -2737,13 +2758,13 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsEditingTask(false)}
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs cursor-pointer"
+                    className="min-h-[44px] sm:min-h-0 px-3 py-2 sm:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold cursor-pointer"
+                    className="min-h-[44px] sm:min-h-0 px-4 py-2 sm:py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold cursor-pointer"
                   >
                     Save Task
                   </button>
@@ -2756,13 +2777,13 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
 
       {/* Project Settings / Edit Modal */}
       {showProjectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 max-h-[92vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] pl-[calc(1rem+env(safe-area-inset-left))] pr-[calc(1rem+env(safe-area-inset-right))] bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-5 sm:p-6 max-h-[calc(100dvh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-y-auto">
             {/* Modal Header */}
-            <div className="flex items-start justify-between pb-4 border-b border-slate-800 mb-5">
-              <div>
+            <div className="flex items-start justify-between pb-4 border-b border-slate-800 mb-5 gap-2">
+              <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
                     <Edit2 className="w-4 h-4" />
                   </div>
                   <h3 className="text-base font-bold text-white">Project Info & Settings</h3>
@@ -2774,7 +2795,8 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               <button
                 type="button"
                 onClick={() => setShowProjectModal(false)}
-                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                aria-label="Close modal"
+                className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center p-2 sm:p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -2788,7 +2810,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   <span>General Information & Visual Identity</span>
                 </h4>
 
-                <div>
+                <div className="min-w-0">
                   <label className="block font-medium text-slate-300 mb-1">
                     Project Name <span className="text-rose-400">*</span>
                   </label>
@@ -2797,7 +2819,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                     required
                     value={projectForm.name}
                     onChange={e => setProjectForm({ ...projectForm, name: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-blue-500"
+                    className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 focus:outline-none focus:border-blue-500"
                     placeholder="e.g. Lumina Camera"
                   />
                 </div>
@@ -2819,7 +2841,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                       {projectForm.color ? PROJECT_COLOR_THEMES[projectForm.color].label : 'Auto matching'}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap p-2.5 bg-slate-800/50 border border-slate-700/60 rounded-xl">
+                  <div className="flex items-center gap-2.5 flex-wrap p-2.5 bg-slate-800/50 border border-slate-700/60 rounded-xl">
                     {(['emerald', 'cyan', 'indigo', 'purple', 'amber', 'rose', 'teal', 'blue'] as ProjectColor[]).map(c => {
                       const theme = PROJECT_COLOR_THEMES[c];
                       const isSelected = projectForm.color === c || (!projectForm.color && currentProject.color === c);
@@ -2828,7 +2850,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                           key={c}
                           type="button"
                           onClick={() => setProjectForm({ ...projectForm, color: c })}
-                          className={`w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                          className={`w-8 h-8 sm:w-7 sm:h-7 rounded-full flex items-center justify-center transition-all cursor-pointer ${
                             isSelected ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900 scale-110 shadow-md' : 'hover:scale-105 opacity-70 hover:opacity-100'
                           }`}
                           style={{ backgroundColor: theme.hex }}
@@ -2841,14 +2863,14 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   </div>
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <label className="block font-medium text-slate-300 mb-1">Description</label>
                   <textarea
                     rows={2}
                     value={projectForm.description}
                     onChange={e => setProjectForm({ ...projectForm, description: e.target.value })}
                     placeholder="Describe this project, features, or architectural notes..."
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-blue-500 resize-y"
+                    className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 focus:outline-none focus:border-blue-500 resize-y"
                   />
                 </div>
               </div>
@@ -2860,8 +2882,8 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   <span>Bundle Identifier & Target Apple Platforms</span>
                 </h4>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
                     <label className="block font-medium text-slate-300">
                       Bundle Identifier <span className="text-rose-400">*</span>
                     </label>
@@ -2883,7 +2905,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                     placeholder={`e.g. com.${bundlePrefix}.app`}
                     value={projectForm.bundleId}
                     onChange={e => setProjectForm({ ...projectForm, bundleId: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg font-mono text-slate-100 focus:outline-none focus:border-blue-500"
+                    className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg font-mono text-base sm:text-xs text-slate-100 focus:outline-none focus:border-blue-500"
                   />
                   <p className="text-[11px] text-slate-500 mt-1">
                     Reverse-domain app identifier for App Store Connect. Middle prefix is configured as <span className="text-blue-400 font-mono font-semibold">{bundlePrefix}</span> in Developer Profile.
@@ -2894,7 +2916,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   <label className="block font-medium text-slate-300 mb-1.5">
                     Target Apple Platforms <span className="text-rose-400">*</span>
                   </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                     {ALL_APPLE_PLATFORMS.map(p => {
                       const Icon = p.icon;
                       const isSelected = projectForm.platforms.includes(p.id);
@@ -2903,13 +2925,13 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                           key={p.id}
                           type="button"
                           onClick={() => handleTogglePlatform(p.id)}
-                          className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
+                          className={`min-h-[44px] sm:min-h-0 flex items-center gap-2 p-2.5 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
                             isSelected
                               ? 'bg-blue-600/15 border-blue-500 text-white shadow-sm ring-1 ring-blue-500/40'
                               : 'bg-slate-800/60 border-slate-700/60 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
                           }`}
                         >
-                          <Icon className={`w-4 h-4 ${isSelected ? 'text-blue-400' : 'text-slate-400'}`} />
+                          <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-blue-400' : 'text-slate-400'}`} />
                           <span className="flex-1 text-left">{p.label}</span>
                           {isSelected && <Check className="w-3.5 h-3.5 text-blue-400 shrink-0" />}
                         </button>
@@ -2930,18 +2952,18 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 </h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <div>
+                  <div className="min-w-0">
                     <label className="block font-medium text-slate-300 mb-1">
                       Deployment Target (Min iOS) <span className="text-rose-400">*</span>
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2 min-w-0">
                       <input
                         type="text"
                         required
                         placeholder="e.g. iOS 17.0"
                         value={projectForm.minIOS}
                         onChange={e => setProjectForm({ ...projectForm, minIOS: e.target.value })}
-                        className="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-mono focus:outline-none focus:border-blue-500"
+                        className="w-full min-w-0 flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 font-mono focus:outline-none focus:border-blue-500"
                       />
                       <select
                         value={['iOS 18.2', 'iOS 18.0', 'iOS 17.5', 'iOS 17.0', 'iOS 16.4', 'iOS 16.0', 'iOS 15.0'].includes(projectForm.minIOS) ? projectForm.minIOS : 'custom'}
@@ -2950,7 +2972,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                             setProjectForm({ ...projectForm, minIOS: e.target.value });
                           }
                         }}
-                        className="px-2.5 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-300 text-xs focus:outline-none cursor-pointer"
+                        className="w-full sm:w-auto min-w-0 min-h-[44px] sm:min-h-0 px-2.5 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-300 focus:outline-none cursor-pointer"
                       >
                         <option value="iOS 18.2">iOS 18.2</option>
                         <option value="iOS 18.0">iOS 18.0</option>
@@ -2964,14 +2986,14 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                     </div>
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <label className="block font-medium text-slate-300 mb-1">
                       UI Framework
                     </label>
                     <select
                       value={projectForm.uiFramework}
                       onChange={e => setProjectForm({ ...projectForm, uiFramework: e.target.value as any })}
-                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none cursor-pointer"
+                      className="w-full min-w-0 min-h-[44px] sm:min-h-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200 focus:outline-none cursor-pointer"
                     >
                       <option value="SwiftUI">SwiftUI (Modern declarative)</option>
                       <option value="UIKit">UIKit (Imperative)</option>
@@ -2979,18 +3001,18 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                     </select>
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <label className="block font-medium text-slate-300 mb-1">
                       Swift Version <span className="text-rose-400">*</span>
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2 min-w-0">
                       <input
                         type="text"
                         required
                         placeholder="e.g. 6.0"
                         value={projectForm.swiftVersion}
                         onChange={e => setProjectForm({ ...projectForm, swiftVersion: e.target.value })}
-                        className="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-mono focus:outline-none focus:border-blue-500"
+                        className="w-full min-w-0 flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 font-mono focus:outline-none focus:border-blue-500"
                       />
                       <select
                         value={['6.0', '5.10', '5.9', '5.8'].includes(projectForm.swiftVersion) ? projectForm.swiftVersion : 'custom'}
@@ -2999,7 +3021,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                             setProjectForm({ ...projectForm, swiftVersion: e.target.value });
                           }
                         }}
-                        className="px-2.5 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-300 text-xs focus:outline-none cursor-pointer"
+                        className="w-full sm:w-auto min-w-0 min-h-[44px] sm:min-h-0 px-2.5 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-300 focus:outline-none cursor-pointer"
                       >
                         <option value="6.0">Swift 6.0</option>
                         <option value="5.10">Swift 5.10</option>
@@ -3010,18 +3032,18 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                     </div>
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <label className="block font-medium text-slate-300 mb-1">
                       Xcode Version <span className="text-rose-400">*</span>
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2 min-w-0">
                       <input
                         type="text"
                         required
                         placeholder="e.g. 16.1"
                         value={projectForm.xcodeVersion}
                         onChange={e => setProjectForm({ ...projectForm, xcodeVersion: e.target.value })}
-                        className="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-mono focus:outline-none focus:border-blue-500"
+                        className="w-full min-w-0 flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 font-mono focus:outline-none focus:border-blue-500"
                       />
                       <select
                         value={['16.2', '16.1', '16.0', '15.4', '15.0'].includes(projectForm.xcodeVersion) ? projectForm.xcodeVersion : 'custom'}
@@ -3030,7 +3052,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                             setProjectForm({ ...projectForm, xcodeVersion: e.target.value });
                           }
                         }}
-                        className="px-2.5 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-300 text-xs focus:outline-none cursor-pointer"
+                        className="w-full sm:w-auto min-w-0 min-h-[44px] sm:min-h-0 px-2.5 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-300 focus:outline-none cursor-pointer"
                       >
                         <option value="16.2">Xcode 16.2</option>
                         <option value="16.1">Xcode 16.1</option>
@@ -3052,12 +3074,12 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 </h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <div>
+                  <div className="min-w-0">
                     <label className="block font-medium text-slate-300 mb-1">Project Status</label>
                     <select
                       value={projectForm.status}
                       onChange={e => setProjectForm({ ...projectForm, status: e.target.value as any })}
-                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none"
+                      className="w-full min-w-0 min-h-[44px] sm:min-h-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200 focus:outline-none"
                     >
                       <option value="Planning">Planning</option>
                       <option value="In development">In development</option>
@@ -3069,7 +3091,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   </div>
 
                   {projectForm.status === 'In development' ? (
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <label className="block font-medium text-slate-300">Development Subphase</label>
                         <span className="text-[10px] text-blue-400 font-mono">
@@ -3084,7 +3106,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                             devSubstatus: e.target.value as DevelopmentSubstatus,
                           })
                         }
-                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
+                        className="w-full min-w-0 min-h-[44px] sm:min-h-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
                       >
                         {DEVELOPMENT_SUBSTATUSES.map(sub => (
                           <option key={sub.id} value={sub.id} className="bg-slate-900 text-white">
@@ -3094,14 +3116,14 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                       </select>
                     </div>
                   ) : (
-                    <div className="flex items-center text-slate-500 text-xs pt-5">
+                    <div className="flex items-center text-slate-500 text-xs sm:pt-5">
                       Subphase is active when status is &quot;In development&quot;.
                     </div>
                   )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
-                  <div>
+                  <div className="min-w-0">
                     <label className="block font-medium text-slate-300 mb-1">
                       Start Date <span className="text-rose-400">*</span>
                     </label>
@@ -3110,14 +3132,14 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                       required
                       value={projectForm.startDate}
                       onChange={e => setProjectForm({ ...projectForm, startDate: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-blue-500 [color-scheme:dark]"
+                      className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 focus:outline-none focus:border-blue-500 [color-scheme:dark]"
                     />
                     <span className="text-[11px] text-slate-400 mt-1 block">
                       Weergave: {projectForm.startDate ? formatDate(projectForm.startDate) : 'Geen datum ingevoerd'}
                     </span>
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <label className="font-medium text-slate-300">
                         Target Release Date <span className="text-slate-500 font-normal">(Optioneel)</span>
@@ -3136,7 +3158,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                       type="date"
                       value={projectForm.targetDate}
                       onChange={e => setProjectForm({ ...projectForm, targetDate: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:border-blue-500 [color-scheme:dark]"
+                      className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 focus:outline-none focus:border-blue-500 [color-scheme:dark]"
                     />
                     <span className="text-[11px] text-slate-400 mt-1 block">
                       Weergave: {projectForm.targetDate ? formatDate(projectForm.targetDate) : 'Geen streefdatum'}
@@ -3146,14 +3168,14 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               </div>
 
               {/* MODAL FOOTER */}
-              <div className="flex justify-between items-center pt-3 border-t border-slate-800">
+              <div className="flex flex-wrap justify-between items-center gap-2 pt-3 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => {
                     deleteProject(currentProject.id);
                     setShowProjectModal(false);
                   }}
-                  className="px-3 py-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                  className="min-h-[44px] sm:min-h-0 px-3 py-2 sm:py-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
                 >
                   Delete Project
                 </button>
@@ -3161,13 +3183,13 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowProjectModal(false)}
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg cursor-pointer transition-colors"
+                    className="min-h-[44px] sm:min-h-0 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg cursor-pointer transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold cursor-pointer shadow-lg shadow-blue-500/20 transition-all"
+                    className="min-h-[44px] sm:min-h-0 px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold cursor-pointer shadow-lg shadow-blue-500/20 transition-all"
                   >
                     Save Changes
                   </button>

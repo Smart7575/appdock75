@@ -22,6 +22,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { useData } from '../../context/DataContext';
+import { exportTextFile } from '../../utils/fileExport';
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -107,16 +108,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         onClose();
         try {
           const jsonStr = exportFullDatabase();
-          const blob = new Blob([jsonStr], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
           const dateStr = new Date().toISOString().split('T')[0];
-          a.href = url;
-          a.download = `AppDock75_backup_${dateStr}.json`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
+          void exportTextFile({
+            filename: `AppDock75_backup_${dateStr}.json`,
+            content: jsonStr,
+            mimeType: 'application/json',
+            title: 'AppDock75 Workspace Backup',
+          });
         } catch (e) {
           console.error('Export failed', e);
         }
@@ -266,10 +264,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-xl bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[max(4rem,calc(1.5rem+env(safe-area-inset-top)))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="relative w-full max-w-xl max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-5rem)] flex flex-col bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden">
         {/* Search Input Bar */}
-        <div className="flex items-center px-4 border-b border-slate-800">
+        <div className="flex items-center px-4 border-b border-slate-800 shrink-0">
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input
             type="text"
@@ -277,15 +275,19 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             placeholder="Type a command, project, idea, or task..."
             value={query}
             onChange={e => { setQuery(e.target.value); setSelectedIndex(0); }}
-            className="w-full px-3 py-3.5 bg-transparent text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none"
+            className="w-full min-w-0 px-3 py-3.5 bg-transparent text-base sm:text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none"
           />
-          <kbd className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-slate-700 font-mono">
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-[44px] sm:min-h-0 px-2 flex items-center text-[10px] bg-slate-800 text-slate-400 rounded border border-slate-700 font-mono cursor-pointer shrink-0"
+          >
             ESC
-          </kbd>
+          </button>
         </div>
 
         {/* Results List */}
-        <div className="max-h-80 overflow-y-auto p-2 divide-y divide-slate-800/40">
+        <div className="flex-1 min-h-0 overflow-y-auto p-2 divide-y divide-slate-800/40">
           {results.length === 0 ? (
             <div className="p-8 text-center text-xs text-slate-500">
               No matching commands or items found for "{query}".
@@ -299,7 +301,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   key={item.id}
                   onClick={item.action}
                   onMouseEnter={() => setSelectedIndex(idx)}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-xs transition-colors cursor-pointer ${
+                  className={`flex items-center justify-between gap-2 px-3 py-2.5 min-h-[44px] rounded-lg text-xs transition-colors cursor-pointer ${
                     isSelected ? 'bg-blue-600/20 text-blue-200' : 'text-slate-300 hover:bg-slate-800/60'
                   }`}
                 >
@@ -313,7 +315,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                         {item.badge}
                       </span>
                     )}
-                    <span className="text-[10px] text-slate-500 uppercase tracking-wider">
+                    <span className="hidden sm:inline text-[10px] text-slate-500 uppercase tracking-wider">
                       {item.category}
                     </span>
                   </div>

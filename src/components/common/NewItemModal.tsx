@@ -164,17 +164,22 @@ export const NewItemModal: React.FC<NewItemModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] bg-black/80 backdrop-blur-sm animate-in fade-in">
+      <div className="w-full max-w-md max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem)] overflow-y-auto bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-5 sm:p-6">
         <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-          <div className="flex items-center gap-2">
-            {type === 'idea' && <Lightbulb className="w-5 h-5 text-amber-400" />}
-            {type === 'project' && <FolderPlus className="w-5 h-5 text-blue-400" />}
-            {type === 'task' && <CheckSquare className="w-5 h-5 text-emerald-400" />}
-            {type === 'release' && <Tag className="w-5 h-5 text-purple-400" />}
-            <h3 className="text-sm font-bold text-white capitalize">New {type}</h3>
+          <div className="flex items-center gap-2 min-w-0">
+            {type === 'idea' && <Lightbulb className="w-5 h-5 text-amber-400 shrink-0" />}
+            {type === 'project' && <FolderPlus className="w-5 h-5 text-blue-400 shrink-0" />}
+            {type === 'task' && <CheckSquare className="w-5 h-5 text-emerald-400 shrink-0" />}
+            {type === 'release' && <Tag className="w-5 h-5 text-purple-400 shrink-0" />}
+            <h3 className="text-sm font-bold text-white capitalize truncate">New {type}</h3>
           </div>
-          <button onClick={handleClose} className="text-slate-400 hover:text-white cursor-pointer">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-slate-400 hover:text-white cursor-pointer"
+            aria-label="Close modal"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -182,7 +187,7 @@ export const NewItemModal: React.FC<NewItemModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-3 text-xs">
           {type === 'idea' && (
             <>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-slate-300 font-medium mb-1">Idea Title</label>
                 <input
                   type="text"
@@ -190,10 +195,10 @@ export const NewItemModal: React.FC<NewItemModalProps> = ({
                   placeholder="e.g. FocusDeck Pomodoro"
                   value={ideaTitle}
                   onChange={e => setIdeaTitle(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 placeholder:text-slate-500"
+                  className="w-full min-w-0 px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 placeholder:text-slate-500"
                 />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-slate-300 font-medium mb-1">Description</label>
                 <textarea
                   rows={2}
@@ -201,7 +206,7 @@ export const NewItemModal: React.FC<NewItemModalProps> = ({
                   placeholder="Describe your idea concept..."
                   value={ideaDesc}
                   onChange={e => setIdeaDesc(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 placeholder:text-slate-500"
+                  className="w-full min-w-0 px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 placeholder:text-slate-500"
                 />
               </div>
             </>
@@ -209,7 +214,7 @@ export const NewItemModal: React.FC<NewItemModalProps> = ({
 
           {type === 'project' && (
             <>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-slate-300 font-medium mb-1">Project Name</label>
                 <input
                   type="text"
@@ -224,17 +229,17 @@ export const NewItemModal: React.FC<NewItemModalProps> = ({
                       setProjBundle(cleanSuffix ? `com.${bundlePrefix}.${cleanSuffix}` : '');
                     }
                   }}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                  className="w-full min-w-0 px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
                 />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-slate-300 font-medium mb-1">Description (optional)</label>
                 <textarea
                   rows={2}
                   placeholder="e.g. Manual camera app for indie creators with live ProRes Log recording..."
                   value={projDesc}
                   onChange={e => setProjDesc(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                  className="w-full min-w-0 px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
                 />
               </div>
 
@@ -245,7 +250,7 @@ export const NewItemModal: React.FC<NewItemModalProps> = ({
                 projectName={projName || 'App'}
               />
 
-              <div>
+              <div className="min-w-0">
                 <label className="block text-slate-300 font-medium mb-1">Bundle Identifier</label>
                 <input
                   type="text"
@@ -253,20 +258,20 @@ export const NewItemModal: React.FC<NewItemModalProps> = ({
                   placeholder={`e.g. com.${bundlePrefix}.luminacamera`}
                   value={projBundle}
                   onChange={e => setProjBundle(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg font-mono text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                  className="w-full min-w-0 px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg font-mono text-base sm:text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
                 />
               </div>
-              <div>
-                <div className="flex items-center justify-between mb-1">
+              <div className="min-w-0">
+                <div className="flex items-center justify-between gap-2 mb-1">
                   <label className="block text-slate-300 font-medium">Initial Development Subphase</label>
-                  <span className="text-[10px] text-blue-400 font-mono">
+                  <span className="text-[10px] text-blue-400 font-mono shrink-0">
                     Phase {DEVELOPMENT_SUBSTATUSES.find(s => s.id === projDevSubstatus)?.step || 1} of 7
                   </span>
                 </div>
                 <select
                   value={projDevSubstatus}
                   onChange={e => setProjDevSubstatus(e.target.value as DevelopmentSubstatus)}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
+                  className="w-full min-w-0 px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
                 >
                   {DEVELOPMENT_SUBSTATUSES.map(sub => (
                     <option key={sub.id} value={sub.id} className="bg-slate-900 text-white">
@@ -283,19 +288,19 @@ export const NewItemModal: React.FC<NewItemModalProps> = ({
 
           {type === 'task' && (
             <>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-slate-300 font-medium mb-1">Project</label>
                 <select
                   value={taskProjectId}
                   onChange={e => setTaskProjectId(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200"
+                  className="w-full min-w-0 px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200"
                 >
                   {db.projects.map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-slate-300 font-medium mb-1">Task Title</label>
                 <input
                   type="text"
@@ -303,7 +308,7 @@ export const NewItemModal: React.FC<NewItemModalProps> = ({
                   placeholder="e.g. Add iOS 18 interactive widget"
                   value={taskTitle}
                   onChange={e => setTaskTitle(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100"
+                  className="w-full min-w-0 px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100"
                 />
               </div>
             </>
@@ -311,37 +316,37 @@ export const NewItemModal: React.FC<NewItemModalProps> = ({
 
           {type === 'release' && (
             <>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-slate-300 font-medium mb-1">Project</label>
                 <select
                   value={relProjectId}
                   onChange={e => setRelProjectId(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200"
+                  className="w-full min-w-0 px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200"
                 >
                   {db.projects.map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="min-w-0">
                   <label className="block text-slate-300 font-medium mb-1">SemVer Version</label>
                   <input
                     type="text"
                     required
                     value={relVersion}
                     onChange={e => setRelVersion(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg font-mono text-slate-100"
+                    className="w-full min-w-0 px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg font-mono text-base sm:text-xs text-slate-100"
                   />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <label className="block text-slate-300 font-medium mb-1">Build Number</label>
                   <input
                     type="number"
                     required
                     value={relBuild}
                     onChange={e => setRelBuild(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg font-mono text-slate-100"
+                    className="w-full min-w-0 px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg font-mono text-base sm:text-xs text-slate-100"
                   />
                 </div>
               </div>
@@ -352,13 +357,13 @@ export const NewItemModal: React.FC<NewItemModalProps> = ({
             <button
               type="button"
               onClick={handleClose}
-              className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg cursor-pointer"
+              className="px-4 py-2 min-h-[44px] sm:min-h-0 sm:py-1.5 bg-slate-800 text-slate-300 rounded-lg cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold cursor-pointer"
+              className="px-4 py-2 min-h-[44px] sm:min-h-0 sm:py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold cursor-pointer"
             >
               Create
             </button>

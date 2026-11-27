@@ -23,6 +23,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 import { exportTasksAsCsv, exportChangelogAsMarkdown } from '../../services/storage';
+import { exportTextFile } from '../../utils/fileExport';
 
 export const DataBackupManager: React.FC = () => {
   const { user } = useAuth();
@@ -70,20 +71,17 @@ export const DataBackupManager: React.FC = () => {
   const totalChangelogs = db.changelogEntries.length;
 
   // Handle Export Full JSON
-  const handleDownloadJson = () => {
+  const handleDownloadJson = async () => {
     try {
       const jsonStr = exportFullDatabase();
-      const blob = new Blob([jsonStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
       const dateStr = new Date().toISOString().split('T')[0];
-      a.href = url;
-      a.download = `AppDock75_backup_${dateStr}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      setExportNotice('Full backup JSON downloaded successfully.');
+      await exportTextFile({
+        filename: `AppDock75_backup_${dateStr}.json`,
+        content: jsonStr,
+        mimeType: 'application/json',
+        title: 'AppDock75 Full Backup',
+      });
+      setExportNotice('Full backup JSON exported successfully.');
       setTimeout(() => setExportNotice(null), 4000);
     } catch {
       setExportNotice('Failed to generate JSON backup.');
@@ -105,19 +103,16 @@ export const DataBackupManager: React.FC = () => {
   };
 
   // Handle Export Tasks CSV
-  const handleExportCsv = () => {
+  const handleExportCsv = async () => {
     try {
       const csvStr = exportTasksAsCsv(db.tasks, db.projects, db.statuses);
-      const blob = new Blob([csvStr], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
       const dateStr = new Date().toISOString().split('T')[0];
-      a.href = url;
-      a.download = `AppDock75_tasks_${dateStr}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      await exportTextFile({
+        filename: `AppDock75_tasks_${dateStr}.csv`,
+        content: csvStr,
+        mimeType: 'text/csv',
+        title: 'AppDock75 Tasks CSV Export',
+      });
       setExportNotice('Tasks CSV exported successfully.');
       setTimeout(() => setExportNotice(null), 4000);
     } catch {
@@ -126,7 +121,7 @@ export const DataBackupManager: React.FC = () => {
   };
 
   // Handle Export Changelog Markdown
-  const handleExportMarkdown = () => {
+  const handleExportMarkdown = async () => {
     try {
       const mdStr = exportChangelogAsMarkdown(
         db.projects,
@@ -134,16 +129,13 @@ export const DataBackupManager: React.FC = () => {
         db.changelogEntries,
         db.archivedApps
       );
-      const blob = new Blob([mdStr], { type: 'text/markdown' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
       const dateStr = new Date().toISOString().split('T')[0];
-      a.href = url;
-      a.download = `AppDock75_changelog_${dateStr}.md`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      await exportTextFile({
+        filename: `AppDock75_changelog_${dateStr}.md`,
+        content: mdStr,
+        mimeType: 'text/markdown',
+        title: 'AppDock75 Changelog Export',
+      });
       setExportNotice('Changelog Markdown exported successfully.');
       setTimeout(() => setExportNotice(null), 4000);
     } catch {
@@ -398,7 +390,7 @@ export const DataBackupManager: React.FC = () => {
               <button
                 type="button"
                 onClick={handleDownloadJson}
-                className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-sm shadow-blue-500/20"
+                className="flex-1 min-h-[44px] sm:min-h-0 py-2 px-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-sm shadow-blue-500/20"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Download JSON</span>
@@ -407,7 +399,7 @@ export const DataBackupManager: React.FC = () => {
                 type="button"
                 onClick={handleCopyJson}
                 title="Copy full JSON to clipboard"
-                className="py-2 px-2.5 bg-slate-700/80 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center py-2 px-2.5 bg-slate-700/80 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium transition-colors cursor-pointer"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
@@ -439,7 +431,7 @@ export const DataBackupManager: React.FC = () => {
               <button
                 type="button"
                 onClick={handleExportCsv}
-                className="w-full py-2 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-100 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                className="w-full min-h-[44px] sm:min-h-0 py-2 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-100 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Export Tasks (CSV)</span>
@@ -472,7 +464,7 @@ export const DataBackupManager: React.FC = () => {
               <button
                 type="button"
                 onClick={handleExportMarkdown}
-                className="w-full py-2 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-100 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                className="w-full min-h-[44px] sm:min-h-0 py-2 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-100 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Export Changelog (MD)</span>
@@ -500,7 +492,7 @@ export const DataBackupManager: React.FC = () => {
             <button
               type="button"
               onClick={() => { setImportSource('file'); setValidationResult(null); }}
-              className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
+              className={`px-3 py-1 min-h-[44px] sm:min-h-0 rounded-md transition-all cursor-pointer ${
                 importSource === 'file' ? 'bg-slate-700 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -509,7 +501,7 @@ export const DataBackupManager: React.FC = () => {
             <button
               type="button"
               onClick={() => { setImportSource('text'); setValidationResult(null); }}
-              className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
+              className={`px-3 py-1 min-h-[44px] sm:min-h-0 rounded-md transition-all cursor-pointer ${
                 importSource === 'text' ? 'bg-slate-700 text-white font-medium shadow-sm' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -564,7 +556,7 @@ export const DataBackupManager: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2 min-w-0">
             <label className="block text-xs font-medium text-slate-300">
               Paste JSON Backup Content
             </label>
@@ -573,7 +565,7 @@ export const DataBackupManager: React.FC = () => {
               value={pastedJson}
               onChange={handlePastedTextChange}
               placeholder='{"application":"AppDock75", "version":"1.0.0", "data": { "projects": [...], "tasks": [...] }}'
-              className="w-full p-3 bg-slate-800/80 border border-slate-700/80 rounded-xl text-xs font-mono text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full min-w-0 p-3 bg-slate-800/80 border border-slate-700/80 rounded-xl text-base sm:text-xs font-mono text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
             />
           </div>
         )}
@@ -700,7 +692,7 @@ export const DataBackupManager: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
               <p className="text-[11px] text-slate-400">
                 Data will be persisted locally and synced to Firebase Cloud Firestore.
               </p>
@@ -709,7 +701,7 @@ export const DataBackupManager: React.FC = () => {
                 type="button"
                 disabled={isImporting}
                 onClick={handleExecuteImport}
-                className="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition-all cursor-pointer flex items-center gap-2 shadow-md shadow-emerald-600/20 disabled:opacity-50"
+                className="py-2.5 px-5 min-h-[44px] sm:min-h-0 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition-all cursor-pointer flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 disabled:opacity-50"
               >
                 {isImporting ? (
                   <>

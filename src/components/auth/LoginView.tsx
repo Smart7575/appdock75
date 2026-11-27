@@ -140,39 +140,39 @@ export const LoginView: React.FC<LoginViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center px-4 py-8 relative selection:bg-blue-500/20 selection:text-blue-300">
+    <div className="min-h-dvh bg-slate-950 text-slate-100 flex flex-col justify-center items-center px-4 py-6 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] relative selection:bg-blue-500/20 selection:text-blue-300">
       {/* Background ambient lighting */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Container */}
-      <div className="w-full max-w-md relative z-10 space-y-4">
+      <div className="w-full max-w-md relative z-10 space-y-3 sm:space-y-4">
         {/* Top Branding */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/20 text-white mx-auto">
+        <div className="text-center space-y-1.5 sm:space-y-2">
+          <div className="hidden sm:inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/20 text-white mx-auto">
             <Layers className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white flex items-center justify-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center justify-center gap-2">
               <span>AppDock75</span>
               <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
                 iOS Hub
               </span>
             </h1>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="hidden sm:block text-xs text-slate-400 mt-1">
               Complete Lifecycle Workspace for Indie iOS Developers
             </p>
           </div>
         </div>
 
         {/* Auth Card */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 shadow-2xl backdrop-blur-md">
+        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-2xl backdrop-blur-md">
           {/* Mode Switcher Tabs */}
           {mode !== 'forgot' && (
-            <div className="flex p-1 bg-slate-800/80 rounded-xl mb-5">
+            <div className="flex p-1 bg-slate-800/80 rounded-xl mb-4 sm:mb-5">
               <button
                 type="button"
                 onClick={() => { setMode('login'); setError(null); }}
-                className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                className={`flex-1 min-h-[44px] sm:min-h-0 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                   mode === 'login'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-slate-400 hover:text-slate-200'
@@ -183,7 +183,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
               <button
                 type="button"
                 onClick={() => { setMode('register'); setError(null); }}
-                className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                className={`flex-1 min-h-[44px] sm:min-h-0 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                   mode === 'register'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-slate-400 hover:text-slate-200'
@@ -196,13 +196,13 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
           {/* Social Sign-in Buttons */}
           {mode !== 'forgot' && (
-            <div className="space-y-2.5 mb-5">
+            <div className="space-y-2.5 mb-4 sm:mb-5">
               {/* Google Button */}
               <button
                 type="button"
                 disabled={isSubmitting}
                 onClick={handleGoogleSignIn}
-                className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 bg-white hover:bg-neutral-100 text-neutral-800 rounded-xl text-xs font-semibold transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+                className="w-full min-h-[44px] flex items-center justify-center gap-2.5 px-4 py-2.5 bg-white hover:bg-neutral-100 text-neutral-800 rounded-xl text-xs font-semibold transition-colors cursor-pointer shadow-sm disabled:opacity-50"
               >
                 <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                   <path
@@ -230,7 +230,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 type="button"
                 disabled={isSubmitting}
                 onClick={handleAppleSignIn}
-                className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 bg-black hover:bg-neutral-900 text-white border border-neutral-700/80 rounded-xl text-xs font-semibold transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+                className="w-full min-h-[44px] flex items-center justify-center gap-2.5 px-4 py-2.5 bg-black hover:bg-neutral-900 text-white border border-neutral-700/80 rounded-xl text-xs font-semibold transition-colors cursor-pointer shadow-sm disabled:opacity-50"
               >
                 <Apple className="w-4 h-4 fill-current shrink-0" />
                 <span>{mode === 'login' ? 'Sign in with Apple' : 'Sign up with Apple'}</span>
@@ -282,67 +282,68 @@ export const LoginView: React.FC<LoginViewProps> = ({
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-3.5">
+          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-3.5">
             {mode === 'register' && (
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-medium text-slate-300 mb-1">Developer / Full Name</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-2.5 w-4 h-4 text-slate-500" />
+                <div className="relative min-w-0">
+                  <User className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
                   <input
                     type="text"
                     required
                     placeholder="e.g. Alex Vance"
                     value={name}
                     onChange={e => setName(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-800/80 border border-slate-700/60 rounded-xl text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                    className="w-full min-w-0 pl-9 pr-3 py-2.5 sm:py-2 bg-slate-800/80 border border-slate-700/60 rounded-xl text-base sm:text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
                   />
                 </div>
               </div>
             )}
 
-            <div>
+            <div className="min-w-0">
               <label className="block text-xs font-medium text-slate-300 mb-1">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-2.5 w-4 h-4 text-slate-500" />
+              <div className="relative min-w-0">
+                <Mail className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
                 <input
                   type="email"
                   required
                   placeholder="developer@example.com"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-800/80 border border-slate-700/60 rounded-xl text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full min-w-0 pl-9 pr-3 py-2.5 sm:py-2 bg-slate-800/80 border border-slate-700/60 rounded-xl text-base sm:text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
             </div>
 
             {mode !== 'forgot' && (
-              <div>
+              <div className="min-w-0">
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-xs font-medium text-slate-300">Password</label>
                   {mode === 'login' && (
                     <button
                       type="button"
                       onClick={() => { setMode('forgot'); setError(null); }}
-                      className="text-[11px] text-blue-400 hover:underline cursor-pointer"
+                      className="text-[11px] text-blue-400 hover:underline cursor-pointer min-h-[44px] sm:min-h-0 flex items-center"
                     >
                       Forgot password?
                     </button>
                   )}
                 </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-2.5 w-4 h-4 text-slate-500" />
+                <div className="relative min-w-0">
+                  <Lock className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
                     placeholder={mode === 'register' ? 'Min. 8 characters' : 'Enter password'}
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    className="w-full pl-9 pr-9 py-2 bg-slate-800/80 border border-slate-700/60 rounded-xl text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                    className="w-full min-w-0 pl-9 pr-11 py-2.5 sm:py-2 bg-slate-800/80 border border-slate-700/60 rounded-xl text-base sm:text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 cursor-pointer"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-slate-500 hover:text-slate-300 cursor-pointer"
+                    aria-label="Toggle password visibility"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -377,10 +378,10 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   id="rememberMeCheckbox"
                   checked={rememberMe}
                   onChange={e => setRememberMe(e.target.checked)}
-                  className="w-3.5 h-3.5 rounded border-slate-700 bg-slate-800 text-blue-600 focus:ring-0 cursor-pointer"
+                  className="w-4 h-4 sm:w-3.5 sm:h-3.5 rounded border-slate-700 bg-slate-800 text-blue-600 focus:ring-0 cursor-pointer"
                 />
                 <label htmlFor="rememberMeCheckbox" className="text-xs text-slate-400 select-none cursor-pointer">
-                  Remember me on this browser
+                  Remember me on this device
                 </label>
               </div>
             )}
@@ -389,7 +390,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-xs transition-colors cursor-pointer mt-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-blue-500/20"
+              className="w-full min-h-[44px] py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-xs transition-colors cursor-pointer mt-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-blue-500/20"
             >
               {isSubmitting
                 ? 'Processing...'
@@ -404,7 +405,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
               <button
                 type="button"
                 onClick={() => { setMode('login'); setError(null); }}
-                className="w-full text-center py-2 text-xs text-slate-400 hover:text-white cursor-pointer"
+                className="w-full min-h-[44px] text-center py-2 text-xs text-slate-400 hover:text-white cursor-pointer"
               >
                 Back to Sign In
               </button>
@@ -412,18 +413,18 @@ export const LoginView: React.FC<LoginViewProps> = ({
           </form>
 
           {/* Quick Demo Developer Login */}
-          <div className="mt-5 pt-4 border-t border-slate-800/80 text-center space-y-2">
-            <p className="text-[11px] text-slate-400">
+          <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-slate-800/80 text-center space-y-2">
+            <p className="hidden sm:block text-[11px] text-slate-400">
               Want to test immediately without registration?
             </p>
             <button
               type="button"
               disabled={isSubmitting}
               onClick={handleDemoSignIn}
-              className="w-full py-2.5 px-3 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 text-slate-200 hover:text-white rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+              className="w-full min-h-[44px] py-2.5 px-3 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 text-slate-200 hover:text-white rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
             >
-              <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-              <span>Continue as Demo Developer (Alex Vance)</span>
+              <Sparkles className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+              <span className="truncate">Continue as Demo Developer (Alex Vance)</span>
             </button>
           </div>
         </div>
@@ -434,14 +435,14 @@ export const LoginView: React.FC<LoginViewProps> = ({
             <button
               type="button"
               onClick={onExploreLandingPage}
-              className="hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
+              className="min-h-[44px] sm:min-h-0 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
             >
               <span>Explore Features & Product Tour</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           )}
 
-          <div className="flex items-center gap-1.5 text-emerald-400 text-[11px] ml-auto">
+          <div className="hidden sm:flex items-center gap-1.5 text-emerald-400 text-[11px] ml-auto">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>Firebase Database: appdock75</span>
           </div>

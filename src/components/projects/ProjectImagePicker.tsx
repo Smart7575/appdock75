@@ -9,6 +9,7 @@ import {
   Camera,
   Folder,
 } from 'lucide-react';
+import { HABITPULSE_ICON, CHRONOS_ICON, resolveBundledImage } from '../../assets/bundledImages';
 
 export interface AppIconPreset {
   id: string;
@@ -22,13 +23,13 @@ export const APP_ICON_PRESETS: AppIconPreset[] = [
     id: 'habitpulse',
     name: 'HabitPulse',
     category: 'Productivity',
-    url: '/src/assets/images/app_icon_habitpulse_1791271816455.jpg',
+    url: HABITPULSE_ICON,
   },
   {
     id: 'chronos',
     name: 'Chronos Timer',
     category: 'Utilities',
-    url: '/src/assets/images/app_icon_chronos_1791271827616.jpg',
+    url: CHRONOS_ICON,
   },
   {
     id: 'lumina',
@@ -179,7 +180,7 @@ export const ProjectImagePicker: React.FC<ProjectImagePickerProps> = ({
           <button
             type="button"
             onClick={handleClear}
-            className="text-[11px] text-rose-400 hover:text-rose-300 flex items-center gap-1 cursor-pointer shrink-0"
+            className="text-xs sm:text-[11px] text-rose-400 hover:text-rose-300 flex items-center gap-1 cursor-pointer shrink-0 min-h-[44px] sm:min-h-0 px-2 sm:px-0"
           >
             <X className="w-3 h-3" />
             <span>Remove</span>
@@ -192,10 +193,9 @@ export const ProjectImagePicker: React.FC<ProjectImagePickerProps> = ({
         {value ? (
           <div className="relative group shrink-0">
             <img
-              src={value}
+              src={resolveBundledImage(value)}
               alt={projectName}
               className="w-14 h-14 rounded-2xl object-cover ring-2 ring-blue-500/40 shadow-md bg-slate-800"
-              referrerPolicy="no-referrer"
             />
             <span className="absolute -bottom-1 -right-1 bg-emerald-500 text-slate-950 p-0.5 rounded-full ring-2 ring-slate-900">
               <Check className="w-2.5 h-2.5 stroke-[3]" />
@@ -223,44 +223,44 @@ export const ProjectImagePicker: React.FC<ProjectImagePickerProps> = ({
       </div>
 
       {/* Tab Switcher: Presets | Upload File | Web URL */}
-      <div className="flex items-center gap-1 p-0.5 bg-slate-900 border border-slate-800 rounded-lg text-xs">
+      <div className="grid grid-cols-3 gap-1 p-0.5 bg-slate-900 border border-slate-800 rounded-lg text-xs">
         <button
           type="button"
           onClick={() => setActiveTab('presets')}
-          className={`flex-1 py-1.5 px-2 rounded-md font-medium text-center transition-colors cursor-pointer flex items-center justify-center gap-1.5 ${
+          className={`min-h-[44px] sm:min-h-0 py-1.5 px-1.5 sm:px-2 rounded-md font-medium text-center transition-colors cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 min-w-0 ${
             activeTab === 'presets'
               ? 'bg-blue-600 text-white font-semibold shadow-sm'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          <Sparkles className="w-3 h-3" />
-          <span>Curated Presets</span>
+          <Sparkles className="w-3 h-3 shrink-0" />
+          <span className="truncate">Presets</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('upload')}
-          className={`flex-1 py-1.5 px-2 rounded-md font-medium text-center transition-colors cursor-pointer flex items-center justify-center gap-1.5 ${
+          className={`min-h-[44px] sm:min-h-0 py-1.5 px-1.5 sm:px-2 rounded-md font-medium text-center transition-colors cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 min-w-0 ${
             activeTab === 'upload'
               ? 'bg-blue-600 text-white font-semibold shadow-sm'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          <Upload className="w-3 h-3" />
-          <span>Upload Image</span>
+          <Upload className="w-3 h-3 shrink-0" />
+          <span className="truncate">Upload</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('url')}
-          className={`flex-1 py-1.5 px-2 rounded-md font-medium text-center transition-colors cursor-pointer flex items-center justify-center gap-1.5 ${
+          className={`min-h-[44px] sm:min-h-0 py-1.5 px-1.5 sm:px-2 rounded-md font-medium text-center transition-colors cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 min-w-0 ${
             activeTab === 'url'
               ? 'bg-blue-600 text-white font-semibold shadow-sm'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          <LinkIcon className="w-3 h-3" />
-          <span>Image URL</span>
+          <LinkIcon className="w-3 h-3 shrink-0" />
+          <span className="truncate">URL</span>
         </button>
       </div>
 
@@ -332,19 +332,19 @@ export const ProjectImagePicker: React.FC<ProjectImagePickerProps> = ({
 
       {/* Tab 3: Direct URL */}
       {activeTab === 'url' && (
-        <div className="flex gap-2 pt-1">
+        <div className="flex flex-col sm:flex-row gap-2 pt-1">
           <input
             type="url"
             placeholder="https://example.com/app-icon.png"
             value={customUrl}
             onChange={e => setCustomUrl(e.target.value)}
-            className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+            className="w-full min-w-0 flex-1 px-3 py-2 sm:py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
           />
           <button
             type="button"
             onClick={handleApplyUrl}
             disabled={!customUrl.trim()}
-            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white rounded-lg text-xs font-semibold cursor-pointer"
+            className="min-h-[44px] sm:min-h-0 px-3 py-2 sm:py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white rounded-lg text-xs font-semibold cursor-pointer shrink-0"
           >
             Apply
           </button>

@@ -297,7 +297,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 border-b border-slate-800 pb-1 text-xs">
+      <div className="flex items-center gap-1 border-b border-slate-800 pb-1 text-xs overflow-x-auto scrollbar-none">
         {[
           { id: 'profile', label: 'Profile & Account', icon: User },
           { id: 'workflow', label: 'Kanban Workflow Statuses', icon: Columns },
@@ -311,13 +311,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-2 min-h-[44px] sm:min-h-0 rounded-lg font-medium whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
                 isActive
                   ? 'bg-slate-800 text-blue-400 font-semibold'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
               }`}
             >
-              <Icon className="w-3.5 h-3.5" />
+              <Icon className="w-3.5 h-3.5 shrink-0" />
               <span>{tab.label}</span>
             </button>
           );
@@ -353,29 +353,29 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             </div>
 
-            <form onSubmit={handleSaveProfile} className="space-y-3 text-xs max-w-md">
-              <div>
+            <form onSubmit={handleSaveProfile} className="space-y-3 text-xs max-w-md w-full">
+              <div className="min-w-0">
                 <label className="block text-slate-300 font-medium mb-1">Display Name</label>
                 <input
                   type="text"
                   value={name}
                   onChange={e => setName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none"
+                  className="w-full min-w-0 min-h-[44px] sm:min-h-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 focus:outline-none"
                 />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block text-slate-300 font-medium mb-1">Email (Primary)</label>
                 <input
                   type="email"
                   disabled
                   value={user?.email}
-                  className="w-full px-3 py-2 bg-slate-800/50 border border-slate-800 rounded-lg text-slate-500 cursor-not-allowed"
+                  className="w-full min-w-0 min-h-[44px] sm:min-h-0 px-3 py-2 bg-slate-800/50 border border-slate-800 rounded-lg text-base sm:text-xs text-slate-500 cursor-not-allowed"
                 />
               </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-1">
+              <div className="min-w-0">
+                <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
                   <label className="block text-slate-300 font-medium">
                     Bundle Identifier Prefix (Middle part)
                   </label>
@@ -383,8 +383,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     Default: indie
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 font-mono text-xs">
-                  <span className="px-2.5 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-slate-400 select-none">
+                <div className="flex items-center gap-1.5 font-mono text-xs min-w-0">
+                  <span className="px-2 sm:px-2.5 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-slate-400 select-none shrink-0">
                     com.
                   </span>
                   <input
@@ -408,15 +408,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       setProfileSaved(true);
                       setTimeout(() => setProfileSaved(false), 2000);
                     }}
-                    className="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-semibold focus:outline-none focus:border-blue-500"
+                    className="flex-1 min-w-0 min-h-[44px] sm:min-h-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 font-semibold focus:outline-none focus:border-blue-500"
                   />
-                  <span className="px-2.5 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-slate-400 select-none">
+                  <span className="px-2 sm:px-2.5 py-2 bg-slate-800/80 border border-slate-700/80 rounded-lg text-slate-400 select-none shrink-0">
                     .&lt;appName&gt;
                   </span>
                 </div>
-                <div className="mt-1.5 p-2 bg-slate-950/60 border border-slate-800 rounded-lg flex items-center justify-between text-[11px]">
+                <div className="mt-1.5 p-2 bg-slate-950/60 border border-slate-800 rounded-lg flex items-center justify-between gap-2 flex-wrap text-[11px]">
                   <span className="text-slate-400">Example Bundle Identifier:</span>
-                  <span className="font-mono text-blue-400 font-semibold">
+                  <span className="font-mono text-blue-400 font-semibold break-all">
                     com.{bundlePrefix.toLowerCase().trim().replace(/^com\./, '').replace(/^\.+|\.+$/g, '') || 'indie'}.appdock75
                   </span>
                 </div>
@@ -428,7 +428,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <div className="flex items-center gap-2 pt-2">
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium cursor-pointer"
+                  className="px-4 py-2 min-h-[44px] sm:min-h-0 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium cursor-pointer"
                 >
                   Save Profile
                 </button>
@@ -466,15 +466,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
             {/* Quick dropdown for mobile / fast selection */}
             <div className="space-y-3">
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-medium text-slate-300 mb-1.5">
                   Select Date Format
                 </label>
-                <div className="flex items-center gap-2 max-w-md">
+                <div className="flex items-center gap-2 max-w-md min-w-0">
                   <select
                     value={selectedDateFormat}
                     onChange={e => handleSelectDateFormat(e.target.value as DateFormatOption)}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 text-xs focus:outline-none focus:border-blue-500 cursor-pointer"
+                    className="w-full min-w-0 min-h-[44px] sm:min-h-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 text-base sm:text-xs focus:outline-none focus:border-blue-500 cursor-pointer"
                   >
                     {DATE_FORMAT_OPTIONS.map(opt => (
                       <option key={opt.id} value={opt.id}>
@@ -577,7 +577,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <button
                   type="button"
                   onClick={handleToggleShowAllPasswords}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer self-start sm:self-auto ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] sm:min-h-0 rounded-lg border text-xs font-medium transition-colors cursor-pointer self-start sm:self-auto ${
                     showAllPasswords
                       ? 'bg-blue-600/20 border-blue-500/40 text-blue-300'
                       : 'bg-slate-800/80 border-slate-700/80 text-slate-300 hover:bg-slate-800 hover:text-white'
@@ -615,9 +615,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
               )}
 
-              <form onSubmit={handleChangePassword} className="space-y-3.5 text-xs max-w-lg">
+              <form onSubmit={handleChangePassword} className="space-y-3.5 text-xs max-w-lg w-full">
                 {/* Current Password */}
-                <div>
+                <div className="min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-slate-300 font-medium">Current Password</label>
                     <span className="text-[11px] text-slate-500">Required for verification</span>
@@ -629,12 +629,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       placeholder="Enter current password"
                       value={oldPassword}
                       onChange={e => setOldPassword(e.target.value)}
-                      className="w-full pl-3 pr-10 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-mono text-xs focus:outline-none focus:border-blue-500 transition-colors"
+                      className="w-full min-w-0 min-h-[44px] sm:min-h-0 pl-3 pr-11 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-mono text-base sm:text-xs focus:outline-none focus:border-blue-500 transition-colors"
                     />
                     <button
                       type="button"
                       onClick={() => setShowOldPassword(!showOldPassword)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors p-1 cursor-pointer"
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center p-1 cursor-pointer"
                       title={showOldPassword || showAllPasswords ? 'Hide password' : 'Show password'}
                     >
                       {showOldPassword || showAllPasswords ? (
@@ -647,7 +647,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
 
                 {/* New Password */}
-                <div>
+                <div className="min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-slate-300 font-medium">New Password</label>
                     <span className="text-[11px] text-slate-500">Minimum 8 characters</span>
@@ -659,12 +659,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       placeholder="Enter new password (min. 8 characters)"
                       value={newPassword}
                       onChange={e => setNewPassword(e.target.value)}
-                      className="w-full pl-3 pr-10 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-mono text-xs focus:outline-none focus:border-blue-500 transition-colors"
+                      className="w-full min-w-0 min-h-[44px] sm:min-h-0 pl-3 pr-11 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-mono text-base sm:text-xs focus:outline-none focus:border-blue-500 transition-colors"
                     />
                     <button
                       type="button"
                       onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors p-1 cursor-pointer"
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center p-1 cursor-pointer"
                       title={showNewPassword || showAllPasswords ? 'Hide password' : 'Show password'}
                     >
                       {showNewPassword || showAllPasswords ? (
@@ -690,7 +690,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
 
                 {/* Confirm New Password */}
-                <div>
+                <div className="min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-slate-300 font-medium">Confirm New Password</label>
                     <span className="text-[11px] text-slate-500">Re-enter to prevent typos</span>
@@ -702,7 +702,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       placeholder="Repeat new password"
                       value={confirmPassword}
                       onChange={e => setConfirmPassword(e.target.value)}
-                      className={`w-full pl-3 pr-10 py-2 bg-slate-800 border rounded-lg text-slate-100 font-mono text-xs focus:outline-none transition-colors ${
+                      className={`w-full min-w-0 min-h-[44px] sm:min-h-0 pl-3 pr-11 py-2 bg-slate-800 border rounded-lg text-slate-100 font-mono text-base sm:text-xs focus:outline-none transition-colors ${
                         confirmPassword && confirmPassword !== newPassword
                           ? 'border-rose-500/80 focus:border-rose-500'
                           : confirmPassword && confirmPassword === newPassword
@@ -713,7 +713,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors p-1 cursor-pointer"
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center p-1 cursor-pointer"
                       title={showConfirmPassword || showAllPasswords ? 'Hide password' : 'Show password'}
                     >
                       {showConfirmPassword || showAllPasswords ? (
@@ -740,11 +740,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   )}
                 </div>
 
-                <div className="pt-2 flex items-center gap-3">
+                <div className="pt-2 flex items-center gap-3 flex-wrap">
                   <button
                     type="submit"
                     disabled={isUpdatingPassword || (confirmPassword ? newPassword !== confirmPassword : false)}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium cursor-pointer transition-colors flex items-center gap-2"
+                    className="px-4 py-2 min-h-[44px] sm:min-h-0 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium cursor-pointer transition-colors flex items-center gap-2"
                   >
                     <Key className="w-3.5 h-3.5" />
                     <span>{isUpdatingPassword ? 'Updating Password...' : 'Update Password'}</span>
@@ -753,7 +753,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <button
                     type="button"
                     onClick={handleToggleShowAllPasswords}
-                    className="text-xs text-slate-400 hover:text-slate-200 cursor-pointer flex items-center gap-1.5"
+                    className="text-xs text-slate-400 hover:text-slate-200 cursor-pointer flex items-center gap-1.5 min-h-[44px] sm:min-h-0"
                   >
                     {showAllPasswords ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                     <span>{showAllPasswords ? 'Hide plain text' : 'Show plain text'}</span>
@@ -784,9 +784,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 return (
                   <div
                     key={st.id}
-                    className="p-3 bg-slate-800/60 rounded-xl flex items-center justify-between text-xs"
+                    className="p-3 bg-slate-800/60 rounded-xl flex items-center justify-between gap-2 flex-wrap text-xs"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5 flex-wrap min-w-0">
                       <span
                         className="w-3.5 h-3.5 rounded-full shrink-0"
                         style={{ backgroundColor: st.color }}
@@ -800,11 +800,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       )}
                     </div>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => handleMoveStatus(idx, 'up')}
                         disabled={isFirst}
-                        className={`p-1 rounded transition-colors cursor-pointer ${
+                        className={`p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded transition-colors cursor-pointer ${
                           isFirst ? 'text-slate-600 cursor-not-allowed' : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
                         }`}
                         title="Move up"
@@ -814,7 +814,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       <button
                         onClick={() => handleMoveStatus(idx, 'down')}
                         disabled={isLast}
-                        className={`p-1 rounded transition-colors cursor-pointer ${
+                        className={`p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded transition-colors cursor-pointer ${
                           isLast ? 'text-slate-600 cursor-not-allowed' : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
                         }`}
                         title="Move down"
@@ -823,7 +823,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       </button>
                       <button
                         onClick={() => handleOpenEditStatus(st)}
-                        className="p-1 text-slate-400 hover:text-blue-400 hover:bg-slate-700/50 rounded transition-colors cursor-pointer"
+                        className="p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-slate-400 hover:text-blue-400 hover:bg-slate-700/50 rounded transition-colors cursor-pointer"
                         title="Edit column"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -831,7 +831,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       {db.statuses.length > 2 && (
                         <button
                           onClick={() => deleteStatus(st.id)}
-                          className="p-1 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors cursor-pointer"
+                          className="p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors cursor-pointer"
                           title="Delete column"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -845,37 +845,37 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
             {/* Edit Status Modal */}
             {editingStatus && (
-              <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4">
+              <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4 max-h-[calc(100dvh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-y-auto">
                   <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                     <h3 className="text-sm font-bold text-white">Edit Workflow Column</h3>
                     <button
                       onClick={() => setEditingStatus(null)}
-                      className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
+                      className="text-slate-400 hover:text-white p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-lg cursor-pointer"
                     >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
 
                   <form onSubmit={handleSaveEditStatus} className="space-y-3 text-xs">
-                    <div>
+                    <div className="min-w-0">
                       <label className="block text-slate-400 mb-1">Column Name *</label>
                       <input
                         type="text"
                         required
                         value={editStatusName}
                         onChange={e => setEditStatusName(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:border-blue-500"
+                        className="w-full min-w-0 min-h-[44px] sm:min-h-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-base sm:text-xs text-slate-100 focus:outline-none focus:border-blue-500"
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="min-w-0">
                         <label className="block text-slate-400 mb-1">Type</label>
                         <select
                           value={editStatusType}
                           onChange={e => setEditStatusType(e.target.value as any)}
-                          className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-200 focus:outline-none cursor-pointer"
+                          className="w-full min-w-0 min-h-[44px] sm:min-h-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-base sm:text-xs text-slate-200 focus:outline-none cursor-pointer"
                         >
                           <option value="Backlog">Backlog</option>
                           <option value="Active">Active</option>
@@ -884,18 +884,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         </select>
                       </div>
 
-                      <div>
+                      <div className="min-w-0">
                         <label className="block text-slate-400 mb-1">Color</label>
                         <input
                           type="color"
                           value={editStatusColor}
                           onChange={e => setEditStatusColor(e.target.value)}
-                          className="w-full h-9 bg-slate-800 border border-slate-700 rounded-xl p-0.5 cursor-pointer"
+                          className="w-full h-11 sm:h-9 bg-slate-800 border border-slate-700 rounded-xl p-0.5 cursor-pointer"
                         />
                       </div>
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <label className="block text-slate-400 mb-1">WIP Limit (optional)</label>
                       <input
                         type="number"
@@ -903,7 +903,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         placeholder="No limit"
                         value={editStatusWip || ''}
                         onChange={e => setEditStatusWip(e.target.value ? parseInt(e.target.value, 10) : undefined)}
-                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 focus:outline-none"
+                        className="w-full min-w-0 min-h-[44px] sm:min-h-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-base sm:text-xs text-slate-100 focus:outline-none"
                       />
                     </div>
 
@@ -911,13 +911,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       <button
                         type="button"
                         onClick={() => setEditingStatus(null)}
-                        className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl cursor-pointer"
+                        className="px-3.5 py-2 min-h-[44px] sm:min-h-0 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl cursor-pointer"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium cursor-pointer shadow-md shadow-blue-600/20"
+                        className="px-4 py-2 min-h-[44px] sm:min-h-0 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium cursor-pointer shadow-md shadow-blue-600/20"
                       >
                         Save
                       </button>
@@ -932,7 +932,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <h4 className="font-semibold text-slate-200">Add Workflow Column</h4>
 
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                <div className="sm:col-span-2">
+                <div className="sm:col-span-2 min-w-0">
                   <label className="block text-slate-400 mb-1">Column Name</label>
                   <input
                     type="text"
@@ -940,16 +940,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     placeholder="e.g. Design Review"
                     value={newStatusName}
                     onChange={e => setNewStatusName(e.target.value)}
-                    className="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-slate-100"
+                    className="w-full min-w-0 min-h-[44px] sm:min-h-0 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100"
                   />
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <label className="block text-slate-400 mb-1">Type</label>
                   <select
                     value={newStatusType}
                     onChange={e => setNewStatusType(e.target.value as any)}
-                    className="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-slate-200"
+                    className="w-full min-w-0 min-h-[44px] sm:min-h-0 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200"
                   >
                     <option value="Backlog">Backlog</option>
                     <option value="Active">Active</option>
@@ -958,20 +958,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </select>
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <label className="block text-slate-400 mb-1">Color</label>
                   <input
                     type="color"
                     value={newStatusColor}
                     onChange={e => setNewStatusColor(e.target.value)}
-                    className="w-full h-8 bg-slate-800 border border-slate-700 rounded-lg p-0.5 cursor-pointer"
+                    className="w-full h-11 sm:h-8 bg-slate-800 border border-slate-700 rounded-lg p-0.5 cursor-pointer"
                   />
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium cursor-pointer"
+                className="px-4 py-1.5 min-h-[44px] sm:min-h-0 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium cursor-pointer"
               >
                 + Add Column
               </button>
@@ -1088,7 +1088,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 type="button"
                 onClick={() => setShowDeleteDemoModal(true)}
                 disabled={!hasDemoData}
-                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold disabled:opacity-40 disabled:cursor-not-allowed text-xs rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm shadow-amber-500/20"
+                className="px-4 py-2 min-h-[44px] sm:min-h-0 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold disabled:opacity-40 disabled:cursor-not-allowed text-xs rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm shadow-amber-500/20"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Delete All Demo Data...</span>
@@ -1097,7 +1097,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <button
                 type="button"
                 onClick={reloadDemoData}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
+                className="px-4 py-2 min-h-[44px] sm:min-h-0 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Add/Restore Demo Workspace</span>
@@ -1138,7 +1138,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <div className="pt-2">
               <button
                 onClick={() => setShowDeleteModal(true)}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 shadow-sm shadow-rose-600/30"
+                className="px-4 py-2 min-h-[44px] sm:min-h-0 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 shadow-sm shadow-rose-600/30"
               >
                 <Trash2 className="w-4 h-4" />
                 <span>Delete My Account Permanently</span>
@@ -1150,10 +1150,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* Delete Account Re-Authentication Dialog (PRD §5.2) */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md bg-slate-900 border border-rose-500/40 rounded-2xl shadow-2xl p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md bg-slate-900 border border-rose-500/40 rounded-2xl shadow-2xl p-6 max-h-[calc(100dvh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-y-auto">
             <div className="flex items-center gap-2.5 text-rose-400 mb-2">
-              <AlertTriangle className="w-5 h-5" />
+              <AlertTriangle className="w-5 h-5 shrink-0" />
               <h3 className="text-sm font-bold text-white">Confirm Permanent Deletion</h3>
             </div>
 
@@ -1168,7 +1168,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             )}
 
             <div className="space-y-3 mb-5 text-xs">
-              <div>
+              <div className="min-w-0">
                 <label className="block text-slate-300 font-medium mb-1">
                   Re-Authentication Credential / Confirmation:
                 </label>
@@ -1178,12 +1178,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     placeholder="Enter password or type DELETE"
                     value={reauthInput}
                     onChange={e => setReauthInput(e.target.value)}
-                    className="w-full pl-3 pr-10 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-mono text-xs focus:outline-none focus:border-rose-500"
+                    className="w-full min-w-0 min-h-[44px] sm:min-h-0 pl-3 pr-11 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 font-mono text-base sm:text-xs focus:outline-none focus:border-rose-500"
                   />
                   <button
                     type="button"
                     onClick={() => setShowReauthPassword(!showReauthPassword)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors p-1 cursor-pointer"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center p-1 cursor-pointer"
                     title={showReauthPassword ? 'Hide password' : 'Show password'}
                   >
                     {showReauthPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -1207,14 +1207,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   setReauthInput('');
                 }}
                 disabled={isDeleting}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs cursor-pointer"
+                className="px-3.5 py-2 min-h-[44px] sm:min-h-0 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDeleteAccount}
                 disabled={isDeleting || !reauthInput.trim()}
-                className="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 min-h-[44px] sm:min-h-0 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold cursor-pointer disabled:opacity-50"
               >
                 {isDeleting ? 'Deleting All Records...' : 'Permanently Erase Everything'}
               </button>

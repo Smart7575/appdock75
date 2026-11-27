@@ -78,26 +78,26 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="h-14 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30">
+    <header className="h-[calc(3.5rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] border-b border-slate-800 bg-slate-900/90 backdrop-blur-md px-2.5 sm:px-6 flex items-center justify-between sticky top-0 z-30 shrink-0">
       {/* Zone 1: Brand / View Title & Breadcrumb */}
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-sm tracking-tight text-white flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-            AppDock75
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="font-semibold text-sm tracking-tight text-white flex items-center gap-1.5 shrink-0">
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shrink-0"></span>
+            <span className={activeTimer ? 'hidden sm:inline' : 'inline'}>AppDock75</span>
           </span>
-          <span className="text-slate-600">/</span>
-          <span className="text-xs font-medium text-slate-300 truncate">
+          <span className="hidden sm:inline text-slate-600">/</span>
+          <span className="hidden sm:inline text-xs font-medium text-slate-300 truncate">
             {viewTitles[currentView] || 'Workspace'}
           </span>
         </div>
       </div>
 
       {/* Zone 2: Search Trigger */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
         <button
           onClick={onOpenCommandPalette}
-          className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-xs text-slate-400 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 rounded-lg transition-colors cursor-pointer w-48 md:w-64"
+          className="hidden sm:flex items-center gap-2 px-3 py-1.5 min-h-[44px] sm:min-h-0 text-xs text-slate-400 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 rounded-lg transition-colors cursor-pointer w-48 md:w-64"
         >
           <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
           <span className="truncate">Quick jump or search...</span>
@@ -107,23 +107,24 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
 
         {/* Zone 3: New Quick Action + Notifications + Profile */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-0.5 sm:gap-2">
           {/* Mobile search trigger */}
           <button
             onClick={onOpenCommandPalette}
-            className="sm:hidden p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg cursor-pointer"
+            className="sm:hidden min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg cursor-pointer"
             title="Search"
+            aria-label="Search"
           >
             <Search className="w-4 h-4" />
           </button>
 
           {/* Live Production Timer Control */}
           {activeTimer ? (
-            <div className="flex items-center bg-emerald-500/10 border border-emerald-500/30 rounded-lg overflow-hidden shrink-0">
+            <div className="flex items-center bg-emerald-500/10 border border-emerald-500/30 rounded-lg overflow-hidden shrink-0 min-h-[44px] sm:min-h-0">
               <button
                 type="button"
                 onClick={() => onNavigate('time')}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-emerald-300 hover:bg-emerald-500/15 transition-colors cursor-pointer whitespace-nowrap"
+                className="flex items-center gap-1.5 px-2 sm:px-2.5 py-2 sm:py-1.5 text-xs text-emerald-300 hover:bg-emerald-500/15 transition-colors cursor-pointer whitespace-nowrap min-h-[44px] sm:min-h-0"
                 title={`Timer running for ${activeTimerProject?.name || 'App'} — Open Time Tracker`}
               >
                 <Clock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
@@ -137,7 +138,7 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 type="button"
                 onClick={() => stopTimer()}
-                className="px-2 py-1.5 bg-rose-600/80 hover:bg-rose-500 text-white text-[11px] font-semibold flex items-center gap-1 border-l border-emerald-500/20 transition-colors cursor-pointer whitespace-nowrap"
+                className="px-2 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 bg-rose-600/80 hover:bg-rose-500 text-white text-[11px] font-semibold flex items-center gap-1 border-l border-emerald-500/20 transition-colors cursor-pointer whitespace-nowrap"
                 title="End & Save Active Timer"
               >
                 <Square className="w-2.5 h-2.5 fill-current" />
@@ -160,41 +161,42 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="relative">
             <button
               onClick={() => setShowNewMenu(!showNewMenu)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors cursor-pointer shadow-sm shadow-blue-500/10"
+              className="flex items-center justify-center gap-1.5 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 px-2 sm:px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors cursor-pointer shadow-sm shadow-blue-500/10"
+              aria-label="Create new item"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
               <span className="hidden sm:inline">New</span>
-              <ChevronDown className="w-3 h-3 opacity-80" />
+              <ChevronDown className="hidden sm:inline w-3 h-3 opacity-80" />
             </button>
 
             {showNewMenu && (
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setShowNewMenu(false)} />
-                <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-800 rounded-lg shadow-xl shadow-black/40 py-1.5 z-40 text-xs animate-in fade-in zoom-in-95 duration-100">
+                <div className="absolute right-0 mt-2 w-48 max-w-[calc(100vw-1.5rem)] bg-slate-900 border border-slate-800 rounded-lg shadow-xl shadow-black/40 py-1.5 z-40 text-xs animate-in fade-in zoom-in-95 duration-100">
                   <button
                     onClick={() => { setShowNewMenu(false); onOpenNewModal('idea'); }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-slate-200 hover:bg-slate-800 hover:text-white text-left cursor-pointer"
+                    className="w-full flex items-center gap-2 px-3 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 text-slate-200 hover:bg-slate-800 hover:text-white text-left cursor-pointer"
                   >
                     <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
                     New Idea
                   </button>
                   <button
                     onClick={() => { setShowNewMenu(false); onOpenNewModal('project'); }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-slate-200 hover:bg-slate-800 hover:text-white text-left cursor-pointer"
+                    className="w-full flex items-center gap-2 px-3 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 text-slate-200 hover:bg-slate-800 hover:text-white text-left cursor-pointer"
                   >
                     <FolderPlus className="w-3.5 h-3.5 text-blue-400" />
                     New Project
                   </button>
                   <button
                     onClick={() => { setShowNewMenu(false); onOpenNewModal('task'); }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-slate-200 hover:bg-slate-800 hover:text-white text-left cursor-pointer"
+                    className="w-full flex items-center gap-2 px-3 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 text-slate-200 hover:bg-slate-800 hover:text-white text-left cursor-pointer"
                   >
                     <CheckSquare className="w-3.5 h-3.5 text-emerald-400" />
                     New Kanban Task
                   </button>
                   <button
                     onClick={() => { setShowNewMenu(false); onOpenNewModal('release'); }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-slate-200 hover:bg-slate-800 hover:text-white text-left cursor-pointer"
+                    className="w-full flex items-center gap-2 px-3 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 text-slate-200 hover:bg-slate-800 hover:text-white text-left cursor-pointer"
                   >
                     <Tag className="w-3.5 h-3.5 text-purple-400" />
                     New Release
@@ -208,25 +210,26 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="relative">
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+              className="relative min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 p-2 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
               title="Notifications"
+              aria-label="Notifications"
             >
               <Bell className="w-4 h-4" />
               {unreadNotifs.length > 0 && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-blue-500 ring-2 ring-slate-900" />
+                <span className="absolute top-2 right-2 sm:top-1 sm:right-1 w-2 h-2 rounded-full bg-blue-500 ring-2 ring-slate-900" />
               )}
             </button>
 
             {showNotifications && (
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setShowNotifications(false)} />
-                <div className="absolute right-0 mt-2 w-80 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-2 z-40 text-xs">
+                <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-1.5rem)] bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-2 z-40 text-xs">
                   <div className="flex items-center justify-between px-3 py-1.5 border-b border-slate-800">
                     <span className="font-semibold text-slate-200">Notifications</span>
                     {unreadNotifs.length > 0 && (
                       <button
                         onClick={clearNotifications}
-                        className="text-[11px] text-blue-400 hover:underline cursor-pointer"
+                        className="text-[11px] text-blue-400 hover:underline cursor-pointer min-h-[44px] sm:min-h-0 px-1"
                       >
                         Clear all
                       </button>
@@ -266,7 +269,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Theme Toggle Button (Light Mode / Dark Mode) */}
           <button
             onClick={toggleTheme}
-            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+            className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 p-2 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
             title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             aria-label="Toggle theme"
           >
@@ -281,7 +284,8 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="relative">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-2 p-1 pl-2 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+              className="flex items-center justify-center gap-2 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 p-1 sm:pl-2 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+              aria-label="User menu"
             >
               <div className="w-7 h-7 rounded-full bg-slate-800 border border-slate-700/80 flex items-center justify-center text-slate-300 shrink-0">
                 <User className="w-3.5 h-3.5 text-slate-300" />
@@ -294,11 +298,11 @@ export const Header: React.FC<HeaderProps> = ({
             {showUserMenu && (
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setShowUserMenu(false)} />
-                <div className="absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-2 z-40 text-xs">
+                <div className="absolute right-0 mt-2 w-56 max-w-[calc(100vw-1.5rem)] bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-2 z-40 text-xs">
                   <div className="px-3 py-2 border-b border-slate-800">
                     <p className="font-medium text-slate-200 truncate">{user?.name}</p>
                     <p className="text-[11px] text-slate-400 truncate">{user?.email}</p>
-                    <div className="flex items-center gap-1.5 mt-1.5 text-[10px] text-slate-400">
+                    <div className="flex items-center gap-1.5 mt-1.5 text-[10px] text-slate-400 flex-wrap">
                       <span>Auth:</span>
                       {user?.providers.map(p => (
                         <span key={p} className="capitalize text-slate-300 bg-slate-800 px-1.5 py-0.5 rounded">
@@ -310,14 +314,14 @@ export const Header: React.FC<HeaderProps> = ({
 
                   <button
                     onClick={() => { setShowUserMenu(false); onNavigate('settings'); }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-slate-300 hover:bg-slate-800 hover:text-white text-left cursor-pointer"
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 text-slate-300 hover:bg-slate-800 hover:text-white text-left cursor-pointer"
                   >
                     <Settings className="w-3.5 h-3.5 text-slate-400" />
                     Account Settings
                   </button>
                   <button
                     onClick={() => { setShowUserMenu(false); onNavigate('settings:data'); }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-slate-300 hover:bg-slate-800 hover:text-white text-left cursor-pointer"
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 text-slate-300 hover:bg-slate-800 hover:text-white text-left cursor-pointer"
                   >
                     <Database className="w-3.5 h-3.5 text-blue-400" />
                     Data Backup, Export & Import
@@ -327,7 +331,7 @@ export const Header: React.FC<HeaderProps> = ({
 
                   <button
                     onClick={() => { setShowUserMenu(false); signOut(); }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-rose-400 hover:bg-rose-500/10 text-left cursor-pointer"
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 text-rose-400 hover:bg-rose-500/10 text-left cursor-pointer"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     Log Out

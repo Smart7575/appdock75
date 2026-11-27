@@ -80,7 +80,7 @@ const WorkspaceShell: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400">
+      <div className="min-h-dvh bg-slate-950 flex items-center justify-center text-slate-400 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
         <div className="flex items-center gap-3 text-xs font-mono">
           <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse" />
           <span>Loading AppDock75...</span>
@@ -114,7 +114,7 @@ const WorkspaceShell: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="h-dvh min-h-dvh overflow-hidden bg-slate-950 text-slate-100 flex flex-col font-sans pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       {/* Top Bar Header */}
       <Header
         currentView={currentView}
@@ -123,7 +123,7 @@ const WorkspaceShell: React.FC = () => {
         onOpenNewModal={type => setNewItemType(type)}
       />
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 min-h-0 flex overflow-hidden">
         {/* Desktop Sidebar & Mobile Tab Bar */}
         <Sidebar
           currentView={currentView}
@@ -131,7 +131,7 @@ const WorkspaceShell: React.FC = () => {
         />
 
         {/* Viewport Canvas */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 min-w-0">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-8 min-w-0">
           {currentView === 'dashboard' && (
             <DashboardView
               onNavigate={handleNavigate}
@@ -227,7 +227,7 @@ class WorkspaceErrorBoundary extends React.Component<{ children: React.ReactNode
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
+        <div className="min-h-dvh bg-slate-950 text-slate-100 flex items-center justify-center p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] pl-[max(1.5rem,env(safe-area-inset-left))] pr-[max(1.5rem,env(safe-area-inset-right))]">
           <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 text-center shadow-2xl">
             <h2 className="text-base font-bold text-white">Something went wrong</h2>
             <p className="text-xs text-slate-400 break-words">{this.state.errorMessage}</p>

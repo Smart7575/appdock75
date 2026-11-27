@@ -25,7 +25,12 @@ import {
   ensureFirebaseAuth,
   FirestoreUserRecord,
 } from '../services/firebase';
+import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import {
+  GoogleAuthProvider,
+  OAuthProvider,
+  signInWithCredential,
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -68,7 +73,7 @@ interface AuthContextType {
   registerWithEmail: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signInWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   signInWithApple: () => Promise<{ success: boolean; error?: string }>;
-  signOut: () => void;
+  signOut: () => void | Promise<void>;
   updateProfile: (updates: Partial<Pick<User, 'name' | 'avatar' | 'settings'>>) => void;
   changePassword: (oldPass: string, newPass: string) => Promise<{ success: boolean; error?: string }>;
   requestPasswordReset: (email: string) => Promise<{ success: boolean; message: string }>;
@@ -212,9 +217,16 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     let isMounted = true;
+    const timeoutId = window.setTimeout(() => {
+      if (isMounted) {
+        setIsLoading(false);
+      }
+    }, 3000);
+
     // Observe Firebase Auth state and sync with Cloud Firestore (/users/{uid})
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (!isMounted) return;
+      window.clearTimeout(timeoutId);
       if (fbUser) {
         // Transition immediately so network latency in Firestore never blocks login
         const baselineUser = buildBaselineUser(fbUser);
@@ -241,6 +253,7 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
 
     return () => {
       isMounted = false;
+      window.clearTimeout(timeoutId);
       unsubscribe();
     };
   }, []);
@@ -418,8 +431,23 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
 
   const signInWithGoogle = async () => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const fbUser = result.user;
+      let fbUser: FirebaseUser;
+      if (Capacitor.isNativePlatform()) {
+        const nativeRes = await FirebaseAuthentication.signInWithGoogle({
+          skipNativeAuth: true,
+        });
+        const idToken = nativeRes.credential?.idToken;
+        if (!idToken) {
+          return { success: false, error: 'Google sign-in did not return an ID token.' };
+        }
+        const credential = GoogleAuthProvider.credential(idToken);
+        const result = await signInWithCredential(auth, credential);
+        fbUser = result.user;
+      } else {
+        const result = await signInWithPopup(auth, googleProvider);
+        fbUser = result.user;
+      }
+
       const baselineUser = buildBaselineUser(fbUser, 'google');
       setUser(baselineUser);
       setCurrentSessionUser(baselineUser);
@@ -441,8 +469,28 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
 
   const signInWithApple = async () => {
     try {
-      const result = await signInWithPopup(auth, appleProvider);
-      const fbUser = result.user;
+      let fbUser: FirebaseUser;
+      if (Capacitor.isNativePlatform()) {
+        const nativeRes = await FirebaseAuthentication.signInWithApple({
+          skipNativeAuth: true,
+        });
+        const idToken = nativeRes.credential?.idToken;
+        const rawNonce = nativeRes.credential?.nonce;
+        if (!idToken) {
+          return { success: false, error: 'Apple sign-in did not return an ID token.' };
+        }
+        const provider = new OAuthProvider('apple.com');
+        const credential = provider.credential({
+          idToken,
+          ...(rawNonce ? { rawNonce } : {}),
+        });
+        const result = await signInWithCredential(auth, credential);
+        fbUser = result.user;
+      } else {
+        const result = await signInWithPopup(auth, appleProvider);
+        fbUser = result.user;
+      }
+
       const baselineUser = buildBaselineUser(fbUser, 'apple');
       setUser(baselineUser);
       setCurrentSessionUser(baselineUser);
@@ -462,8 +510,15 @@ export const AuthProviderComponent: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const signOut = () => {
-    firebaseSignOut(auth).catch(() => {});
+  const signOut = async () => {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await FirebaseAuthentication.signOut();
+      } catch (nativeErr) {
+        console.warn('Native FirebaseAuthentication signOut skipped:', nativeErr);
+      }
+    }
+    await firebaseSignOut(auth).catch(() => {});
     setCurrentSessionUser(null);
     setUser(null);
   };

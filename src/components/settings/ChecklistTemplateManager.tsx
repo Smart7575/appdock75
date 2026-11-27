@@ -87,8 +87,9 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
 
-  // Delete Confirmation state
+  // Delete & Reset Confirmation state
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ text: string; type: 'success' | 'info' } | null>(null);
 
   const showFeedback = (text: string, type: 'success' | 'info' = 'success') => {
@@ -292,10 +293,13 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
   };
 
   const handleResetDefaults = () => {
-    if (window.confirm('Are you sure you want to reset the standard checklist template to original Apple guidelines?')) {
-      resetChecklistTemplate();
-      showFeedback('Standard checklist template reset to Apple defaults.');
-    }
+    setShowResetConfirm(true);
+  };
+
+  const handleConfirmResetDefaults = () => {
+    resetChecklistTemplate();
+    setShowResetConfirm(false);
+    showFeedback('Standard checklist template reset to Apple defaults.');
   };
 
   const handleSyncAll = () => {
@@ -327,12 +331,12 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
             </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap shrink-0">
+          <div className="flex items-center gap-2 flex-wrap">
             {onNavigate && !isModal && (
               <button
                 type="button"
                 onClick={() => onNavigate('projects')}
-                className="px-3.5 py-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700/80 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+                className="px-3.5 py-1.5 min-h-[44px] sm:min-h-0 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700/80 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
                 title="Return to Projects Workspace"
               >
                 <ArrowLeft className="w-3.5 h-3.5 text-blue-400" />
@@ -342,7 +346,7 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
             <button
               type="button"
               onClick={openAddForm}
-              className="px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-sm shadow-blue-500/20"
+              className="px-3.5 py-1.5 min-h-[44px] sm:min-h-0 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-sm shadow-blue-500/20"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add New Item</span>
@@ -350,7 +354,7 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
             <button
               type="button"
               onClick={handleSyncAll}
-              className="px-3.5 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 hover:text-white border border-slate-700 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+              className="px-3.5 py-1.5 min-h-[44px] sm:min-h-0 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 hover:text-white border border-slate-700 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
               title="Ensure all existing projects include all current template items"
             >
               <Layers className="w-3.5 h-3.5 text-blue-400" />
@@ -359,7 +363,7 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
             <button
               type="button"
               onClick={handleResetDefaults}
-              className="px-3.5 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-200 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/60 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+              className="px-3.5 py-1.5 min-h-[44px] sm:min-h-0 text-xs font-medium text-slate-400 hover:text-slate-200 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-700/60 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
               title="Reset to default Apple App Store guidelines"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -369,7 +373,7 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
               <button
                 type="button"
                 onClick={onClose}
-                className="p-1.5 text-slate-400 hover:text-white bg-slate-800 rounded-lg cursor-pointer"
+                className="p-1.5 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-slate-400 hover:text-white bg-slate-800 rounded-lg cursor-pointer"
                 title="Close"
               >
                 <X className="w-4 h-4" />
@@ -420,26 +424,26 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
       {/* Filter and search toolbar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Search */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-0">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search checklist items (title, description, or category)..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/50"
+            className="w-full min-w-0 min-h-[44px] sm:min-h-0 pl-9 pr-3 py-2 text-base sm:text-xs bg-slate-900 border border-slate-800 rounded-xl text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500/50"
           />
         </div>
 
         {/* Category filter */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 shrink-0">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
           <Filter className="w-3.5 h-3.5 text-slate-500 shrink-0 ml-1" />
           {categories.map(cat => (
             <button
               key={cat}
               type="button"
               onClick={() => setSelectedCategory(cat)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+              className={`px-2.5 py-1 min-h-[44px] sm:min-h-0 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 transition-colors cursor-pointer ${
                 selectedCategory === cat
                   ? 'bg-blue-600 text-white font-semibold'
                   : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
@@ -586,7 +590,7 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
                       <button
                         type="button"
                         onClick={() => openEditForm(item)}
-                        className="px-2.5 py-1.5 text-xs text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors cursor-pointer flex items-center gap-1 border border-slate-700/60"
+                        className="px-2.5 py-1.5 min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0 justify-center text-xs text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors cursor-pointer flex items-center gap-1 border border-slate-700/60"
                         title="Edit item (title, description, category, required)"
                       >
                         <Edit2 className="w-3.5 h-3.5 text-blue-400" />
@@ -595,7 +599,7 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
                       <button
                         type="button"
                         onClick={() => setDeletingId(item.id)}
-                        className="px-2.5 py-1.5 text-xs text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                        className="px-2.5 py-1.5 min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0 justify-center text-xs text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
                         title="Delete item"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -612,26 +616,26 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
 
       {/* Add / Edit Form Modal */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 max-h-[calc(100dvh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
-              <div className="flex items-center gap-2">
-                <CheckSquare className="w-4 h-4 text-blue-400" />
-                <h3 className="text-sm font-bold text-white">
+              <div className="flex items-center gap-2 min-w-0">
+                <CheckSquare className="w-4 h-4 text-blue-400 shrink-0" />
+                <h3 className="text-sm font-bold text-white truncate">
                   {editingItem ? 'Edit Standard Checklist Item' : 'New Standard Checklist Item'}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsFormOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
+                className="text-slate-400 hover:text-white p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-lg cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleSubmitForm} className="space-y-4 text-xs">
-              <div>
+              <div className="min-w-0">
                 <label className="block font-medium text-slate-300 mb-1">
                   Checklist Item Title <span className="text-rose-400">*</span>
                 </label>
@@ -641,11 +645,11 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
                   placeholder="e.g. App Icon 1024×1024 px"
                   value={formTitle}
                   onChange={e => setFormTitle(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                  className="w-full min-w-0 min-h-[44px] sm:min-h-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
                 />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <div className="flex items-center justify-between mb-1">
                   <label className="block font-medium text-slate-300">
                     Category <span className="text-rose-400">*</span>
@@ -666,7 +670,7 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
                 </div>
 
                 {!isAddingNewCategory ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <select
                       value={formCategory}
                       onChange={e => {
@@ -677,7 +681,7 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
                           setFormCategory(e.target.value);
                         }
                       }}
-                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500 cursor-pointer"
+                      className="w-full min-w-0 min-h-[44px] sm:min-h-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200 focus:outline-none focus:border-blue-500 cursor-pointer"
                     >
                       {availableCategories.map(cat => (
                         <option key={cat} value={cat}>
@@ -692,7 +696,7 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
                         setIsAddingNewCategory(true);
                         setNewCategoryInput('');
                       }}
-                      className="px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-lg text-xs font-medium whitespace-nowrap cursor-pointer transition-colors flex items-center gap-1 shrink-0"
+                      className="px-2.5 py-2 min-h-[44px] sm:min-h-0 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-lg text-xs font-medium whitespace-nowrap cursor-pointer transition-colors flex items-center gap-1 shrink-0"
                       title="Add a new category to selection list"
                     >
                       <Plus className="w-3.5 h-3.5 text-blue-400" />
@@ -709,13 +713,13 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
                       <button
                         type="button"
                         onClick={() => setIsAddingNewCategory(false)}
-                        className="text-slate-400 hover:text-white p-0.5 rounded cursor-pointer"
+                        className="text-slate-400 hover:text-white p-1 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded cursor-pointer"
                         title="Cancel and return to list"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 min-w-0">
                       <input
                         type="text"
                         autoFocus
@@ -728,13 +732,13 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
                             handleCreateAndSelectCategory();
                           }
                         }}
-                        className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 text-xs"
+                        className="flex-1 min-w-0 min-h-[44px] sm:min-h-0 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 text-base sm:text-xs"
                       />
                       <button
                         type="button"
                         onClick={handleCreateAndSelectCategory}
                         disabled={!newCategoryInput.trim()}
-                        className={`px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer flex items-center gap-1 shrink-0 ${
+                        className={`px-3 py-2 min-h-[44px] sm:min-h-0 text-xs font-semibold rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1 shrink-0 ${
                           newCategoryInput.trim()
                             ? 'bg-blue-600 hover:bg-blue-500 text-white'
                             : 'bg-slate-700 text-slate-500 cursor-not-allowed'
@@ -751,7 +755,7 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
                 )}
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block font-medium text-slate-300 mb-1">
                   Detailed Description / Guidelines
                 </label>
@@ -760,7 +764,7 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
                   placeholder="Describe concrete guidelines or requirements for this verification item..."
                   value={formDescription}
                   onChange={e => setFormDescription(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 leading-relaxed"
+                  className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 leading-relaxed"
                 />
               </div>
 
@@ -770,11 +774,11 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
                   <label className="block font-medium text-slate-300 mb-1">
                     Position in Checklist
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => setFormPosition('end')}
-                      className={`p-2.5 rounded-lg border text-left cursor-pointer transition-colors ${
+                      className={`p-2.5 min-h-[44px] rounded-lg border text-left cursor-pointer transition-colors ${
                         formPosition === 'end'
                           ? 'bg-blue-600/15 border-blue-500 text-white'
                           : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-slate-200'
@@ -786,7 +790,7 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
                     <button
                       type="button"
                       onClick={() => setFormPosition('start')}
-                      className={`p-2.5 rounded-lg border text-left cursor-pointer transition-colors ${
+                      className={`p-2.5 min-h-[44px] rounded-lg border text-left cursor-pointer transition-colors ${
                         formPosition === 'start'
                           ? 'bg-blue-600/15 border-blue-500 text-white'
                           : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:text-slate-200'
@@ -805,7 +809,7 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
                     type="checkbox"
                     checked={formRequired}
                     onChange={e => setFormRequired(e.target.checked)}
-                    className="w-4 h-4 rounded text-blue-600 accent-blue-500 cursor-pointer"
+                    className="w-4 h-4 rounded text-blue-600 accent-blue-500 cursor-pointer shrink-0"
                   />
                   <div>
                     <span className="font-semibold text-slate-200 block">
@@ -822,18 +826,51 @@ export const ChecklistTemplateManager: React.FC<ChecklistTemplateManagerProps> =
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="px-3.5 py-2 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+                  className="px-3.5 py-2 min-h-[44px] sm:min-h-0 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors cursor-pointer shadow-sm shadow-blue-500/20"
+                  className="px-4 py-2 min-h-[44px] sm:min-h-0 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors cursor-pointer shadow-sm shadow-blue-500/20"
                 >
                   {editingItem ? 'Save Changes' : 'Add to Checklist'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Checklist Defaults Confirmation Modal */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4 max-h-[calc(100dvh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-y-auto">
+            <div className="flex items-center gap-3 text-amber-400">
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 shrink-0">
+                <RotateCcw className="w-5 h-5 text-amber-400" />
+              </div>
+              <h3 className="text-sm font-bold text-white">Reset Checklist Defaults</h3>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Are you sure you want to reset the standard checklist template to the original Apple App Store guidelines?
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(false)}
+                className="px-3.5 py-2 min-h-[44px] sm:min-h-0 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmResetDefaults}
+                className="px-3.5 py-2 min-h-[44px] sm:min-h-0 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-md shadow-amber-600/20"
+              >
+                Reset Defaults
+              </button>
+            </div>
           </div>
         </div>
       )}

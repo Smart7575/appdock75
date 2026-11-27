@@ -17,6 +17,7 @@ import {
   Lightbulb,
   Apple,
 } from 'lucide-react';
+import { HERO_IOS_WORKSPACE } from '../../assets/bundledImages';
 
 interface LandingPageProps {
   onOpenAuth: (mode?: 'login' | 'register') => void;
@@ -28,26 +29,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onExploreDemo,
 }) => {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-blue-500/20 selection:text-blue-300">
+    <div className="min-h-dvh bg-slate-950 text-slate-100 flex flex-col selection:bg-blue-500/20 selection:text-blue-300 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       {/* Top Navbar */}
-      <header className="h-16 border-b border-slate-800/80 bg-slate-900/50 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-30">
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse"></span>
-          <span className="font-bold text-sm tracking-tight text-white">
+      <header className="h-[calc(4rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] border-b border-slate-800/80 bg-slate-900/50 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse shrink-0"></span>
+          <span className="font-bold text-sm tracking-tight text-white truncate">
             AppDock75
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <button
             onClick={() => onOpenAuth('login')}
-            className="px-3.5 py-1.5 text-xs text-slate-300 hover:text-white transition-colors cursor-pointer"
+            className="min-h-[44px] sm:min-h-0 px-3.5 py-1.5 text-xs text-slate-300 hover:text-white transition-colors cursor-pointer"
           >
             Sign In
           </button>
           <button
             onClick={() => onOpenAuth('register')}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer shadow-sm shadow-blue-500/20"
+            className="min-h-[44px] sm:min-h-0 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer shadow-sm shadow-blue-500/20"
           >
             Get Started
           </button>
@@ -55,26 +56,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </header>
 
       {/* Hero Section */}
-      <main className="flex-1 max-w-6xl mx-auto px-6 py-16 lg:py-24 space-y-20">
-        <div className="text-center space-y-6 max-w-3xl mx-auto">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-10 sm:py-16 lg:py-24 space-y-10 sm:space-y-20">
+        <div className="text-center space-y-5 sm:space-y-6 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Built for Indie iOS Developers & Small Teams</span>
+            <Sparkles className="w-3.5 h-3.5 shrink-0" />
+            <span>Built for Indie iOS Developers</span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight">
             The Complete Lifecycle Workspace for iOS Apps.
           </h1>
 
-          <p className="text-base text-slate-400 leading-relaxed max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-slate-400 leading-relaxed max-w-2xl mx-auto">
             From initial idea brainstorms and customizable Kanban boards to TestFlight releases,
             App Store changelogs, and published app archiving. Replace scattered notes, boards, and bookmarks.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 sm:pt-4">
             <button
               onClick={() => onOpenAuth('register')}
-              className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-xs transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25"
+              className="w-full sm:w-auto min-h-[44px] px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-xs transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25"
             >
               <span>Create Free Account</span>
               <ArrowRight className="w-4 h-4" />
@@ -82,21 +83,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
             <button
               onClick={onExploreDemo}
-              className="w-full sm:w-auto px-6 py-3 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 font-semibold rounded-xl text-xs transition-all cursor-pointer flex items-center justify-center gap-2"
+              className="w-full sm:w-auto min-h-[44px] px-6 py-3 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 font-semibold rounded-xl text-xs transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              <Sparkles className="w-4 h-4 text-amber-400" />
+              <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
               <span>Explore Instant Demo (No signup required)</span>
             </button>
           </div>
         </div>
 
-        {/* Hero Image Showcase */}
-        <div className="relative rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-900">
+        {/* Hero Image Showcase (hidden on phones so mobile screen fits above fold) */}
+        <div className="hidden sm:block relative rounded-2xl overflow-hidden border border-slate-800 shadow-2xl bg-slate-900">
           <img
-            src="/src/assets/images/hero_ios_workspace_1791271788673.jpg"
+            src={HERO_IOS_WORKSPACE}
             alt="AppDock75 Workspace Studio"
             className="w-full h-auto object-cover max-h-[500px]"
-            referrerPolicy="no-referrer"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
           <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between text-xs text-slate-300">
@@ -109,8 +109,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </div>
 
-        {/* Feature Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+        {/* Feature Grid (hidden on phones to avoid marketing scroll bloat) */}
+        <div className="hidden sm:grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
           <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
             <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
               <Lightbulb className="w-5 h-5" />
@@ -174,7 +174,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-900 py-8 px-6 text-center text-xs text-slate-500">
+      <footer className="border-t border-slate-900 py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] px-6 text-center text-xs text-slate-500">
         <p>AppDock75 · English Product Interface · Firebase Connected</p>
       </footer>
     </div>

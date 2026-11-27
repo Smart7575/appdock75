@@ -299,7 +299,7 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
           <div className="flex items-center gap-2 flex-wrap shrink-0">
             <button
               onClick={handleCopyAll}
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700/80 transition-colors cursor-pointer shadow-sm"
+              className="min-h-[44px] sm:min-h-0 flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700/80 transition-colors cursor-pointer shadow-sm"
               title="Copy all questions and answers to clipboard"
             >
               {allCopied ? (
@@ -317,7 +317,7 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
 
             <button
               onClick={handleOpenAdd}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-md shadow-blue-600/20"
+              className="min-h-[44px] sm:min-h-0 flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-md shadow-blue-600/20"
             >
               <Plus className="w-4 h-4" />
               <span>New Question</span>
@@ -325,7 +325,7 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
 
             <button
               onClick={() => setShowResetConfirm(true)}
-              className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-xl border border-slate-700 transition-colors cursor-pointer"
+              className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-xl border border-slate-700 transition-colors cursor-pointer"
               title="Restore default Apple App Store question template"
             >
               <RotateCcw className="w-4 h-4" />
@@ -386,22 +386,22 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 bg-slate-900 border border-slate-800 rounded-xl">
-        <div className="flex items-center gap-2 flex-1 flex-wrap">
-          <div className="relative min-w-56 flex-1 sm:flex-initial">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
+        <div className="flex items-center gap-2 flex-1 flex-wrap min-w-0">
+          <div className="relative min-w-0 w-full sm:w-auto sm:min-w-56 flex-1 sm:flex-initial">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-3 sm:top-2.5 text-slate-500" />
             <input
               type="text"
               placeholder="Search in questions or answers..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+              className="w-full min-w-0 pl-8 pr-3 py-2 sm:py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
             />
           </div>
 
           <select
             value={selectedCategory}
             onChange={e => setSelectedCategory(e.target.value)}
-            className="px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-300 focus:outline-none cursor-pointer"
+            className="w-full sm:w-auto min-w-0 min-h-[44px] sm:min-h-0 px-3 py-2 sm:py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-300 focus:outline-none cursor-pointer"
           >
             <option value="All">All categories ({appStoreQuestions.length})</option>
             {categories.map(cat => (
@@ -414,14 +414,14 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="text-xs text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded border border-slate-700 cursor-pointer"
+              className="min-h-[44px] sm:min-h-0 text-xs text-slate-400 hover:text-white px-3 py-2 sm:px-2 sm:py-1 bg-slate-800 rounded border border-slate-700 cursor-pointer"
             >
               Clear filters
             </button>
           )}
         </div>
 
-        <div className="text-xs text-slate-500 text-right">
+        <div className="text-xs text-slate-500 text-right shrink-0">
           {filteredQuestions.length} {filteredQuestions.length === 1 ? 'question' : 'questions'} shown
         </div>
       </div>
@@ -498,7 +498,7 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
                   </div>
 
                   {/* Top-Right Badges & Actions */}
-                  <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0">
+                  <div className="flex items-center gap-1.5 flex-wrap self-end sm:self-center shrink-0">
                     {/* Live Character Limit Badge */}
                     <div
                       className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold flex items-center gap-1.5 border ${
@@ -525,7 +525,7 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
                     {/* Copy answer */}
                     <button
                       onClick={() => handleCopyAnswer(q)}
-                      className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                      className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center p-2 sm:p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                       title="Copy this answer to clipboard"
                     >
                       {copiedId === q.id ? (
@@ -539,7 +539,7 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
                     <button
                       onClick={() => reorderAppStoreQuestion(q.id, 'up')}
                       disabled={isFirst}
-                      className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                      className={`min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center p-2 sm:p-1.5 rounded-lg transition-colors cursor-pointer ${
                         isFirst
                           ? 'text-slate-600 cursor-not-allowed'
                           : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -553,7 +553,7 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
                     <button
                       onClick={() => reorderAppStoreQuestion(q.id, 'down')}
                       disabled={isLast}
-                      className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                      className={`min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center p-2 sm:p-1.5 rounded-lg transition-colors cursor-pointer ${
                         isLast
                           ? 'text-slate-600 cursor-not-allowed'
                           : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -566,7 +566,7 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
                     {/* Edit Question */}
                     <button
                       onClick={() => handleOpenEdit(q)}
-                      className="p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                      className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center p-2 sm:p-1.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                       title="Edit question and character limit (synchronizes to all projects)"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
@@ -575,7 +575,7 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
                     {/* Delete Question */}
                     <button
                       onClick={() => setDeletingQuestion(q)}
-                      className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                      className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center p-2 sm:p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
                       title="Remove question from template"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -584,14 +584,14 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
                 </div>
 
                 {/* Answer Field with Live Character Counter */}
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 min-w-0">
                   {isMultiline ? (
                     <textarea
                       rows={Math.min(8, Math.max(3, Math.ceil(q.maxLength / 100)))}
                       value={currentAnswer}
                       placeholder={q.placeholder || `Enter your answer (max ${q.maxLength} chars)...`}
                       onChange={e => updateProjectAppStoreAnswer(project.id, q.id, e.target.value)}
-                      className={`w-full px-3.5 py-2.5 bg-slate-950/80 border rounded-xl text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors resize-y leading-relaxed ${
+                      className={`w-full min-w-0 px-3.5 py-2.5 bg-slate-950/80 border rounded-xl text-base sm:text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors resize-y leading-relaxed ${
                         isOverLimit
                           ? 'border-rose-500/60 focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30'
                           : 'border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30'
@@ -603,7 +603,7 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
                       value={currentAnswer}
                       placeholder={q.placeholder || `Enter your answer (max ${q.maxLength} chars)...`}
                       onChange={e => updateProjectAppStoreAnswer(project.id, q.id, e.target.value)}
-                      className={`w-full px-3.5 py-2 bg-slate-950/80 border rounded-xl text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors ${
+                      className={`w-full min-w-0 px-3.5 py-2 bg-slate-950/80 border rounded-xl text-base sm:text-xs text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors ${
                         isOverLimit
                           ? 'border-rose-500/60 focus:border-rose-500 focus:ring-1 focus:ring-rose-500/30'
                           : 'border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30'
@@ -646,18 +646,19 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
 
       {/* Add / Edit Question Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/60">
-              <div className="flex items-center gap-2">
-                <HelpCircle className="w-4 h-4 text-blue-400" />
-                <h3 className="text-sm font-bold text-white">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] pl-[calc(1rem+env(safe-area-inset-left))] pr-[calc(1rem+env(safe-area-inset-right))]">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg max-h-[calc(100dvh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-y-auto shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/60 sticky top-0 z-10 backdrop-blur">
+              <div className="flex items-center gap-2 min-w-0">
+                <HelpCircle className="w-4 h-4 text-blue-400 shrink-0" />
+                <h3 className="text-sm font-bold text-white truncate">
                   {editingQuestion ? 'Edit App Store Question' : 'Add New App Store Question'}
                 </h3>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                aria-label="Close modal"
+                className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-slate-400 hover:text-white p-2 sm:p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -673,7 +674,7 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
               </div>
 
               {/* Question Title */}
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
                   Question or Field Name *
                 </label>
@@ -684,12 +685,12 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
                   placeholder="e.g. Promotional Text"
                   value={formQuestion}
                   onChange={e => setFormQuestion(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+                  className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-base sm:text-xs text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
 
               {/* Category */}
-              <div>
+              <div className="min-w-0">
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-xs font-semibold text-slate-300">
                     Category
@@ -709,7 +710,7 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
                   )}
                 </div>
                 {!isCustomCategory ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <select
                       value={formCategory}
                       onChange={e => {
@@ -720,7 +721,7 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
                           setFormCategory(e.target.value);
                         }
                       }}
-                      className="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer"
+                      className="w-full min-w-0 min-h-[44px] sm:min-h-0 flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-base sm:text-xs text-white focus:outline-none focus:border-blue-500 cursor-pointer"
                     >
                       {categories.map(cat => (
                         <option key={cat} value={cat}>
@@ -731,18 +732,18 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
                     </select>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 min-w-0">
                     <input
                       type="text"
                       placeholder="Category name..."
                       value={customCategoryInput}
                       onChange={e => setCustomCategoryInput(e.target.value)}
-                      className="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+                      className="w-full min-w-0 flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-base sm:text-xs text-white focus:outline-none focus:border-blue-500"
                     />
                     <button
                       type="button"
                       onClick={() => setIsCustomCategory(false)}
-                      className="px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-xs text-slate-400 rounded-xl border border-slate-700 cursor-pointer"
+                      className="min-h-[44px] sm:min-h-0 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-xs text-slate-400 rounded-xl border border-slate-700 cursor-pointer shrink-0"
                     >
                       Cancel
                     </button>
@@ -751,7 +752,7 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
               </div>
 
               {/* Max Characters Limit */}
-              <div>
+              <div className="min-w-0">
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-xs font-semibold text-slate-300">
                     Maximum Character Limit *
@@ -767,7 +768,7 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
                   required
                   value={formMaxLength}
                   onChange={e => setFormMaxLength(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
+                  className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-base sm:text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
                 />
 
                 {/* Preset suggestions */}
@@ -781,7 +782,7 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
                         setFormMaxLength(p.value);
                         if (p.value > 100) setFormMultiline(true);
                       }}
-                      className={`text-[10px] px-2 py-0.5 rounded border transition-colors cursor-pointer ${
+                      className={`text-[10px] px-2 py-1 sm:py-0.5 rounded border transition-colors cursor-pointer ${
                         formMaxLength === p.value
                           ? 'bg-blue-600/30 text-blue-300 border-blue-500/50'
                           : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-white'
@@ -794,7 +795,7 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
               </div>
 
               {/* Description / Instructions */}
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
                   Explanation & Helper Tip (optional)
                 </label>
@@ -803,12 +804,12 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
                   placeholder="Short guideline or description for filling out this App Store information..."
                   value={formDescription}
                   onChange={e => setFormDescription(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500 resize-none leading-relaxed"
+                  className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-base sm:text-xs text-white focus:outline-none focus:border-blue-500 resize-none leading-relaxed"
                 />
               </div>
 
               {/* Placeholder */}
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
                   Example Placeholder (optional)
                 </label>
@@ -817,18 +818,18 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
                   placeholder="e.g. https://mydomain.com/privacy"
                   value={formPlaceholder}
                   onChange={e => setFormPlaceholder(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-blue-500"
+                  className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-base sm:text-xs text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
 
               {/* Multiline Toggle */}
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex items-center gap-2 pt-1 min-h-[44px] sm:min-h-0">
                 <input
                   type="checkbox"
                   id="formMultiline"
                   checked={formMultiline}
                   onChange={e => setFormMultiline(e.target.checked)}
-                  className="rounded border-slate-700 bg-slate-800 text-blue-600 focus:ring-0 cursor-pointer"
+                  className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-blue-600 focus:ring-0 cursor-pointer shrink-0"
                 />
                 <label htmlFor="formMultiline" className="text-xs text-slate-300 cursor-pointer select-none">
                   Use a large input field (multiple lines / textarea)
@@ -840,13 +841,13 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl cursor-pointer"
+                  className="min-h-[44px] sm:min-h-0 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-md shadow-blue-600/20"
+                  className="min-h-[44px] sm:min-h-0 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-md shadow-blue-600/20"
                 >
                   {editingQuestion ? 'Save Question' : 'Add Question'}
                 </button>
@@ -858,8 +859,8 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
 
       {/* Delete Question Confirmation Modal */}
       {deletingQuestion && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] pl-[calc(1rem+env(safe-area-inset-left))] pr-[calc(1rem+env(safe-area-inset-right))]">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md max-h-[calc(100dvh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-y-auto p-5 shadow-2xl space-y-4">
             <div className="flex items-center gap-3 text-rose-400">
               <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20">
                 <Trash2 className="w-5 h-5 text-rose-400" />
@@ -876,13 +877,13 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 onClick={() => setDeletingQuestion(null)}
-                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl cursor-pointer"
+                className="min-h-[44px] sm:min-h-0 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDelete}
-                className="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-md shadow-rose-600/20"
+                className="min-h-[44px] sm:min-h-0 px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-md shadow-rose-600/20"
               >
                 Delete Permanently
               </button>
@@ -893,8 +894,8 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
 
       {/* Reset Confirmation Modal */}
       {showResetConfirm && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] pl-[calc(1rem+env(safe-area-inset-left))] pr-[calc(1rem+env(safe-area-inset-right))]">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md max-h-[calc(100dvh-2rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-y-auto p-5 shadow-2xl space-y-4">
             <div className="flex items-center gap-3 text-amber-400">
               <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
                 <RotateCcw className="w-5 h-5 text-amber-400" />
@@ -908,13 +909,13 @@ export const AppStoreInfoTab: React.FC<AppStoreInfoTabProps> = ({ project }) => 
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 onClick={() => setShowResetConfirm(false)}
-                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl cursor-pointer"
+                className="min-h-[44px] sm:min-h-0 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmReset}
-                className="px-3.5 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-md shadow-amber-600/20"
+                className="min-h-[44px] sm:min-h-0 px-3.5 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-md shadow-amber-600/20"
               >
                 Restore to Default
               </button>

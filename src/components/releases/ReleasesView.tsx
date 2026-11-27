@@ -181,14 +181,14 @@ export const ReleasesView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto min-w-0">
           {/* Project Selector (Like on Tab Projects) */}
-          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border font-bold text-sm tracking-tight ${colorTheme.titleField} shadow-sm`}>
+          <div className={`inline-flex items-center gap-2 px-3 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 max-w-full min-w-0 rounded-xl border font-bold text-sm tracking-tight ${colorTheme.titleField} shadow-sm`}>
             <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${colorTheme.dot}`} />
             <select
               value={currentProject?.id || ''}
               onChange={e => setActiveProjectId(e.target.value)}
-              className="bg-transparent font-bold text-sm cursor-pointer focus:outline-none text-white"
+              className="bg-transparent font-bold text-base sm:text-sm cursor-pointer focus:outline-none text-white min-w-0 max-w-full truncate"
             >
               {[...db.projects].sort((a, b) => a.name.localeCompare(b.name)).map(p => (
                 <option key={p.id} value={p.id} className="bg-slate-900 text-white font-medium">
@@ -207,7 +207,7 @@ export const ReleasesView: React.FC = () => {
           {releases.length >= 2 && (
             <button
               onClick={() => setShowDiffModal(true)}
-              className="px-3 py-1.5 text-xs text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 text-xs text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center gap-1.5 cursor-pointer"
             >
               <GitCompare className="w-3.5 h-3.5" />
               <span>Compare Versions</span>
@@ -216,7 +216,7 @@ export const ReleasesView: React.FC = () => {
 
           <button
             onClick={() => setShowNewReleaseModal(true)}
-            className="px-3.5 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-sm shadow-blue-500/20"
+            className="px-3.5 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 text-xs font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-sm shadow-blue-500/20"
           >
             <Plus className="w-4 h-4" />
             <span>New Release</span>
@@ -408,11 +408,11 @@ export const ReleasesView: React.FC = () => {
               </div>
 
               {/* Add New Changelog Entry Form */}
-              <form onSubmit={handleAddChangelog} className="flex gap-2">
+              <form onSubmit={handleAddChangelog} className="flex flex-col sm:flex-row gap-2">
                 <select
                   value={newChangeType}
                   onChange={e => setNewChangeType(e.target.value as any)}
-                  className="px-2.5 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none cursor-pointer"
+                  className="w-full sm:w-auto min-w-0 min-h-[44px] sm:min-h-0 px-2.5 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200 focus:outline-none cursor-pointer"
                 >
                   <option value="Added">Added</option>
                   <option value="Changed">Changed</option>
@@ -428,12 +428,12 @@ export const ReleasesView: React.FC = () => {
                   placeholder="e.g. Added iOS 18 Control Center quick habit widget"
                   value={newChangeText}
                   onChange={e => setNewChangeText(e.target.value)}
-                  className="flex-1 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                  className="flex-1 min-w-0 px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
                 />
 
                 <button
                   type="submit"
-                  className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium cursor-pointer"
+                  className="px-3.5 py-2 min-h-[44px] sm:min-h-0 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium cursor-pointer shrink-0"
                 >
                   Add
                 </button>
@@ -464,7 +464,7 @@ export const ReleasesView: React.FC = () => {
 
                       <button
                         onClick={() => deleteChangelogEntry(entry.id)}
-                        className="text-slate-500 hover:text-rose-400 p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+                        className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-slate-500 hover:text-rose-400 p-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
                         title="Delete entry"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -477,7 +477,7 @@ export const ReleasesView: React.FC = () => {
 
             {/* App Store "What's New" Generator (PRD §8.5: max 4000 chars) */}
             <div className="p-5 bg-slate-900 border border-slate-800 rounded-xl space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <h3 className="text-sm font-semibold text-white">
                     App Store "What's New" Generator
@@ -487,13 +487,13 @@ export const ReleasesView: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[11px] font-mono text-slate-400">
                     {whatsNewText.length} / 4000 chars
                   </span>
                   <button
                     onClick={copyWhatsNew}
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-colors"
+                    className="px-3 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-colors"
                   >
                     {copiedText ? (
                       <>
@@ -523,8 +523,8 @@ export const ReleasesView: React.FC = () => {
 
       {/* Mark as Released Modal */}
       {showMarkReleasedModal && activeRelease && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem)] overflow-y-auto bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-5 sm:p-6">
             <h3 className="text-sm font-bold text-white mb-2">
               Mark Version {activeRelease.version} as Released
             </h3>
@@ -533,13 +533,13 @@ export const ReleasesView: React.FC = () => {
             </p>
 
             <div className="space-y-3 mb-4 text-xs">
-              <div>
+              <div className="min-w-0">
                 <label className="block text-slate-300 font-medium mb-1">Actual Release Date</label>
                 <input
                   type="date"
                   value={releasePubDate}
                   onChange={e => setReleasePubDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 focus:outline-none"
+                  className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100 focus:outline-none"
                 />
               </div>
             </div>
@@ -547,13 +547,13 @@ export const ReleasesView: React.FC = () => {
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowMarkReleasedModal(false)}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs cursor-pointer"
+                className="px-3 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmMarkReleased}
-                className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold cursor-pointer"
+                className="px-4 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold cursor-pointer"
               >
                 Confirm Release
               </button>
@@ -564,35 +564,42 @@ export const ReleasesView: React.FC = () => {
 
       {/* Version Comparison Diff Modal (PRD §8.5) */}
       {showDiffModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 max-h-[85vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-5 sm:p-6 max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem)] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2">
                 <GitCompare className="w-4 h-4 text-blue-400" />
                 <h3 className="text-sm font-bold text-white">Version Comparison Diff</h3>
               </div>
-              <button onClick={() => setShowDiffModal(false)} className="text-slate-400 hover:text-white">✕</button>
+              <button
+                type="button"
+                onClick={() => setShowDiffModal(false)}
+                className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-slate-400 hover:text-white cursor-pointer"
+                aria-label="Close modal"
+              >
+                ✕
+              </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 my-4 text-xs">
-              <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-4 text-xs">
+              <div className="min-w-0">
                 <label className="block text-slate-400 mb-1">Base Version</label>
                 <select
                   value={diffBaseId}
                   onChange={e => setDiffBaseId(e.target.value)}
-                  className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200"
+                  className="w-full min-w-0 p-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200"
                 >
                   {releases.map(r => (
                     <option key={r.id} value={r.id}>v{r.version} ({r.name || r.status})</option>
                   ))}
                 </select>
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-slate-400 mb-1">Target Version</label>
                 <select
                   value={diffTargetId}
                   onChange={e => setDiffTargetId(e.target.value)}
-                  className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200"
+                  className="w-full min-w-0 p-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200"
                 >
                   {releases.map(r => (
                     <option key={r.id} value={r.id}>v{r.version} ({r.name || r.status})</option>
@@ -609,8 +616,8 @@ export const ReleasesView: React.FC = () => {
               <div className="space-y-1.5">
                 {db.changelogEntries.filter(c => c.releaseId === diffTargetId).map(entry => (
                   <div key={entry.id} className="flex items-center gap-2 p-1.5 rounded bg-slate-800/80">
-                    <span className="font-bold text-emerald-400 text-[10px] uppercase">+{entry.type}</span>
-                    <span className="text-slate-200">{entry.text}</span>
+                    <span className="font-bold text-emerald-400 text-[10px] uppercase shrink-0">+{entry.type}</span>
+                    <span className="text-slate-200 break-words">{entry.text}</span>
                   </div>
                 ))}
               </div>
@@ -619,7 +626,7 @@ export const ReleasesView: React.FC = () => {
             <div className="flex justify-end pt-4">
               <button
                 onClick={() => setShowDiffModal(false)}
-                className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs"
+                className="px-4 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs cursor-pointer"
               >
                 Close
               </button>
@@ -630,13 +637,13 @@ export const ReleasesView: React.FC = () => {
 
       {/* New Release Modal */}
       {showNewReleaseModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem)] overflow-y-auto bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-5 sm:p-6">
             <h3 className="text-sm font-bold text-white mb-3">Create New Version</h3>
 
             <form onSubmit={handleCreateRelease} className="space-y-3 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="min-w-0">
                   <label className="block text-slate-300 font-medium mb-1">Version (SemVer)</label>
                   <input
                     type="text"
@@ -644,39 +651,39 @@ export const ReleasesView: React.FC = () => {
                     placeholder="1.2.0"
                     value={newRelForm.version}
                     onChange={e => setNewRelForm({ ...newRelForm, version: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg font-mono text-slate-100"
+                    className="w-full min-w-0 px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg font-mono text-base sm:text-xs text-slate-100"
                   />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <label className="block text-slate-300 font-medium mb-1">Build Number</label>
                   <input
                     type="number"
                     required
                     value={newRelForm.build}
                     onChange={e => setNewRelForm({ ...newRelForm, build: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg font-mono text-slate-100"
+                    className="w-full min-w-0 px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg font-mono text-base sm:text-xs text-slate-100"
                   />
                 </div>
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block text-slate-300 font-medium mb-1">Codename / Theme</label>
                 <input
                   type="text"
                   placeholder="e.g. Spring Polish & Widgets"
                   value={newRelForm.name}
                   onChange={e => setNewRelForm({ ...newRelForm, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100"
+                  className="w-full min-w-0 px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="min-w-0">
                   <label className="block text-slate-300 font-medium mb-1">Initial Status</label>
                   <select
                     value={newRelForm.status}
                     onChange={e => setNewRelForm({ ...newRelForm, status: e.target.value as any })}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200"
+                    className="w-full min-w-0 px-3 py-2.5 sm:py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200"
                   >
                     <option value="Planned">Planned</option>
                     <option value="In development">In development</option>
@@ -685,13 +692,13 @@ export const ReleasesView: React.FC = () => {
                     <option value="In review">In review</option>
                   </select>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <label className="block text-slate-300 font-medium mb-1">Planned Target Date</label>
                   <input
                     type="date"
                     value={newRelForm.plannedDate}
                     onChange={e => setNewRelForm({ ...newRelForm, plannedDate: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100"
+                    className="w-full min-w-0 px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-100"
                   />
                 </div>
               </div>
@@ -700,13 +707,13 @@ export const ReleasesView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowNewReleaseModal(false)}
-                  className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg"
+                  className="px-3 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 bg-slate-800 text-slate-300 rounded-lg cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-blue-600 text-white rounded-lg font-semibold"
+                  className="px-4 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 bg-blue-600 text-white rounded-lg font-semibold cursor-pointer"
                 >
                   Create Version
                 </button>
@@ -718,8 +725,8 @@ export const ReleasesView: React.FC = () => {
 
       {/* Delete Release Confirmation Modal */}
       {deletingRelease && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))]">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md max-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem)] overflow-y-auto p-5 shadow-2xl space-y-4">
             <div className="flex items-center gap-3 text-rose-400">
               <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20">
                 <Trash2 className="w-5 h-5 text-rose-400" />
@@ -736,7 +743,7 @@ export const ReleasesView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setDeletingRelease(null)}
-                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl cursor-pointer"
+                className="px-3.5 py-2 min-h-[44px] sm:min-h-0 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl cursor-pointer"
               >
                 Cancel
               </button>
@@ -746,7 +753,7 @@ export const ReleasesView: React.FC = () => {
                   deleteRelease(deletingRelease.id);
                   setDeletingRelease(null);
                 }}
-                className="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-md shadow-rose-600/20"
+                className="px-3.5 py-2 min-h-[44px] sm:min-h-0 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-md shadow-rose-600/20"
               >
                 Delete Permanently
               </button>

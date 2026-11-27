@@ -12,6 +12,7 @@ import {
   Smartphone,
 } from 'lucide-react';
 import { Project, Release } from '../../types';
+import { resolveBundledImage } from '../../assets/bundledImages';
 
 interface ReleasedProjectTileProps {
   project: Project;
@@ -50,10 +51,9 @@ export const ReleasedProjectTile: React.FC<ReleasedProjectTileProps> = ({
           <div className="relative group/icon cursor-pointer" onClick={() => onEditImage(project)}>
             {project.icon ? (
               <img
-                src={project.icon}
+                src={resolveBundledImage(project.icon)}
                 alt={project.name}
                 className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl object-cover ring-1 ring-slate-700/80 shadow-md group-hover/icon:scale-105 group-hover/icon:ring-blue-500/60 transition-all bg-slate-800"
-                referrerPolicy="no-referrer"
               />
             ) : (
               <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-br from-emerald-600/30 to-blue-600/20 text-emerald-300 border border-emerald-500/30 flex flex-col items-center justify-center font-bold text-base shadow-md group-hover/icon:border-blue-500/60 transition-colors">
@@ -145,7 +145,7 @@ export const ReleasedProjectTile: React.FC<ReleasedProjectTileProps> = ({
           <button
             type="button"
             onClick={() => onEditImage(project)}
-            className="text-[11px] text-slate-400 hover:text-slate-200 transition-colors cursor-pointer flex items-center gap-1"
+            className="min-h-[44px] sm:min-h-0 px-1 text-[11px] text-slate-400 hover:text-slate-200 transition-colors cursor-pointer flex items-center gap-1"
             title="Update app icon / artwork"
           >
             <Camera className="w-3 h-3" />
@@ -157,7 +157,7 @@ export const ReleasedProjectTile: React.FC<ReleasedProjectTileProps> = ({
           <button
             type="button"
             onClick={() => onOpenProject(project.id)}
-            className="w-full py-1.5 px-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1 shadow-sm shadow-blue-500/20"
+            className="w-full min-h-[44px] sm:min-h-0 py-2 sm:py-1.5 px-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1 shadow-sm shadow-blue-500/20"
           >
             <FolderGit2 className="w-3.5 h-3.5" />
             <span>Workspace</span>
@@ -166,7 +166,7 @@ export const ReleasedProjectTile: React.FC<ReleasedProjectTileProps> = ({
           <button
             type="button"
             onClick={() => onNavigateToReleases && onNavigateToReleases(project.id)}
-            className="w-full py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center justify-center gap-1 border border-slate-700/60"
+            className="w-full min-h-[44px] sm:min-h-0 py-2 sm:py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center justify-center gap-1 border border-slate-700/60"
           >
             <Tag className="w-3.5 h-3.5 text-purple-400" />
             <span>Releases</span>

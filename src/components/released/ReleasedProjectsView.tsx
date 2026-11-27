@@ -103,7 +103,7 @@ export const ReleasedProjectsView: React.FC<ReleasedProjectsViewProps> = ({
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => onOpenNewModal('project')}
-            className="px-3 py-1.5 text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
+            className="px-3 py-2 min-h-[44px] sm:min-h-0 sm:py-1.5 text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
           >
             <Plus className="w-3.5 h-3.5 text-blue-400" />
             <span>New Project</span>
@@ -111,7 +111,7 @@ export const ReleasedProjectsView: React.FC<ReleasedProjectsViewProps> = ({
 
           <button
             onClick={() => onOpenNewModal('release')}
-            className="px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm shadow-blue-500/20"
+            className="px-3.5 py-2 min-h-[44px] sm:min-h-0 sm:py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm shadow-blue-500/20"
           >
             <Tag className="w-3.5 h-3.5" />
             <span>New Release</span>
@@ -165,22 +165,22 @@ export const ReleasedProjectsView: React.FC<ReleasedProjectsViewProps> = ({
 
       {/* Search & Filter Toolbar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 bg-slate-900 border border-slate-800 rounded-xl">
-        <div className="relative flex-1">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
+        <div className="relative flex-1 min-w-0">
+          <Search className="w-3.5 h-3.5 absolute left-3 top-3 sm:top-2.5 text-slate-500" />
           <input
             type="text"
             placeholder="Search released apps by name, bundle ID, keywords..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+            className="w-full min-w-0 pl-8 pr-3 py-2 sm:py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <select
             value={platformFilter}
             onChange={e => setPlatformFilter(e.target.value)}
-            className="px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-300 focus:outline-none cursor-pointer"
+            className="w-full sm:w-auto min-w-0 px-2.5 py-2 sm:py-1.5 min-h-[44px] sm:min-h-0 bg-slate-800 border border-slate-700 rounded-lg text-base sm:text-xs text-slate-300 focus:outline-none cursor-pointer"
           >
             <option value="All">All Platforms</option>
             <option value="iPhone">iPhone</option>

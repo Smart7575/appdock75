@@ -4,9 +4,11 @@
  */
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
+import { Capacitor } from '@capacitor/core';
 import {
   getAuth,
   initializeAuth,
+  setPersistence,
   indexedDBLocalPersistence,
   browserLocalPersistence,
   browserSessionPersistence,
@@ -50,8 +52,18 @@ export const firebaseConfig = {
 
 export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 export const auth = (() => {
+  if (Capacitor.isNativePlatform()) {
+    try {
+      return initializeAuth(app, {
+        persistence: indexedDBLocalPersistence,
+      });
+    } catch {
+      return getAuth(app);
+    }
+  }
+
   try {
-    return initializeAuth(app, {
+    const webAuth = initializeAuth(app, {
       persistence: [
         indexedDBLocalPersistence,
         browserLocalPersistence,
@@ -60,8 +72,12 @@ export const auth = (() => {
       ],
       popupRedirectResolver: browserPopupRedirectResolver,
     });
+    setPersistence(webAuth, browserLocalPersistence).catch(() => {});
+    return webAuth;
   } catch {
-    return getAuth(app);
+    const fallbackAuth = getAuth(app);
+    setPersistence(fallbackAuth, browserLocalPersistence).catch(() => {});
+    return fallbackAuth;
   }
 })();
 export const db = getFirestore(app);

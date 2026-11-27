@@ -19,6 +19,7 @@ import {
   TimeLogEntry,
   ActiveTimerState,
 } from '../types';
+import { HABITPULSE_ICON, CHRONOS_ICON } from '../assets/bundledImages';
 
 export interface UserDatabase {
   ideas: Idea[];
@@ -189,7 +190,7 @@ export function generateDemoData(userId: string): UserDatabase {
     id: projectId,
     userId,
     name: 'HabitPulse - Minimal Habit Tracker',
-    icon: '/src/assets/images/app_icon_habitpulse_1791271816455.jpg',
+    icon: HABITPULSE_ICON,
     description: 'An elegant, distraction-free habit tracker featuring interactive iOS 18 widgets, Live Activities, and seamless HealthKit streak synchronization.',
     bundleId: 'com.indiepulse.habitpulse',
     platforms: ['iPhone', 'Apple Watch', 'iPad', 'visionOS'],
@@ -277,7 +278,7 @@ export function generateDemoData(userId: string): UserDatabase {
     id: 'proj-demo-chronos',
     userId,
     name: 'Chronos - Mechanical Timer',
-    icon: '/src/assets/images/app_icon_chronos_1791271827616.jpg',
+    icon: CHRONOS_ICON,
     description: 'Precision mechanical stopwatch and interval timer with realistic titanium sound effects, Dynamic Island timers, and interactive widgets.',
     bundleId: 'com.indiechrono.chronostimer',
     platforms: ['iPhone', 'Apple Watch', 'iPad'],
